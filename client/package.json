@@ -1,0 +1,32 @@
+{
+  "name": "app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@reduxjs/toolkit": "^2.9.1",
+    "@tailwindcss/vite": "^4.1.18",
+    "axios": "^1.7.2",
+    "jwt-decode": "^4.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-hook-form": "^7.65.0",
+    "react-redux": "^9.2.0",
+    "react-router-dom": "^7.9.4",
+    "react-toastify": "^11.0.5",
+    "tailwindcss": "^4.1.18",
+    "yup": "^1.7.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}

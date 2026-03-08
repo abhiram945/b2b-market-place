@@ -1,0 +1,124 @@
+import React, { useEffect } from 'react';
+import { useForm, SubmitHandler } from 'react-hook-form';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { loginUser } from '../../redux/slices/userSlice';
+import { RootState, AppDispatch } from '../../redux/store';
+import { Building } from '../../components/icons';
+
+type LoginFormInputs = {
+  email: string;
+  password: string;
+};
+
+const Login: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { loading, error, isAuthenticated, user } = useSelector((state: RootState) => state.user);
+  
+  const from = location.state?.from?.pathname || '/dashboard';
+
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormInputs>();
+
+  useEffect(() => {
+    if (isAuthenticated && user && user.role) {
+      if (user.role === 'admin') {
+        navigate('/admin-dashboard', { replace: true });
+      } else if (user.role === 'buyer') {
+        navigate('/buyer-dashboard', { replace: true });
+      } else if (user.role === 'vendor') {
+        navigate('/vendor-dashboard', { replace: true });
+      } else {
+        navigate(from, { replace: true });
+      }
+    }
+  }, [isAuthenticated, navigate, from, user]);
+
+  const onSubmit: SubmitHandler<LoginFormInputs> = (data) => {
+    dispatch(loginUser(data));
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-xl border border-gray-100">
+        <div>
+          <Link to="/" className="mx-auto h-12 w-auto flex items-center justify-center text-3xl font-black text-gray-900 tracking-tighter italic">
+            <Building className="w-10 h-10 text-brand-red mr-2" />
+            <span>B2B<span className="text-brand-red">MARKET</span></span>
+          </Link>
+          <h2 className="mt-8 text-center text-3xl font-black text-gray-900 uppercase tracking-tight">
+            SIGN IN
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-500 font-medium">
+            AUTHORIZED PERSONNEL ONLY
+          </p>
+        </div>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+          <div className="space-y-4">
+            <div>
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email</label>
+              <input
+                {...register('email', {
+                  required: 'Email is required',
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i,
+                    message: 'Invalid email address'
+                  }
+                })}
+                id="email-address"
+                type="email"
+                className="appearance-none relative block w-full px-4 py-3 border-2 border-gray-100 placeholder-gray-300 text-gray-900 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all sm:text-sm font-bold"
+                placeholder="admin@b2bmarket.com"
+              />
+              <p className="text-red-600 text-[10px] font-bold mt-1 uppercase ml-1">{errors.email?.message}</p>
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Password</label>
+              <input
+                {...register('password', {
+                  required: 'Password is required'
+                })}
+                id="password"
+                type="password"
+                className="appearance-none relative block w-full px-4 py-3 border-2 border-gray-100 placeholder-gray-300 text-gray-900 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all sm:text-sm font-bold"
+                placeholder="••••••••"
+              />
+              <p className="text-red-600 text-[10px] font-bold mt-1 uppercase ml-1">{errors.password?.message}</p>
+            </div>
+          </div>
+          
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-600 p-4">
+                <p className="text-red-600 text-xs font-black uppercase tracking-widest text-center">{error}</p>
+            </div>
+          )}
+
+          <div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="group relative w-full flex justify-center py-4 px-4 border border-transparent text-xs font-black tracking-[0.2em] rounded-xl text-white bg-black hover:bg-brand-red focus:outline-none transition-all disabled:opacity-50 shadow-xl active:scale-95"
+            >
+              {loading ? 'Authenticating...' : 'Sign In'}
+            </button>
+          </div>
+        </form>
+
+        <div className="mt-8 pt-8 border-t border-gray-100 text-center space-y-4">
+            <p className="text-xs text-gray-500 font-bold tracking-wider">
+                Need here?{' '}
+                <Link to="/register" className="text-brand-red hover:underline decoration-2 underline-offset-4">
+                  Create account
+                </Link>
+            </p>
+            <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">
+                Support: <a href="mailto:support@b2bmarket.com" className="hover:text-gray-900">support@b2bmarket.com</a>
+            </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Login;

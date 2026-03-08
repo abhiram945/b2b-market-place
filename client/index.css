@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-red: #dc2626; /* Red-600 */
+  --color-brand-red-hover: #b91c1c; /* Red-700 */
+}
+
+/* Force Light Theme Only */
+body {
+  background-color: #f9fafb; /* gray-50 */
+  color: #111827; /* gray-900 */
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Consistent Red Button */
+.btn-red {
+  @apply bg-brand-red hover:bg-brand-red-hover text-white font-bold py-2 px-4 rounded transition-all shadow-sm active:scale-95 disabled:opacity-50;
+}
+
+/* Card Style */
+.card-light {
+  @apply bg-white border border-gray-200 shadow-sm rounded-lg;
+}
+
+/* Table Style */
+.table-header {
+  @apply bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider;
+}
+
+/* Modal Style */
+.modal-content {
+  @apply bg-white rounded-lg shadow-xl;
+}
+
+/* Scrollbar for title */
+.title-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.title-scrollbar::-webkit-scrollbar {
+  display: none;
+}
