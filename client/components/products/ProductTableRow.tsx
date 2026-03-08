@@ -28,8 +28,8 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
 
   const isInCart = cartItems.some(item => item._id === product._id);
 
-  const initialPriceAlert = subscriptions.some(sub => sub.productId === product._id && sub.type === 'price');
-  const initialStockAlert = subscriptions.some(sub => sub.productId === product._id && sub.type === 'stock');
+  const initialPriceAlert = subscriptions.some(sub => sub.product === product._id && sub.type === 'price');
+  const initialStockAlert = subscriptions.some(sub => sub.product === product._id && sub.type === 'stock');
 
   useEffect(() => {
     if (isInCart) {

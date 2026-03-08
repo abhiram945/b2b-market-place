@@ -44,9 +44,9 @@ const AlertSubscriptionModal: React.FC<AlertSubscriptionModalProps> = ({
             id="priceAlert"
             checked={priceAlert}
             onChange={(e) => setPriceAlert(e.target.checked)}
-            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:checked:bg-blue-500"
+            className="h-4 w-4 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700"
           />
-          <label htmlFor="priceAlert" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+          <label htmlFor="priceAlert" className="ml-2 block text-sm text-gray-900">
             Price Alert
           </label>
         </div>
@@ -56,9 +56,9 @@ const AlertSubscriptionModal: React.FC<AlertSubscriptionModalProps> = ({
             id="stockAlert"
             checked={stockAlert}
             onChange={(e) => setStockAlert(e.target.checked)}
-            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:checked:bg-blue-500"
+            className="h-4 w-4 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700"
           />
-          <label htmlFor="stockAlert" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+          <label htmlFor="stockAlert" className="ml-2 block text-sm text-gray-900">
             Stock Alert
           </label>
         </div>
@@ -67,14 +67,14 @@ const AlertSubscriptionModal: React.FC<AlertSubscriptionModalProps> = ({
         <button
           type="button"
           onClick={onClose}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
+          className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md cursor-pointer"
         >
           Cancel
         </button>
         <button
           type="button"
           onClick={handleSave}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+          className="px-4 py-2 text-sm font-medium text-white bg-brand-red rounded-md hover:bg-brand-red-hover cursor-pointer"
         >
           Save
         </button>

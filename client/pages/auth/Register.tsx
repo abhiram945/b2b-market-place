@@ -13,10 +13,19 @@ type RegisterFormInputs = {
   email: string;
   phoneNumber: string;
   companyName: string;
+  address: string;
   role: 'buyer' | 'vendor' | '';
   password: string;
   confirmPassword: string;
 };
+
+const InputWrapper = ({ label, children, error }: any) => (
+  <div className="flex flex-col gap-1.5 min-h-[85px]">
+    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{label}</label>
+    {children}
+    {error && <p className="text-red-600 text-[9px] font-bold uppercase ml-1 animate-in fade-in slide-in-from-top-1">{error.message}</p>}
+  </div>
+);
 
 const Register: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -30,12 +39,17 @@ const Register: React.FC = () => {
   });
 
   const password = watch('password');
+  const role = watch('role');
 
   const onSubmit: SubmitHandler<RegisterFormInputs> = (data) => {
     if (data.role === '') return;
 
     const { confirmPassword, ...registerData } = data;
     const payload = { ...registerData, role: data.role as 'buyer' | 'vendor', _id: '' };
+
+    if (payload.role !== 'buyer') {
+      delete payload.address;
+    }
 
     dispatch(registerUser(payload)).then(action => {
       if (registerUser.fulfilled.match(action)) {
@@ -44,14 +58,6 @@ const Register: React.FC = () => {
       }
     });
   };
-
-  const InputWrapper = ({ label, name, children, error }: any) => (
-    <div className="flex flex-col gap-1.5 min-h-[85px]">
-      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{label}</label>
-      {children}
-      {error && <p className="text-red-600 text-[9px] font-bold uppercase ml-1 animate-in fade-in slide-in-from-top-1">{error.message}</p>}
-    </div>
-  );
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-4 px-4 sm:px-6 lg:px-8">
@@ -120,6 +126,19 @@ const Register: React.FC = () => {
                 <option value="vendor">Vendor</option>
               </select>
             </InputWrapper>
+
+            {role === 'buyer' && (
+              <div className="md:col-span-2">
+                <InputWrapper label="Address" error={errors.address}>
+                  <textarea
+                    {...register('address', { required: 'Address is required' })}
+                    placeholder="Full Address"
+                    rows={3}
+                    className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm resize-none"
+                  />
+                </InputWrapper>
+              </div>
+            )}
 
             <InputWrapper label="Password" error={errors.password}>
               <input

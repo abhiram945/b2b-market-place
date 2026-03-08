@@ -96,23 +96,26 @@ const AdminDashboard: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                      {user.status === 'rejected' ?
-                        <button
-                          onClick={() => handleStatusUpdate(user._id, 'approved')}
-                          disabled={updatingUserId === user._id}
-                          className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow-sm disabled:opacity-50 min-w-[110px] cursor-pointer tracking-wider"
-                        >
-                          {updatingUserId === user._id && updateType === 'approving' ? 'Approving...' : 'Approve'}
-                        </button>
-                       :
-                        <button
-                          onClick={() => handleStatusUpdate(user._id, 'rejected')}
-                          disabled={updatingUserId === user._id}
-                          className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow-sm disabled:opacity-50 min-w-[110px] cursor-pointer tracking-wider"
-                        >
-                          {updatingUserId === user._id && updateType === 'rejecting' ? 'Rejecting...' : 'Reject'}
-                        </button>
-                      }
+                      <div className="flex justify-center gap-2">
+                        {user.status !== 'approved' && (
+                          <button
+                            onClick={() => handleStatusUpdate(user._id, 'approved')}
+                            disabled={updatingUserId === user._id}
+                            className="bg-green-600 hover:bg-green-700 text-white font-black text-[10px] py-2 px-4 rounded-lg shadow-sm disabled:opacity-50 min-w-[100px] cursor-pointer uppercase tracking-widest transition-all"
+                          >
+                            {updatingUserId === user._id && updateType === 'approving' ? 'Approving...' : 'Approve'}
+                          </button>
+                        )}
+                        {user.status !== 'rejected' && (
+                          <button
+                            onClick={() => handleStatusUpdate(user._id, 'rejected')}
+                            disabled={updatingUserId === user._id}
+                            className="bg-red-600 hover:bg-red-700 text-white font-black text-[10px] py-2 px-4 rounded-lg shadow-sm disabled:opacity-50 min-w-[100px] cursor-pointer uppercase tracking-widest transition-all"
+                          >
+                            {updatingUserId === user._id && updateType === 'rejecting' ? 'Rejecting...' : 'Reject'}
+                          </button>
+                        )}
+                      </div>
                   </td>
                 </tr>
               ))}

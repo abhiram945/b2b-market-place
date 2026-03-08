@@ -9,7 +9,7 @@ import { ROLES, USER_STATUS } from '../utils/constants.js';
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
   console.log(req.body);
-  const { fullName, email, password, companyName, phoneNumber, role } = req.body;
+  const { fullName, email, password, companyName, address, phoneNumber, role } = req.body;
 
   const userExists = await User.findOne({ email });
 
@@ -18,12 +18,20 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error('User already exists');
   }
 
+  const selectedRole = role || ROLES.BUYER;
+
+  if (selectedRole === ROLES.BUYER && !address) {
+    res.status(400);
+    throw new Error('Address is required for buyers');
+  }
+
   const user = await User.create({
     fullName,
     email,
     password,
     companyName,
-    role: role || ROLES.BUYER, // Take role from body, default to 'buyer'
+    address,
+    role: selectedRole,
     phoneNumber,
   });
 
@@ -73,6 +81,7 @@ const loginUser = asyncHandler(async (req, res) => {
       email: user.email,
       phoneNumber: user.phoneNumber,
       companyName: user.companyName,
+      address: user.address,
       role: user.role,
       status: user.status,
       token: accessToken,
@@ -135,6 +144,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
       email: user.email,
       phoneNumber: user.phoneNumber,
       companyName: user.companyName,
+      address: user.address,
       role: user.role,
       status: user.status,
     });

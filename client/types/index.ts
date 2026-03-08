@@ -3,6 +3,7 @@ export interface User {
   fullName: string;
   email: string;
   companyName: string;
+  address?: string;
   role: 'buyer' | 'vendor' | 'admin';
   password: string;
   phoneNumber?: string;
@@ -43,7 +44,7 @@ export interface Order {
 
 export interface NotificationSubscription {
   _id: string;
-  productId: string;
+  product: string;
   productTitle: string;
   type: 'price' | 'stock';
   status: 'active' | 'inactive';

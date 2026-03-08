@@ -25,6 +25,10 @@ const userSchema = mongoose.Schema(
       type: String,
       required: true,
     },
+    address: {
+      type: String,
+      required: false, // Required only for buyers, handled in controller
+    },
     role: {
       type: String,
       required: true,
