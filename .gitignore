@@ -1,7 +1,8 @@
 changes.txt
 2026 Export CI Format Blank.pdf
 2026 Export CI Format.pdf
-
+client/.env
+server/.env
 # Logs
 logs
 *.log
