@@ -40,6 +40,10 @@ const userSchema = mongoose.Schema(
       enum: Object.values(USER_STATUS),
       default: USER_STATUS.PENDING,
     },
+    website: {
+      type: String,
+      required: false,
+    },
   },
   {
     timestamps: true,

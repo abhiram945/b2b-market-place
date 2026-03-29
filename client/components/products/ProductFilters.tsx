@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../redux/store';
-import { ChevronDown, Search } from '../icons';
+import { ChevronDown, Search, X } from '../icons';
 
 interface ProductFiltersProps {
   filters: any;
@@ -43,12 +43,12 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters }) 
   };
 
   const handleBrandClick = (brand: string) => {
-    setFilters({ ...filters, brand: brand });
+    setFilters({ ...filters, brand: brand.toLowerCase() });
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setFilters({ ...filters, search: localSearch });
+    setFilters({ ...filters, search: localSearch.toLowerCase() });
   };
 
   return (
@@ -65,8 +65,20 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters }) 
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
             placeholder="Search inventory..."
-            className="block w-full h-10 pl-10 pr-20 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-900 outline-none focus:border-brand-red transition-all"
+            className="block w-full h-10 pl-10 pr-24 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-900 outline-none focus:border-brand-red transition-all"
           />
+          {localSearch && (
+            <button
+              type="button"
+              onClick={() => {
+                setLocalSearch('');
+                setFilters({ ...filters, search: '' });
+              }}
+              className="absolute inset-y-0 right-20 flex items-center pr-2 text-gray-400 hover:text-brand-red transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
           <button type="submit" className="absolute inset-y-1.5 right-1.5 px-3 bg-black hover:bg-brand-red text-white text-[9px] font-black uppercase tracking-widest rounded transition-all active:scale-95">
             SEARCH
           </button>
@@ -93,18 +105,29 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters }) 
 
         {/* Category */}
         <div className="relative">
-          <select name="category" value={filters.category} onChange={handleInputChange} className="h-10 pl-3 pr-9 bg-gray-50 border border-gray-200 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-700 outline-none focus:border-brand-red cursor-pointer appearance-none min-w-[140px]">
+          <select name="category" value={filters.category} onChange={handleInputChange} className="h-10 pl-3 pr-9 bg-gray-50 border border-gray-200 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-700 outline-none focus:border-brand-red cursor-pointer appearance-none min-w-[140px] capitalize">
             <option value="">Categories</option>
-            {uniqueValues.categories.map(c => <option key={c} value={c}>{c}</option>)}
+            {uniqueValues.categories.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
           </select>
           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
         </div>
 
         {/* Location */}
         <div className="relative">
-          <select name="location" value={filters.location} onChange={handleInputChange} className="h-10 pl-3 pr-9 bg-gray-50 border border-gray-200 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-700 outline-none focus:border-brand-red cursor-pointer appearance-none min-w-[140px]">
+          <select name="location" value={filters.location} onChange={handleInputChange} className="h-10 pl-3 pr-9 bg-gray-50 border border-gray-200 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-700 outline-none focus:border-brand-red cursor-pointer appearance-none min-w-[140px] capitalize">
             <option value="">Locations</option>
-            {uniqueValues.locations.map(l => <option key={l} value={l}>{l}</option>)}
+            {uniqueValues.locations.map(l => <option key={l} value={l} className="capitalize">{l}</option>)}
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+        </div>
+
+        {/* Sort */}
+        <div className="relative">
+          <select name="sort" value={filters.sort} onChange={handleInputChange} className="h-10 pl-3 pr-9 bg-gray-50 border border-gray-200 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-700 outline-none focus:border-brand-red cursor-pointer appearance-none min-w-[140px]">
+            <option value="">Sort By</option>
+            <option value="price_asc">Price: Low to High</option>
+            <option value="price_desc">Price: High to Low</option>
+            <option value="newest">Newest First</option>
           </select>
           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
         </div>

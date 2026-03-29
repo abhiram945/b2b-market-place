@@ -85,8 +85,11 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
         <td className="px-2 py-4 text-center">
             <span className="text-sm font-black text-zinc-900 tracking-tighter">${product.price.toFixed(2)}</span>
         </td>
-        <td className="px-2 py-4 text-center hidden sm:table-cell">
-            <span className="text-[10px] font-bold text-zinc-500 tracking-tighter">{product.minOrderQty}-{product.maxOrderQty}</span>
+        <td className="px-2 py-4 text-center">
+            <span className="text-[10px] font-bold text-zinc-500 tracking-tighter">{product.minOrderQty}</span>
+        </td>
+        <td className="px-2 py-4 text-center">
+            <span className="text-[10px] font-bold text-zinc-500 tracking-tighter">{product.maxOrderQty}</span>
         </td>
         <td className="px-2 py-4 text-center">
             <span className={`text-[11px] font-black ${product.stockQty < product.minOrderQty * 2 ? 'text-red-600' : 'text-zinc-900'}`}>

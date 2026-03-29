@@ -31,7 +31,7 @@ const BuyerDashboard: React.FC = () => {
   
   return (
     <div className="max-w-[90%] mx-auto py-8">
-      <div className="border-b border-gray-200 dark:border-zinc-800 pb-6">
+      <div className="pb-6">
         <h1 className="text-4xl font-black text-black uppercase tracking-tighter italic">
             Dashboard <span className="text-red-600">Overview</span>
         </h1>
@@ -83,7 +83,7 @@ const BuyerDashboard: React.FC = () => {
           {BRANDS.map((brand) => (
             <button
               key={brand.name}
-              onClick={() => navigate(`/products?brand=${brand.name}`)}
+              onClick={() => navigate(`/products?brand=${brand.name.toLowerCase()}`)}
               className="flex justify-center transform hover:scale-110 grayscale hover:grayscale-0 opacity-50 hover:opacity-100 transition-all duration-500"
               title={brand.name}
             >

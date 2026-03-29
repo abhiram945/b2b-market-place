@@ -7,201 +7,236 @@ import { sendEmail } from './notificationSender.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const numberToWords = (num) => {
+    const a = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+    const convert = (n) => {
+        if (n < 20) return a[n];
+        if (n < 100) return b[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + a[n % 10] : '');
+        if (n < 1000) return a[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' ' + convert(n % 100) : '');
+        if (n < 1000000) return convert(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 !== 0 ? ' ' + convert(n % 1000) : '');
+        return '';
+    };
+
+    if (num === 0) return 'Zero';
+    const parts = num.toLocaleString('en-US', { minimumFractionDigits: 2 }).split('.');
+    let res = convert(parseInt(parts[0].replace(/,/g, '')));
+    if (parts.length > 1 && parseInt(parts[1]) > 0) {
+        res += ' and ' + convert(parseInt(parts[1])) + ' Cents';
+    }
+    return res + ' Only';
+};
+
 export const generateInvoice = async (order, buyer) => {
-    const doc = new PDFDocument({ size: 'A4', margin: 30 });
+    const doc = new PDFDocument({ size: 'A4', margin: 25 });
     const invoiceName = `invoice_${order._id}.pdf`;
     const filePath = path.join(__dirname, '..', 'uploads', 'invoices', invoiceName);
 
     const stream = fs.createWriteStream(filePath);
+    if (!fs.existsSync(path.dirname(filePath))) {
+        fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    }
     doc.pipe(stream);
 
+    const RED = '#ed1c24';
+    const logoPath = path.join(__dirname, '..', 'pdf-logo.png');
+
     // --- Header ---
-    // Logo placeholder (Circular with text as per image)
-    doc.circle(60, 60, 40).lineWidth(2).stroke('#000');
-    doc.fillColor('#ed1c24').fontSize(12).text('TECHTRONICS', 30, 50, { width: 60, align: 'center' });
-    doc.fillColor('#000').fontSize(8).text('Global Technology Partner', 25, 75, { width: 70, align: 'center' });
+    if (fs.existsSync(logoPath)) {
+        doc.image(logoPath, 25, 12, { width: 90 });
+    }
+
+    doc.fillColor(RED).fontSize(22).font('Helvetica-Bold').text('Techtronics Technologies FZCO', 0, 25, { align: 'center', width: doc.page.width });
+    doc.fillColor('#000').fontSize(11).font('Helvetica').text('101, A2, DZO IFZA 7069, DSO, Dubai, UAE', 0, 52, { align: 'center', width: doc.page.width });
+    doc.fontSize(11).font('Helvetica-Bold').text('+971 4 229 6506   uae@techtronicsmea.com', 0, 68, { align: 'center', width: doc.page.width });
     
-    // Company Name & Address
-    doc.fillColor('#ed1c24').fontSize(24).font('Helvetica-Bold').text('Techtronics Technologies FZCO', 110, 35);
-    doc.fillColor('#000').fontSize(10).font('Helvetica').text('101, A2, DZO IFZA 7069, DSO, Dubai, UAE', 110, 65, { align: 'center', width: 400 });
-    doc.font('Helvetica-Bold').text('P: +971 52 860 9234   E: uae@techtronicsmea.com', 110, 80, { align: 'center', width: 400 });
-    doc.font('Helvetica').text('TRN: 104055163000003  IMPEX : 25075  DCM2: AE-1170666', 110, 95, { align: 'center', width: 400 });
+    // TRN Line
+    const trnText = "TRN: 104055163000003 IMPEX: 25075 DCM2: AE-1170666";
+    doc.fontSize(9.5);
+    const totalTrnWidth = doc.widthOfString(trnText) + 10;
+    let currentTrnX = (doc.page.width - totalTrnWidth) / 2;
+    const trnY = 84;
 
-    doc.fontSize(14).font('Helvetica-Bold').text('COMMERCIAL INVOICE', 450, 15, { align: 'right' });
+    doc.font('Helvetica').text('TRN: ', currentTrnX, trnY);
+    currentTrnX += doc.widthOfString('TRN: ');
+    doc.font('Helvetica-Bold').text('104055163000003 ', currentTrnX, trnY);
+    currentTrnX += doc.widthOfString('104055163000003 ');
+    doc.font('Helvetica').text(' IMPEX: ', currentTrnX, trnY);
+    currentTrnX += doc.widthOfString(' IMPEX: ');
+    doc.fillColor(RED).font('Helvetica-Bold').text('25075 ', currentTrnX, trnY);
+    currentTrnX += doc.widthOfString('25075 ');
+    doc.fillColor('#000').font('Helvetica').text(' DCM2:', currentTrnX, trnY);
+    currentTrnX += doc.widthOfString(' DCM2:');
+    doc.fillColor(RED).font('Helvetica-Bold').text('AE-1170666', currentTrnX, trnY);
 
-    doc.moveTo(30, 115).lineTo(565, 115).stroke();
+    doc.moveTo(25, 105).lineTo(570, 105).lineWidth(1.5).stroke('#000');
 
-    // --- Info Grid ---
-    let y = 125;
-    const col1 = 35;
-    const col1Val = 130;
-    const col2 = 300;
-    const col2Val = 420;
-
-    const drawRow = (label1, val1, label2, val2) => {
-        doc.fontSize(8).font('Helvetica-Bold').text(label1, col1, y);
-        doc.font('Helvetica').text(`: ${val1 || ''}`, col1Val, y);
-        doc.font('Helvetica-Bold').text(label2, col2, y);
-        doc.font('Helvetica').text(`: ${val2 || ''}`, col2Val, y);
-        y += 12;
+    // --- Bill To / Ship To ---
+    let y = 120;
+    
+    const drawBoxedHeader = (x, text) => {
+        doc.fillColor(RED).roundedRect(x, y, 130, 18, 9).fill();
+        doc.fillColor('#FFF').fontSize(10).font('Helvetica-Bold').text(text, x + 35, y + 4);
     };
 
-    drawRow('Buyer ID', buyer._id.toString().slice(-8).toUpperCase(), 'Invoice Number', order._id.toString().slice(-8).toUpperCase());
-    drawRow('Buyer Order No.', '-', 'Invoice Date', new Date(order.orderDate).toLocaleDateString());
-    drawRow('Buyer Order Date', new Date(order.orderDate).toLocaleDateString(), 'Due Date', new Date(order.orderDate).toLocaleDateString());
-    drawRow('Delivery Note No', '-', 'Shipping/Inco Term', 'EXW');
-    drawRow('POL', 'DUBAI', 'POD Customs Office', '-');
-    drawRow('POD', '-', 'Shopping By', '-');
-    drawRow('DOC Currency', 'USD ($)', 'Payment Term', '100% Advance');
-    drawRow('HAWB/BL/HBL No.', '-', 'AWB/BL/HBL DT.', '-');
+    drawBoxedHeader(30, 'BILL TO');
+    drawBoxedHeader(310, 'SHIP TO');
 
-    doc.moveTo(30, y + 5).lineTo(565, y + 5).stroke();
-    y += 15;
+    y += 25;
+    doc.fillColor('#000').fontSize(14).font('Helvetica-Bold').text(buyer.companyName || buyer.fullName, 30, y);
+    doc.text(buyer.companyName || buyer.fullName, 310, y);
+    y += 16;
+    doc.fontSize(10).font('Helvetica').text(buyer.email, 30, y);
+    doc.text(buyer.email, 310, y);
+    y += 12;
+    doc.text(buyer.address, 30, y, { width: 250 });
+    doc.text(buyer.address, 310, y, { width: 250 });
 
-    // --- Address Sections ---
-    const addrColWidth = 170;
-    doc.fontSize(7).font('Helvetica-Bold');
-    doc.text('BILL TO, CONSIGNEE, NOTIFY (Customer\'s Name & Address)', 35, y, { width: addrColWidth, underline: true });
-    doc.text('SHIP TO (Consignee\'s Details)', 215, y, { width: addrColWidth, underline: true });
-    doc.text('NOTIFY TO (Notify Party)', 395, y, { width: addrColWidth, underline: true });
+    y += 50;
     
-    y += 15;
-    const addrStartHero = y;
+    // --- Invoice Info Grid ---
+    doc.moveTo(25, y).lineTo(570, y).lineWidth(0.5).stroke('#000');
+    y += 6;
     
-    const drawAddr = (x, name, company, address, tel, email) => {
-        let cy = addrStartHero;
-        doc.fontSize(8).font('Helvetica-Bold').text('NAME', x, cy);
-        doc.font('Helvetica').text(`: ${name}`, x + 45, cy);
-        cy += 12;
-        doc.font('Helvetica-Bold').text('ADDRESS', x, cy);
-        doc.font('Helvetica').text(`: ${company}`, x + 45, cy);
-        cy += 10;
-        doc.text(`  ${address || ''}`, x + 45, cy, { width: addrColWidth - 50 });
-        cy += 25;
-        doc.font('Helvetica-Bold').text('Kind. Attn.', x, cy);
-        doc.font('Helvetica').text(`: ${name}`, x + 45, cy);
-        cy += 12;
-        doc.font('Helvetica-Bold').text('TEL', x, cy);
-        doc.font('Helvetica').text(`: ${tel || '-'}`, x + 45, cy);
-        cy += 12;
-        doc.font('Helvetica-Bold').text('Email', x, cy);
-        doc.font('Helvetica').text(`: ${email}`, x + 45, cy);
-        cy += 12;
-        doc.font('Helvetica-Bold').text('VAT No.', x, cy);
-        doc.font('Helvetica').text(': -', x + 45, cy);
-        cy += 12;
-        doc.font('Helvetica-Bold').text('EXIM Code', x, cy);
-        doc.font('Helvetica').text(': -', x + 45, cy);
+    const drawInfoCol = (label, val, x) => {
+        doc.fontSize(9).font('Helvetica').text(label, x, y);
+        doc.font('Helvetica-Bold').text(val, x, y + 12);
     };
 
-    drawAddr(35, buyer.fullName, buyer.companyName, buyer.address, buyer.phoneNumber, buyer.email);
-    drawAddr(215, buyer.fullName, buyer.companyName, buyer.address, buyer.phoneNumber, buyer.email);
-    drawAddr(395, '-', '-', '-', '-', '-');
+    drawInfoCol('INVOICE NO.', order._id.toString().slice(-8).toUpperCase(), 30);
+    drawInfoCol('DATE', new Date(order.orderDate).toLocaleDateString(), 180);
+    drawInfoCol('DUE DATE', new Date(order.orderDate).toLocaleDateString(), 330);
+    drawInfoCol('SALES EMPLOYEE', 'ADMIN', 480);
+    
+    y += 32;
+    doc.moveTo(25, y).lineTo(570, y).lineWidth(0.5).stroke('#000');
+    y += 6;
 
-    y += 100;
-    doc.moveTo(30, y).lineTo(565, y).stroke();
-    y += 5;
+    // --- Items Table ---
+    const colX = [30, 75, 270, 335, 415, 480];
+    const colHeaders = ['S NO.', 'DESCRIPTION', 'EXW', 'UNIT PRICE', 'QTY', 'TOTAL'];
 
-    // --- Table Header ---
-    doc.fontSize(8).font('Helvetica-Bold');
-    doc.text('Sl No.', 35, y);
-    doc.text('Description of Goods', 70, y);
-    doc.text('C.O.O.', 300, y);
-    doc.text('H.S.C.', 350, y);
-    doc.text('Quantity', 410, y);
-    doc.text('Unit Price', 470, y);
-    doc.text('Sub Total', 530, y);
+    doc.fontSize(10).font('Helvetica-Bold');
+    colHeaders.forEach((h, i) => doc.text(h, colX[i], y));
+    
+    y += 16;
+    doc.moveTo(25, y).lineTo(570, y).lineWidth(0.5).stroke('#000');
+    y += 6;
 
-    y += 15;
-    doc.moveTo(30, y).lineTo(565, y).stroke();
-    y += 5;
-
-    // --- Table Rows ---
-    doc.font('Helvetica');
+    doc.font('Helvetica').fontSize(9);
     order.items.forEach((item, index) => {
+        if (y > 700) { doc.addPage(); y = 40; }
+        const itemY = y;
         const subtotal = item.quantity * item.price;
-        doc.text(index + 1, 35, y);
-        doc.text(item.productTitle, 70, y, { width: 220 });
-        doc.text('UAE', 300, y);
-        doc.text('84713010', 350, y);
-        doc.text(item.quantity, 410, y);
-        doc.text(item.price.toFixed(2), 470, y);
-        doc.text(subtotal.toFixed(2), 530, y);
-        y += 20;
+        const titleHeight = doc.heightOfString(item.productTitle, { width: 180 });
+        
+        doc.text(index + 1, colX[0], itemY);
+        doc.font('Helvetica-Bold').text(item.productBrand, colX[1], itemY);
+        doc.font('Helvetica').text(item.productTitle, colX[1], itemY + 12, { width: 180 });
+        
+        doc.text(item.location || 'DUBAI', colX[2], itemY);
+        doc.text(`$${item.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, colX[3], itemY);
+        doc.text(item.quantity, colX[4], itemY);
+        doc.text(`$${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, colX[5], itemY);
+        
+        y += Math.max(42, titleHeight + 18);
+        doc.moveTo(25, y).lineTo(570, y).lineWidth(0.2).stroke('#EEE');
+        y += 6;
     });
 
-    // Fill table space if needed
-    if (y < 500) y = 500;
-
-    doc.moveTo(30, y).lineTo(565, y).stroke();
-    y += 5;
+    if (y > 600) { doc.addPage(); y = 40; } else if (y < 350) { y = 350; }
+    
+    doc.moveTo(25, y).lineTo(570, y).lineWidth(0.5).stroke('#000');
+    y += 6;
 
     // --- Totals ---
-    doc.font('Helvetica-Bold').text('GRANT TOTAL', 35, y);
-    doc.text(`${order.totalPrice.toFixed(2)}`, 530, y);
-    doc.text(`${order.items.reduce((sum, item) => sum + item.quantity, 0)} Nos.`, 410, y);
-    y += 15;
-    doc.moveTo(30, y).lineTo(565, y).stroke();
-    y += 5;
+    const totalsX = 400;
+    const totalsValX = 480;
+    doc.font('Helvetica-Bold').fontSize(11);
+    doc.text('SUBTOTAL', totalsX, y);
+    doc.text(`$${order.totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, totalsValX, y);
+    y += 18;
+    doc.text('TAX', totalsX, y);
+    doc.text('0', totalsValX, y);
+    y += 18;
+    doc.fillColor(RED).text('TOTAL', totalsX, y);
+    doc.text(`$${order.totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, totalsValX, y);
+    
+    y += 22;
+    doc.moveTo(25, y).lineTo(570, y).lineWidth(1).stroke(RED);
+    y += 12;
 
-    doc.fontSize(8).font('Helvetica-Bold').text('Total Quantity In Word :', 35, y);
-    doc.font('Helvetica').text('Forty Units Only', 130, y); // Placeholder for words
-    doc.font('Helvetica-Bold').text('Total Ammount in Word :', 300, y);
-    doc.font('Helvetica').text('Fifteen Thousand Dollars Only', 420, y); // Placeholder for words
-    
+    // --- Payment Details ---
+    doc.fillColor(RED).fontSize(16).font('Helvetica-Bold').text('Payment Details', 30, y);
     y += 20;
-    
-    // --- Bank Details ---
-    doc.fontSize(9).font('Helvetica-Bold').text('Beneficiary Bank Details', 35, y, { underline: true });
-    y += 15;
-    
-    const drawBankRow = (label, val, label2, val2) => {
-        doc.fontSize(8).font('Helvetica-Bold').text(label, 35, y);
-        doc.font('Helvetica').text(`: ${val}`, 110, y);
-        if (label2) {
-            doc.font('Helvetica-Bold').text(label2, 300, y);
-            doc.font('Helvetica').text(`: ${val2}`, 400, y);
-        }
-        y += 12;
+
+    const drawBankRow = (label, val) => {
+        doc.fillColor('#000').fontSize(10).font('Helvetica-Bold').text(label, 30, y);
+        doc.font('Helvetica').text(val, 160, y);
+        y += 18;
+        doc.moveTo(30, y).lineTo(570, y).lineWidth(0.1).stroke('#DDD');
+        y += 4;
     };
 
-    drawBankRow('A/C Name', 'Techtronics Technologies FZCO');
-    drawBankRow('Address', '101, Building A2, Dubai Digital Park, DSO, Dubai, UAE');
-    drawBankRow('A/C Currency', 'USD ($)', 'IBAN No', 'AE24 0400 0003 3293 0994 001');
-    drawBankRow('Bank Name', 'NATIONAL BANK OF RAS AL KHAIMAH (PJSC)', 'Swift Code', 'NRAKAEAKXXX');
-    drawBankRow('A/C No.', '0332930994001', 'Bank Branch', 'UMM HURRAIR DUBAI');
+    drawBankRow('Beneficiary Name:', 'Techtronics Technologies FZCO');
+    drawBankRow('Beneficiary Address:', '101,Building A2, Dubai Digital Park, Dubai Silicon Oasis, Dubai, UAE');
+    drawBankRow('Currency:', 'USD ($)');
+    drawBankRow('Bank Name:', 'NATIONAL BANK OF RAS AL KHAIMAH (PJSC)');
+    drawBankRow('Account Number:', '332930994001');
+    drawBankRow('IBAN Number:', 'AE24 0400 0003 3293 0994 001');
+    drawBankRow('SWIFT Code:', 'NRAKAEAKXXX');
+    drawBankRow('Bank Branch:', 'Umm Hurrair, Dubai, UAE');
 
-    // --- Footer Notes ---
     y += 10;
-    doc.fontSize(6).font('Helvetica').fillColor('#333');
-    const notes = [
-        "Declaration: This invoice reflects the accurate price of goods described, and all details are true except for typographical errors.",
-        "Payment Terms: Payments must be made to the specified bank account. Cash transactions with employees or associates, including payments against invoices, are strictly prohibited.",
-        "Late Payments: Delayed payments will incur a 4% monthly interest.",
-        "Order Cancellation/Returns: All sales are final. If a customer cancels an order after placement or post-shipment, the deposit will be forfeited.",
-        "Product Warranty: Manufacturer's warranties apply; claims must be directed to the manufacturer.",
-        "ETA: Estimated delivery times are subject to transport and customs delays."
+    doc.fontSize(8).font('Helvetica-Bold').text('Total Quantity In Word :', 30, y);
+    doc.font('Helvetica').text(numberToWords(order.items.reduce((sum, i) => sum + i.quantity, 0)).replace(' Only', ''), 145, y);
+    y += 14;
+    doc.font('Helvetica-Bold').text('Total Amount in Word :', 30, y);
+    doc.font('Helvetica').text(numberToWords(order.totalPrice), 145, y);
+
+    // --- Declarations ---
+    y += 20;
+    if (y > 720) { doc.addPage(); y = 40; }
+    doc.fontSize(6.5).font('Helvetica').fillColor('#444');
+    const declarations = [
+        "Declaration: Prices and details are correct; subject to typographical errors.",
+        "Payment Terms: Pay only to the listed bank account. Cash payments to staff or associates are not allowed.",
+        "Late Payments: 4% monthly interest on overdue amounts.",
+        "Order Cancellation / Returns: All sales are final. Cancelled orders forfeit the deposit. If approved by Techtronics, a 15% restocking fee applies.",
+        "Resale Restrictions: Some Dell parts cannot be resold to certain countries (e.g., USA, Canada, UAE).",
+        "Product Warranty: Manufacturer warranty applies. Claims must be made with the manufacturer. Techtronics may offer back-to-origin support only with prior approval.",
+        "Order Verification: Customers must confirm specifications with the manufacturer.",
+        "Finance Charges: 4% monthly charge on overdue balances; credits may be applied against dues.",
+        "ETA: Delivery times are estimates and may change due to transport or customs delays.",
+        "DOA Claims: Report DOA with a video to Techtronics HO within 48 hours of delivery."
     ];
-    notes.forEach(note => {
-        doc.text(note, 35, y);
+    declarations.forEach(d => {
+        doc.text(d, 30, y);
         y += 8;
     });
 
+    // --- Final Footer Lines ---
     y += 10;
-    doc.fontSize(8).font('Helvetica-Bold').fillColor('#000').text('This is a computer-generated invoice and does not require a signature or company stamp.', 35, y, { align: 'center', width: 500 });
-    y += 12;
-    doc.text('For any clarification or assistance regarding this invoice please contact our Accounts Department at accounts@techtronicsmea.com', 35, y, { align: 'center', width: 500 });
+    // if (y > 780) { doc.addPage(); y = 40; }
+    doc.fontSize(8).font('Helvetica-Bold').fillColor('#000').text('This is a computer-generated invoice and does not require a signature or company stamp.', 30, y, { align: 'center', width: 540 });
+    y += 14;
+    doc.text('For any clarification or assistance regarding this invoice please contact our Accounts Department at uae@techtronicsmea.com', 30, y, { align: 'center', width: 540 });
 
     doc.end();
 
     return new Promise((resolve, reject) => {
         stream.on('finish', async () => {
-            await sendEmail(
-                buyer.email,
-                `Invoice for your order ${order._id}`,
-                `Please find attached the invoice for your order containing ${order.items.length} items.`,
-                [{ filename: invoiceName, path: filePath }]
-            );
+            try {
+                await sendEmail(
+                    buyer.email,
+                    `Invoice for Order ${order._id.toString().slice(-8).toUpperCase()}`,
+                    `Dear ${buyer.fullName},\n\nPlease find attached the commercial invoice for your order.\n\nBest regards,\nTechtronics Technologies`,
+                    [{ filename: invoiceName, path: filePath }]
+                );
+            } catch (err) {
+                console.error('Email sending failed:', err);
+            }
             resolve(`/api/orders/${order._id}/invoice`);
         });
         stream.on('error', reject);

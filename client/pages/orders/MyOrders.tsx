@@ -6,7 +6,7 @@ import { fetchOrders, updateOrderStatus } from '../../redux/slices/orderSlice';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../api';
 import { toast } from 'react-toastify';
-import { FileText } from '../../components/icons';
+import { FileText, Search, X } from '../../components/icons';
 import { User as UserType } from '../../types';
 
 
@@ -17,6 +17,7 @@ const MyOrders: React.FC = () => {
   const isAdmin = role === 'admin';
   const isBuyer = role === 'buyer';
   const [viewingInvoiceId, setViewingInvoiceId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     dispatch(fetchOrders());
@@ -47,6 +48,16 @@ const MyOrders: React.FC = () => {
     }
   };
 
+  const filteredOrders = orders.filter(order => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    const buyerName = (order.user as UserType)?.fullName?.toLowerCase() || '';
+    const companyName = (order.user as UserType)?.companyName?.toLowerCase() || '';
+    const orderId = order._id.toLowerCase();
+    
+    return buyerName.includes(term) || companyName.includes(term) || orderId.includes(term);
+  });
+
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed': return 'bg-green-100 text-green-800';
@@ -71,14 +82,39 @@ const MyOrders: React.FC = () => {
         <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tight">ORDER <span className="text-brand-red">MANAGEMENT</span></h1>
         <p className="text-gray-500 font-bold uppercase tracking-widest text-xs mt-1">Transaction History & Fulfilment</p>
       </div>
+
+      {isAdmin && (
+        <div className="mb-8 relative max-w-2xl">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+            <Search className="h-5 w-5" />
+          </div>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search orders by ID, buyer name, or company..."
+            className="block w-full h-14 pl-12 pr-12 bg-white border-2 border-gray-100 rounded-2xl text-sm font-bold text-gray-900 outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all shadow-sm"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-brand-red transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
+        </div>
+      )}
       
-      {orders.length === 0 ? (
+      {filteredOrders.length === 0 ? (
          <div className="bg-white p-12 rounded-lg border border-gray-200 text-center shadow-sm">
-            <p className="text-gray-500 font-bold uppercase tracking-widest text-lg italic">No transaction records detected.</p>
+            <p className="text-gray-500 font-bold uppercase tracking-widest text-lg italic">
+              {searchTerm ? 'No orders match your search criteria.' : 'No transaction records detected.'}
+            </p>
          </div>
       ) : (
         <div className="space-y-10">
-          {orders.map(order => (
+          {filteredOrders.map(order => (
             <div key={order._id} className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden transition-all hover:shadow-md">
               <div className="p-6 bg-gray-50/50 border-b border-gray-200 flex flex-wrap justify-between items-center gap-6">
                 <div>
@@ -138,8 +174,8 @@ const MyOrders: React.FC = () => {
                   <tbody className="divide-y divide-gray-50 bg-white">
                     {order.items.map((item, idx) => (
                       <tr key={idx} className="hover:bg-gray-50/50">
-                        <td className="px-8 py-5 text-sm font-bold text-gray-900 uppercase tracking-tight">{item.productTitle}</td>
-                        <td className="px-8 py-5 text-xs font-bold text-gray-500 uppercase">{(item.vendor as UserType)?.companyName || 'Verified Vendor'}</td>
+                        <td className="px-8 py-5 text-sm font-bold text-gray-900 uppercase tracking-tight capitalize">{item.productTitle}</td>
+                        <td className="px-8 py-5 text-xs font-bold text-gray-500 uppercase capitalize">{(item.vendor as UserType)?.companyName || 'Verified Vendor'}</td>
                         <td className="px-8 py-5 text-sm font-bold text-gray-900 text-center italic">{item.quantity}</td>
                         <td className="px-8 py-5 text-sm font-bold text-gray-500 text-right font-mono">${item.price.toFixed(2)}</td>
                         <td className="px-8 py-5 text-sm font-black text-brand-red text-right font-mono">${(item.quantity * item.price).toFixed(2)}</td>

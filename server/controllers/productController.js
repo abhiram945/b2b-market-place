@@ -83,16 +83,16 @@ const createProduct = asyncHandler(async (req, res) => {
 
   const product = new Product({
     user,
-    title,
-    brand,
-    category,
-    location,
+    title: title.toLowerCase(),
+    brand: brand.toLowerCase(),
+    category: category.toLowerCase(),
+    location: location.toLowerCase(),
     price,
     minOrderQty,
     maxOrderQty,
     stockQty,
-    condition,
-    eta,
+    condition: condition.toLowerCase(),
+    eta: eta ? eta.toLowerCase() : undefined,
   });
 
   const createdProduct = await product.save();
@@ -128,15 +128,15 @@ const updateProduct = asyncHandler(async (req, res) => {
     eta,
   } = req.body;
 
-  product.title = title || product.title;
-  product.brand = brand || product.brand;
-  product.category = category || product.category;
-  product.location = location || product.location;
+  product.title = title ? title.toLowerCase() : product.title;
+  product.brand = brand ? brand.toLowerCase() : product.brand;
+  product.category = category ? category.toLowerCase() : product.category;
+  product.location = location ? location.toLowerCase() : product.location;
   product.price = price !== undefined ? Number(price) : product.price;
   product.stockQty = stockQty !== undefined ? Number(stockQty) : product.stockQty;
   product.minOrderQty = minOrderQty !== undefined ? Number(minOrderQty) : product.minOrderQty;
   product.maxOrderQty = maxOrderQty !== undefined ? Number(maxOrderQty) : product.maxOrderQty;
-  product.eta = eta || product.eta;
+  product.eta = eta ? eta.toLowerCase() : product.eta;
 
   if (isStockEnabled !== undefined) {
     product.isStockEnabled = isStockEnabled;

@@ -16,8 +16,10 @@ const orderSchema = mongoose.Schema(
           ref: 'Product',
         },
         productTitle: { type: String, required: true },
+        productBrand: { type: String, required: true },
         quantity: { type: Number, required: true },
         price: { type: Number, required: true },
+        location: { type: String, required: true },
         vendor: {
           type: mongoose.Schema.Types.ObjectId,
           required: true,

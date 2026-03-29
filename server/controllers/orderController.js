@@ -48,8 +48,10 @@ const createOrder = asyncHandler(async (req, res) => {
     orderItems.push({
       product: product._id,
       productTitle: product.title,
+      productBrand: product.brand,
       quantity: item.quantity,
       price: product.price,
+      location: product.location,
       vendor: product.user,
     });
 
@@ -69,11 +71,16 @@ const createOrder = asyncHandler(async (req, res) => {
   // Generate Invoice and send email
   try {
     const buyer = await User.findById(req.user._id);
+    console.log(`Attempting to generate invoice for order: ${createdOrder._id}`);
     const invoiceUrlPath = await generateInvoice(createdOrder, buyer);
+    console.log(`Invoice generated successfully: ${invoiceUrlPath}`);
     createdOrder.invoiceUrl = invoiceUrlPath;
     await createdOrder.save();
+    console.log(`Order updated with invoiceUrl: ${createdOrder.invoiceUrl}`);
   } catch (error) {
-    console.error('Invoice generation failed:', error);
+    console.error('CRITICAL: Invoice generation failed for order:', createdOrder._id);
+    console.error('Error Details:', error.message);
+    console.error('Stack Trace:', error.stack);
   }
 
   return res.status(201).json(createdOrder);

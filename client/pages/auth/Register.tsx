@@ -13,6 +13,7 @@ type RegisterFormInputs = {
   email: string;
   phoneNumber: string;
   companyName: string;
+  website?: string;
   address: string;
   role: 'buyer' | 'vendor' | '';
   password: string;
@@ -45,7 +46,16 @@ const Register: React.FC = () => {
     if (data.role === '') return;
 
     const { confirmPassword, ...registerData } = data;
-    const payload = { ...registerData, role: data.role as 'buyer' | 'vendor', _id: '' };
+    const payload = { 
+      ...registerData, 
+      fullName: registerData.fullName.toLowerCase(),
+      email: registerData.email.toLowerCase(),
+      companyName: registerData.companyName.toLowerCase(),
+      website: registerData.website ? registerData.website.toLowerCase() : undefined,
+      address: registerData.address ? registerData.address.toLowerCase() : undefined,
+      role: data.role as 'buyer' | 'vendor', 
+      _id: '' 
+    };
 
     if (payload.role !== 'buyer') {
       delete payload.address;
@@ -112,6 +122,14 @@ const Register: React.FC = () => {
               <input
                 {...register('companyName', { required: 'Company name is required' })}
                 placeholder="Company Name"
+                className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
+              />
+            </InputWrapper>
+
+            <InputWrapper label="Website Link" error={errors.website}>
+              <input
+                {...register('website')}
+                placeholder="e.g. https://www.company.com"
                 className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
               />
             </InputWrapper>

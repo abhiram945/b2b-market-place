@@ -7,6 +7,7 @@ export interface User {
   role: 'buyer' | 'vendor' | 'admin';
   password: string;
   phoneNumber?: string;
+  website?: string;
 }
 
 export interface Product {

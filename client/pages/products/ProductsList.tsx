@@ -27,6 +27,7 @@ const ProductsList: React.FC = () => {
     brand: searchParams.get('brand') || '',
     category: searchParams.get('category') || '',
     location: searchParams.get('location') || '',
+    sort: searchParams.get('sort') || '',
   }), [searchParams]);
 
   const handleSetFilters = (newFilters: any) => {
@@ -35,6 +36,7 @@ const ProductsList: React.FC = () => {
     if (newFilters.brand) params.brand = newFilters.brand;
     if (newFilters.category) params.category = newFilters.category;
     if (newFilters.location) params.location = newFilters.location;
+    if (newFilters.sort) params.sort = newFilters.sort;
     setSearchParams(params);
   };
 
@@ -102,14 +104,15 @@ const ProductsList: React.FC = () => {
           <thead className="sticky top-0 z-10 bg-zinc-900 shadow-xl">
             <tr>
               <th className="px-6 py-3 text-left">
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-red-600 italic">Inventory_Title</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-red-600 italic">Product</span>
               </th>
               <Th label="Brand" />
               <Th label="Category" />
               <Th label="Location" />
               <Th label="Condition" />
               <Th label="Price" />
-              <Th label="Qty_Limit" className="hidden sm:table-cell" />
+              <Th label="MOQ"/>
+              <Th label="MXQ"/>
               <Th label="Stock" />
               <Th label="ETA" className="hidden lg:table-cell" />
               <th className="px-6 py-3 text-center">

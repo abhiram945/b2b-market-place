@@ -7,6 +7,7 @@ interface User {
   fullName: string;
   email: string;
   companyName: string;
+  website?: string;
   role: string;
   status: 'pending' | 'approved' | 'rejected';
 }
@@ -81,10 +82,22 @@ const AdminDashboard: React.FC = () => {
               {users.map((user) => (
                 <tr key={user._id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-bold text-gray-900">{user.fullName}</div>
+                    <div className="text-sm font-bold text-gray-900 capitalize">{user.fullName}</div>
                     <div className="text-xs text-gray-500 font-mono">{user.email}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">{user.companyName}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
+                    <div className="font-bold capitalize">{user.companyName}</div>
+                    {user.website && (
+                      <a 
+                        href={user.website.startsWith('http') ? user.website : `https://${user.website}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-[10px] text-brand-red hover:underline font-black italic block mt-0.5"
+                      >
+                        {user.website.replace(/^https?:\/\//, '')}
+                      </a>
+                    )}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-black text-brand-red italic">{user.role}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${

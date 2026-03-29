@@ -9,9 +9,9 @@ import { ROLES, USER_STATUS } from '../utils/constants.js';
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
   console.log(req.body);
-  const { fullName, email, password, companyName, address, phoneNumber, role } = req.body;
+  const { fullName, email, password, companyName, address, phoneNumber, role, website } = req.body;
 
-  const userExists = await User.findOne({ email });
+  const userExists = await User.findOne({ email: email.toLowerCase() });
 
   if (userExists) {
     res.status(400);
@@ -26,13 +26,14 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const user = await User.create({
-    fullName,
-    email,
+    fullName: fullName.toLowerCase(),
+    email: email.toLowerCase(),
     password,
-    companyName,
-    address,
+    companyName: companyName.toLowerCase(),
+    address: address ? address.toLowerCase() : undefined,
     role: selectedRole,
     phoneNumber,
+    website: website ? website.toLowerCase() : undefined,
   });
 
   if (user) {
@@ -51,7 +52,7 @@ const registerUser = asyncHandler(async (req, res) => {
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email: email.toLowerCase() });
 
   if (user && (await user.matchPassword(password))) {
     if (user.status === USER_STATUS.PENDING) {

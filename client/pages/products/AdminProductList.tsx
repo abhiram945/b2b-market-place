@@ -102,10 +102,10 @@ const AdminProductList: React.FC = () => {
               {products.map((product) => (
                 <tr key={product._id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-bold text-gray-900">{product.title.length > 50 ? product.title.slice(0, 50) + "..." : product.title}</div>
+                    <div className="text-sm font-bold text-gray-900 capitalize">{product.title.length > 50 ? product.title.slice(0, 50) + "..." : product.title}</div>
                     <div className="text-[10px] text-gray-400 font-black uppercase tracking-tighter mt-0.5">{product.brand}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium tracking-tight">{product.category}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium tracking-tight capitalize">{product.category}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-black text-gray-900 font-mono">${product.price.toFixed(2)}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`text-sm font-bold ${product.stockQty < 50 ? 'text-red-600' : 'text-gray-600'}`}>{product.stockQty} Units</span>

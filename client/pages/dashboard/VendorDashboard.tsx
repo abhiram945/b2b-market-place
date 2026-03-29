@@ -32,9 +32,19 @@ const VendorDashboard: React.FC = () => {
     };
 
     const lowStockItems = products.filter(p => p.stockQty < 100).length;
+    
+    // Revenue should be the sum of items belonging to this vendor across all non-cancelled orders
     const totalSales = orders
-        .filter(o => o.status.toLowerCase() === 'completed')
-        .reduce((sum, order) => sum + order.totalPrice, 0);
+        .filter(o => o.status.toLowerCase() !== 'cancelled')
+        .reduce((sum, order) => {
+            const vendorItemsTotal = order.items
+                .filter(item => {
+                    const vendorId = typeof item.vendor === 'object' ? item.vendor._id : item.vendor;
+                    return vendorId === user?._id;
+                })
+                .reduce((itemSum, item) => itemSum + (item.price * item.quantity), 0);
+            return sum + vendorItemsTotal;
+        }, 0);
 
     return (
         <div className="max-w-[90%] mx-auto py-8">

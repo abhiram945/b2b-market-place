@@ -43,8 +43,15 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
   const onSubmit: SubmitHandler<EditProductFormData> = async (data) => {
     if (!product) return;
     try {
+      const payload = { ...data };
+      if (payload.title) payload.title = payload.title.toLowerCase();
+      if (payload.brand) payload.brand = payload.brand.toLowerCase();
+      if (payload.category) payload.category = payload.category.toLowerCase();
+      if (payload.location) payload.location = payload.location.toLowerCase();
+      if (payload.eta) payload.eta = payload.eta.toLowerCase();
+
       const url = role === 'admin' ? `/products/${product._id}` : `/products/${product._id}/vendor-update`;
-      await api.put(url, data);
+      await api.put(url, payload);
       toast.success('SPECIFICATIONS UPDATED');
       onProductUpdated();
       onClose();

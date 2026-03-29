@@ -36,7 +36,16 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onPr
 
   const onSubmit: SubmitHandler<AddProductFormData> = async (data) => {
     try {
-      await api.post('/products', data);
+      const payload = {
+        ...data,
+        title: data.title.toLowerCase(),
+        brand: data.brand.toLowerCase(),
+        category: data.category.toLowerCase(),
+        location: data.location.toLowerCase(),
+        condition: data.condition.toLowerCase(),
+        eta: data.eta ? data.eta.toLowerCase() : undefined,
+      };
+      await api.post('/products', payload);
       toast.success('Inventory Entry Created');
       reset();
       onProductAdded();
