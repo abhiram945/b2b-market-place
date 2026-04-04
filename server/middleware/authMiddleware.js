@@ -75,4 +75,23 @@ const vendorOrAdmin = (req, res, next) => {
   }
 };
 
-export { protect, vendor, buyer, admin, vendorOrAdmin };
+const optionalProtect = asyncHandler(async (req, res, next) => {
+  let token;
+
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    try {
+      token = req.headers.authorization.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = await User.findById(decoded._id).select('-password');
+    } catch (error) {
+      console.error('Optional auth error:', error);
+      // Don't throw error, just continue without req.user
+    }
+  }
+  next();
+});
+
+export { protect, vendor, buyer, admin, vendorOrAdmin, optionalProtect };

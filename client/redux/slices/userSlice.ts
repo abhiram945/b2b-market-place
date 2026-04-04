@@ -20,6 +20,7 @@ interface UserState {
   user: User | null;
   token: string | null;
   loading: boolean;
+  isRehydrating: boolean;
   error: string | null;
 }
 
@@ -28,6 +29,7 @@ const initialState: UserState = {
   user: null,
   token: localStorage.getItem('token'),
   loading: false,
+  isRehydrating: true,
   error: null,
 };
 
@@ -73,6 +75,58 @@ export const fetchUserProfile = createAsyncThunk(
   }
 );
 
+export const rehydrateAuth = createAsyncThunk(
+  'user/rehydrate',
+  async (_, { rejectWithValue }) => {
+    const token = localStorage.getItem('token');
+    
+    // 1. Check if token exists and is valid
+    if (token) {
+      try {
+        const decoded = jwtDecode<DecodedToken>(token);
+        if (decoded.exp * 1000 > Date.now()) {
+          // Token still valid, return user info
+          return {
+            token,
+            user: {
+              _id: decoded._id,
+              fullName: decoded.fullName,
+              email: decoded.email,
+              companyName: decoded.companyName,
+              role: decoded.role,
+              password: ''
+            }
+          };
+        }
+      } catch (e) {
+        // Invalid token format
+      }
+    }
+
+    // 2. If token missing or expired, try background refresh using HTTP-only cookie
+    try {
+      const { data } = await api.post('/auth/refresh');
+      const newToken = data.token;
+      localStorage.setItem('token', newToken);
+      const decoded = jwtDecode<DecodedToken>(newToken);
+      return {
+        token: newToken,
+        user: {
+          _id: decoded._id,
+          fullName: decoded.fullName,
+          email: decoded.email,
+          companyName: decoded.companyName,
+          role: decoded.role,
+          password: ''
+        }
+      };
+    } catch (error: any) {
+      localStorage.removeItem('token');
+      return rejectWithValue('Session expired');
+    }
+  }
+);
+
 
 const userSlice = createSlice({
   name: 'user',
@@ -84,6 +138,7 @@ const userSlice = createSlice({
       state.user = null;
       state.token = null;
       state.error = null;
+      state.isRehydrating = false;
     },
     loadUserFromToken(state) {
         const token = state.token;
@@ -112,6 +167,7 @@ const userSlice = createSlice({
                 state.token = null;
             }
         }
+        state.isRehydrating = false;
     }
   },
   extraReducers: (builder) => {
@@ -150,6 +206,21 @@ const userSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
         localStorage.removeItem('token'); // Clear token if profile fetch fails
+      })
+      .addCase(rehydrateAuth.pending, (state) => {
+        state.isRehydrating = true;
+      })
+      .addCase(rehydrateAuth.fulfilled, (state, action) => {
+        state.isAuthenticated = true;
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+        state.isRehydrating = false;
+      })
+      .addCase(rehydrateAuth.rejected, (state) => {
+        state.isAuthenticated = false;
+        state.user = null;
+        state.token = null;
+        state.isRehydrating = false;
       });
   },
 });

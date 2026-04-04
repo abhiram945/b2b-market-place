@@ -9,11 +9,16 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-  const { isAuthenticated, user, loading } = useAuth();
+  const { isAuthenticated, user, loading, isRehydrating } = useAuth();
   const location = useLocation();
 
-  if (loading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  if (loading || isRehydrating) {
+    return (
+        <div className="flex flex-col items-center justify-center h-screen gap-4 bg-zinc-50 font-black italic uppercase tracking-[0.2em] text-[10px] text-zinc-400">
+            <div className="w-12 h-12 border-4 border-zinc-100 border-t-red-600 rounded-full animate-spin"></div>
+            Synchronizing Vector Session...
+        </div>
+    );
   }
 
   if (!isAuthenticated) {

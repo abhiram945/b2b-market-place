@@ -33,7 +33,6 @@ if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
 }
 
 export const sendEmail = async (to, subject, text, attachments = []) => {
-    return
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
         // Fallback to log if not configured
         console.log(`[MOCK EMAIL] To: ${to} | Subject: ${subject} | Body: ${text}`);

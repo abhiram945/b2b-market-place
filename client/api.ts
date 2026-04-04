@@ -22,6 +22,21 @@ api.interceptors.request.use(
 );
 
 // Add response interceptor to handle 401 and refresh token
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+
+  failedQueue = [];
+};
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -29,23 +44,53 @@ api.interceptors.response.use(
     
     // Do NOT attempt refresh for login requests or if the request has already been retried
     const isLoginRequest = originalRequest.url && originalRequest.url.includes('/auth/login');
+    const isRefreshRequest = originalRequest.url && originalRequest.url.includes('/auth/refresh');
     
-    if (error.response && error.response.status === 401 && !originalRequest._retry && !isLoginRequest) {
+    if (error.response && error.response.status === 401 && !originalRequest._retry && !isLoginRequest && !isRefreshRequest) {
+      
+      if (isRefreshing) {
+        console.log('[API] Refresh already in progress, queueing request:', originalRequest.url);
+        return new Promise(function(resolve, reject) {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers['Authorization'] = 'Bearer ' + token;
+            return api(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
+      console.log('[API] 401 Unauthorized detected, attempting token refresh...');
       originalRequest._retry = true;
+      isRefreshing = true;
+
       try {
         // Try to refresh the token
         const { data } = await axios.post(`${api.defaults.baseURL}/auth/refresh`, {}, { withCredentials: true });
         
         const newToken = data.token;
+        console.log('[API] Token refresh successful. Resuming queued requests.');
         localStorage.setItem('token', newToken);
         
-        // Update the authorization header
+        // Update the authorization header for ALL subsequent requests
         api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+        // Also update for the current failed request
         originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
         
+        processQueue(null, newToken);
+        isRefreshing = false;
+
+        // CRITICAL: Return the same api call but with the NEW token
         return api(originalRequest);
-      } catch (refreshError) {
+      } catch (refreshError: any) {
+        console.error('[API] Token refresh failed:', refreshError.response?.data?.message || refreshError.message);
+        processQueue(refreshError, null);
+        isRefreshing = false;
+        
         // Refresh token failed or expired, logout user
+        console.warn('[API] Session expired. Redirecting to login.');
         localStorage.removeItem('token');
         // Avoid infinite loop if refresh itself fails with 401
         if (window.location.pathname !== '/login') {

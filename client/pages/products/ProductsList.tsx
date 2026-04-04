@@ -99,8 +99,9 @@ const ProductsList: React.FC = () => {
       </div>
 
       {/* Independently Scrollable Inventory List with Table */}
-      <div className="flex-1 overflow-auto custom-scrollbar">
-        <table className="w-full border-collapse min-w-[1200px]">
+      <div className="flex-1 overflow-auto custom-scrollbar w-full">
+        <div className="min-w-full inline-block align-middle">
+          <table className="w-full border-collapse min-w-[1200px]">
           <thead className="sticky top-0 z-10 bg-zinc-900 shadow-xl">
             <tr>
               <th className="px-6 py-3 text-left">
@@ -156,6 +157,7 @@ const ProductsList: React.FC = () => {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       <ProductDetailsModal isOpen={isDetailsModalOpen} onClose={() => setIsDetailsModalOpen(false)} product={selectedProduct} />

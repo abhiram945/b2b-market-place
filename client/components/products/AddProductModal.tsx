@@ -81,9 +81,9 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onPr
           <InputField label="location" name="location" />
           <InputField label="price" name="price" type="number" step="0.01" />
           <InputField label="condition" name="condition" />
-          <InputField label="minOrderQty" name="minOrderQty" type="number" />
-          <InputField label="maxOrderQty" name="maxOrderQty" type="number" />
-          <InputField label="stockQty" name="stockQty" type="number" />
+          <InputField label="Min Order Qty" name="minOrderQty" type="number" />
+          <InputField label="max Order Qty" name="maxOrderQty" type="number" />
+          <InputField label="stock Qty" name="stockQty" type="number" />
           <InputField label="eta" name="eta" />
         </div>
 

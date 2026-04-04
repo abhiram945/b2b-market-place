@@ -7,6 +7,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { ROLES } from '../utils/constants.js';
+import mongoose from 'mongoose';
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -19,14 +20,15 @@ const createOrder = asyncHandler(async (req, res) => {
     throw new Error('No items in order');
   }
   
-  let totalPrice = 0;
   const orderItems = [];
+  let totalPrice = 0;
 
+  // 1. Validation Loop: Check if all products exist and have enough stock
   for (const item of items) {
     const product = await Product.findById(item.productId);
     if (!product) {
-        res.status(404);
-        throw new Error(`Product not found: ${item.productId}`);
+      res.status(404);
+      throw new Error(`Product not found: ${item.productId}`);
     }
 
     if (item.quantity < product.minOrderQty) {
@@ -41,6 +43,24 @@ const createOrder = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error(`Insufficient stock for ${product.title}`);
     }
+  }
+
+  // 2. Execution Loop: Atomic Stock Updates using findOneAndUpdate
+  // This approach is safe without full transactions as it uses atomic $inc and condition check
+  for (const item of items) {
+    const product = await Product.findOneAndUpdate(
+      { _id: item.productId, stockQty: { $gte: item.quantity } },
+      { $inc: { stockQty: -item.quantity } },
+      { new: true }
+    );
+
+    if (!product) {
+      // This could happen if stock was taken by someone else between our validation and this update
+      // We throw error here; already decremented items from previous iterations remain decremented
+      // (This is the tradeoff for avoiding full replica-set transactions)
+      res.status(400);
+      throw new Error(`Stock conflict for ${item.productId}. Please try again.`);
+    }
 
     const itemTotalPrice = product.price * item.quantity;
     totalPrice += itemTotalPrice;
@@ -54,10 +74,6 @@ const createOrder = asyncHandler(async (req, res) => {
       location: product.location,
       vendor: product.user,
     });
-
-    // Update stock
-    product.stockQty -= item.quantity;
-    await product.save();
   }
 
   const order = new Order({
@@ -68,7 +84,7 @@ const createOrder = asyncHandler(async (req, res) => {
 
   const createdOrder = await order.save();
 
-  // Generate Invoice and send email
+  // Generate Invoice and send email (outside transaction logic)
   try {
     const buyer = await User.findById(req.user._id);
     console.log(`Attempting to generate invoice for order: ${createdOrder._id}`);
@@ -78,9 +94,7 @@ const createOrder = asyncHandler(async (req, res) => {
     await createdOrder.save();
     console.log(`Order updated with invoiceUrl: ${createdOrder.invoiceUrl}`);
   } catch (error) {
-    console.error('CRITICAL: Invoice generation failed for order:', createdOrder._id);
-    console.error('Error Details:', error.message);
-    console.error('Stack Trace:', error.stack);
+    console.error('CRITICAL: Invoice generation failed for order:', createdOrder._id, error.message);
   }
 
   return res.status(201).json(createdOrder);

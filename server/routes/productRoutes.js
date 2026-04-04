@@ -8,10 +8,10 @@ import {
   deleteProduct,
   updateProductByVendor,
 } from '../controllers/productController.js';
-import { protect, vendor, admin } from '../middleware/authMiddleware.js';
+import { protect, vendor, admin, optionalProtect } from '../middleware/authMiddleware.js';
 import { productCreationValidation, productUpdateByVendorValidation, validate } from '../middleware/validationMiddleware.js';
 
-router.route('/').get(getProducts).post(protect, admin, productCreationValidation, validate, createProduct);
+router.route('/').get(optionalProtect, getProducts).post(protect, admin, productCreationValidation, validate, createProduct);
 
 router
   .route('/:id')

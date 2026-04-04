@@ -46,15 +46,15 @@ const Register: React.FC = () => {
     if (data.role === '') return;
 
     const { confirmPassword, ...registerData } = data;
-    const payload = { 
-      ...registerData, 
+    const payload = {
+      ...registerData,
       fullName: registerData.fullName.toLowerCase(),
       email: registerData.email.toLowerCase(),
       companyName: registerData.companyName.toLowerCase(),
       website: registerData.website ? registerData.website.toLowerCase() : undefined,
       address: registerData.address ? registerData.address.toLowerCase() : undefined,
-      role: data.role as 'buyer' | 'vendor', 
-      _id: '' 
+      role: data.role as 'buyer' | 'vendor',
+      _id: ''
     };
 
     if (payload.role !== 'buyer') {
@@ -84,15 +84,13 @@ const Register: React.FC = () => {
 
         <form className="mt-8" onSubmit={handleSubmit(onSubmit)}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
-            <div className="md:col-span-2">
-              <InputWrapper label="Full Name" error={errors.fullName}>
-                <input
-                  {...register('fullName', { required: 'Full name is required' })}
-                  placeholder="Full Name"
-                  className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
-                />
-              </InputWrapper>
-            </div>
+            <InputWrapper label="Full Name" error={errors.fullName}>
+              <input
+                {...register('fullName', { required: 'Full name is required' })}
+                placeholder="Full Name"
+                className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
+              />
+            </InputWrapper>
 
             <InputWrapper label="Email Address" error={errors.email}>
               <input

@@ -24,14 +24,14 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({ isOpen, onClo
         className="relative bg-white border-2 border-zinc-200 shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header Strip - Light Mode */}
+        {/* Header Strip */}
         <div className="bg-zinc-100 px-6 py-4 flex justify-between items-center border-b border-zinc-200">
             <h3 id="product-modal-title" className="text-xl font-black text-zinc-900 uppercase italic tracking-tighter">
                 Product <span className="text-red-600">Manifest</span>
             </h3>
             <button
                 onClick={onClose}
-                className="text-zinc-400 hover:text-red-600 transition-colors"
+                className="text-zinc-400 hover:text-red-600 transition-colors cursor-pointer"
                 aria-label="Close modal"
             >
                 <XIcon className="w-6 h-6" />
@@ -76,7 +76,7 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({ isOpen, onClo
                         </div>
                         <div className="flex items-center gap-3">
                             <div className="w-2 h-2 rounded-full bg-zinc-300"></div>
-                            <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">State:</span>
+                            <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Condition:</span>
                             <span className="text-xs font-black text-zinc-900 uppercase tracking-widest italic">{product.condition}</span>
                         </div>
                     </div>
@@ -99,7 +99,7 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({ isOpen, onClo
                             </p>
                         </div>
                         <div>
-                            <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">ETA Vector</p>
+                            <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">ETA</p>
                             <p className="text-xs font-black text-red-600 uppercase italic tracking-widest">
                                 {product.eta || 'IMMEDIATE'}
                             </p>
@@ -109,7 +109,7 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({ isOpen, onClo
                     <div className="pt-4">
                         <div className="flex items-center gap-2 bg-zinc-900 px-3 py-2">
                              <CheckCircle className="w-4 h-4 text-red-600" />
-                             <span className="text-[9px] font-black text-white uppercase tracking-[0.2em]">Verified SKU</span>
+                             <span className="text-[9px] font-black text-white uppercase tracking-[0.2em]">Verified</span>
                         </div>
                     </div>
                 </div>
