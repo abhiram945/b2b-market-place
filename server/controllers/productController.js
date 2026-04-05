@@ -4,7 +4,7 @@ import Product from '../models/Product.js';
 import User from '../models/User.js';
 import { checkAndSendNotifications } from '../utils/notificationSender.js';
 import { ROLES } from '../utils/constants.js';
-import { getConfig, addToConfig } from '../utils/jsonStore.js';
+import { getConfig, updateConfig, addToConfig } from '../utils/jsonStore.js';
 
 // @desc    Fetch all products
 // @route   GET /api/products
@@ -218,10 +218,119 @@ const deleteProduct = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Bulk create products
+// @route   POST /api/admin/products/bulk
+// @access  Private/Admin
+const bulkCreateProducts = asyncHandler(async (req, res) => {
+  const productsToCreate = req.body; // Expecting an array of product objects
+
+  if (!Array.isArray(productsToCreate) || productsToCreate.length === 0) {
+    res.status(400);
+    throw new Error('No products provided for bulk upload');
+  }
+  const createdProducts = [];
+  const failedProducts = [];
+  
+  // Set to collect new config values to update once at the end
+  const newConfigs = {
+    brands: new Set(),
+    categories: new Set(),
+    locations: new Set(),
+    conditions: new Set()
+  };
+
+  for (let i = 0; i < productsToCreate.length; i++) {
+    const productData = productsToCreate[i];
+    const logPrefix = `[PRODUCT ${i + 1}/${productsToCreate.length}]`;
+    
+    try {
+      if (!productData.title || !productData.price || !productData.user) {
+        console.warn(`${logPrefix} Validation failed: Missing required fields`);
+        failedProducts.push({ product: productData, error: 'Missing required fields (title, price, user)' });
+        continue;
+      }
+
+      const vendorExists = await User.findById(productData.user);
+      if (!vendorExists || vendorExists.role !== ROLES.VENDOR) {
+          console.warn(`${logPrefix} Validation failed: Invalid vendor ID ${productData.user}`);
+          failedProducts.push({ product: productData, error: 'Invalid or non-vendor user ID provided' });
+          continue;
+      }
+
+      const product = new Product({
+        user: productData.user,
+        title: productData.title,
+        brand: productData.brand,
+        category: productData.category,
+        location: productData.location,
+        price: productData.price,
+        minOrderQty: productData.minOrderQty,
+        maxOrderQty: productData.maxOrderQty,
+        stockQty: productData.stockQty,
+        condition: productData.condition,
+        eta: productData.eta,
+        isStockEnabled: productData.isStockEnabled !== undefined ? productData.isStockEnabled : true,
+      });
+
+      const createdProduct = await product.save();
+      createdProducts.push(createdProduct);
+
+      // Collect config values
+      if (product.brand) newConfigs.brands.add(product.brand.trim());
+      if (product.category) newConfigs.categories.add(product.category.trim());
+      if (product.location) newConfigs.locations.add(product.location.trim());
+      if (product.condition) newConfigs.conditions.add(product.condition.trim());
+
+    } catch (error) {
+      console.error(`${logPrefix} System error: ${error.message}`);
+      failedProducts.push({ product: productData, error: error.message });
+    }
+  }
+
+  // Batch update config once
+  try {
+    const config = await getConfig();
+    let configUpdated = false;
+
+    for (const key of ['brands', 'categories', 'locations', 'conditions']) {
+      if (!config[key]) {
+        console.warn(`[BULK UPLOAD] Key '${key}' missing in config, initializing...`);
+        config[key] = [];
+      }
+      
+      for (const val of newConfigs[key]) {
+        if (!val) continue;
+        const normalized = val.toLowerCase().trim();
+        // Check if exists (case-insensitive)
+        const exists = config[key].some(v => v && v.toLowerCase() === normalized);
+        
+        if (!exists) {
+          config[key].push(val.trim());
+          configUpdated = true;
+        }
+      }
+    }
+
+    if (configUpdated) {
+      await updateConfig(config);
+    }
+  } catch (configError) {
+    console.error(`[BULK UPLOAD] CRITICAL: Failed to update configuration:`, configError.message);
+  }
+
+  res.status(201).json({
+    message: `${createdProducts.length} products created successfully.${failedProducts.length > 0 ? ` ${failedProducts.length} products failed.` : ''}`,
+    createdCount: createdProducts.length,
+    failedCount: failedProducts.length,
+    failedProducts: failedProducts,
+  });
+});
+
 export {
   getProducts,
   createProduct,
   updateProduct,
   updateProductByVendor,
   deleteProduct,
+  bulkCreateProducts,
 };

@@ -1,9 +1,19 @@
 {
   "brands": [
+    "Samsung",
+    "Dell",
+    "HP",
+    "Sony",
+    "Lenovo",
     "apple"
   ],
   "categories": [
-    "mobile"
+    "mobile",
+    "Laptop",
+    "Audio",
+    "Tablet",
+    "Gaming",
+    "Monitor"
   ],
   "locations": [
     "uae"
@@ -16,5 +26,6 @@
   "companyNames": [
     "rrr"
   ],
-  "maintenanceMode": false
+  "maintenanceMode": false,
+  "banner": "/uploads/banners/user-dashboard-banner.jpg"
 }

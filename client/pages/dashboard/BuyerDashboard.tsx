@@ -7,6 +7,7 @@ import { RootState, AppDispatch } from '../../redux/store';
 import DashboardCard from '../../components/dashboard/DashboardCard';
 import { Truck, Package } from '../../components/icons';
 import { fetchOrders } from '../../redux/slices/orderSlice';
+import { fetchProducts } from '../../redux/slices/productSlice';
 
 const BRANDS = [
   { name: 'Apple', logo: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg', width: 'w-12' },
@@ -22,17 +23,19 @@ const BuyerDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { orders } = useSelector((state: RootState) => state.orders);
+  const { config } = useSelector((state: RootState) => state.products);
 
   useEffect(() => {
     dispatch(fetchOrders());
+    dispatch(fetchProducts({}));
   }, [dispatch]);
 
   const pendingOrders = orders.filter(o => o.status.toLowerCase() === 'pending').length;
-  
+  const bannerUrl = import.meta.env.DEV ? 'http://localhost:5000/uploads/banners/user-dashboard-banner.jpg' : 'http://13.53.123.178:5000/uploads/banners/user-dashboard-banner.jpg';
   return (
     <div className="max-w-[90%] mx-auto py-8">
       <div className="pb-6">
-        <h1 className="text-4xl font-black text-black uppercase tracking-tighter italic">
+        <h1 className="text-4xl font-black text-black uppercase tracking-tighter">
             Dashboard <span className="text-red-600">Overview</span>
         </h1>
         <p className="mt-2 text-gray-500 dark:text-zinc-400 font-medium">WELCOME BACK, {user?.fullName?.toUpperCase()}</p>
@@ -56,7 +59,7 @@ const BuyerDashboard: React.FC = () => {
       <div className="bg-white dark:bg-zinc-900 mb-8 rounded-xl shadow-2xl shadow-red-600/5 overflow-hidden border border-gray-100 dark:border-zinc-800">
         <div className="relative h-64 sm:h-80 md:h-96 w-full">
             <img 
-                src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=1200" 
+                src={bannerUrl} 
                 alt="Featured Offer" 
                 className="w-full h-full object-cover"
             />

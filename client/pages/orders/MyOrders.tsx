@@ -92,7 +92,7 @@ const MyOrders: React.FC = () => {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search orders by ID, buyer name, or company..."
+            placeholder="Search by order ID, buyer name..."
             className="block w-full h-14 pl-12 pr-12 bg-white border-2 border-gray-100 rounded-2xl text-sm font-bold text-gray-900 outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all shadow-sm"
           />
           {searchTerm && (
@@ -174,8 +174,8 @@ const MyOrders: React.FC = () => {
                   <tbody className="divide-y divide-gray-50 bg-white">
                     {order.items.map((item, idx) => (
                       <tr key={idx} className="hover:bg-gray-50/50">
-                        <td className="px-8 py-5 text-sm font-bold text-gray-900 uppercase tracking-tight capitalize">{item.productTitle}</td>
-                        <td className="px-8 py-5 text-xs font-bold text-gray-500 uppercase capitalize">{(item.vendor as UserType)?.companyName || 'Verified Vendor'}</td>
+                        <td className="px-8 py-5 text-sm font-bold text-gray-900 tracking-tight capitalize">{item.productTitle}</td>
+                        <td className="px-8 py-5 text-xs font-bold text-gray-500 capitalize">{(item.vendor as UserType)?.companyName || 'Verified Vendor'}</td>
                         <td className="px-8 py-5 text-sm font-bold text-gray-900 text-center italic">{item.quantity}</td>
                         <td className="px-8 py-5 text-sm font-bold text-gray-500 text-right font-mono">${item.price.toFixed(2)}</td>
                         <td className="px-8 py-5 text-sm font-black text-brand-red text-right font-mono">${(item.quantity * item.price).toFixed(2)}</td>

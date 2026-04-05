@@ -2,17 +2,21 @@ import asyncHandler from 'express-async-handler';
 import User from '../models/User.js';
 import { sendEmail, sendWhatsApp } from '../utils/notificationSender.js';
 import { USER_STATUS } from '../utils/constants.js';
-import { getConfig, updateConfig } from '../utils/jsonStore.js';
+import { getConfig, updateConfig, addToConfig } from '../utils/jsonStore.js';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // @desc    Get all users (with optional status filter)
 // @route   GET /api/admin/users
 // @access  Private/Admin
 const getUsers = asyncHandler(async (req, res) => {
-  console.log("2. AdminController: 'getUsers' function called.");
   const { status } = req.query;
   const filter = status ? { status } : {};
   const users = await User.find(filter).sort({ createdAt: -1 }); // Sort by creation date, newest first
-  console.log(`4. AdminController: Sending users data (filtered by status: ${status || 'all'}):`, users.length);
   res.json(users);
 });
 
@@ -65,4 +69,70 @@ const getMaintenanceStatus = asyncHandler(async (req, res) => {
   res.json({ maintenanceMode: config.maintenanceMode });
 });
 
-export { getUsers, updateUserStatus, toggleMaintenanceMode, getMaintenanceStatus };
+// @desc    Upload brand logo
+// @route   POST /api/admin/upload/brand-logo
+// @access  Private/Admin
+const uploadBrandLogo = asyncHandler(async (req, res) => {
+  console.log("uploadBrandLogo req.body = ")
+  console.log(req.body)
+  const { name } = req.body;
+  if (!name) {
+    res.status(400);
+    throw new Error('Brand name is required');
+  }
+
+  if (!req.file) {
+    res.status(400);
+    throw new Error('Image file is required');
+  }
+  // Add brand name to config if not exists
+  await addToConfig('brands', name);
+
+  res.json({ 
+    message: 'Brand logo uploaded successfully', 
+    name: name,
+    logoPath: `/uploads/brands/${req.file.filename}` 
+  });
+});
+
+// @desc    Upload banner image
+// @route   POST /api/admin/upload/banner
+// @access  Private/Admin
+const uploadBanner = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    res.status(400);
+    throw new Error('Banner image is required');
+  }
+
+  const config = await getConfig();
+  const bannerPath = `/uploads/banners/${req.file.filename}`;
+  config.banner = bannerPath;
+  await updateConfig(config);
+
+  res.json({ message: 'Banner uploaded successfully', bannerPath });
+});
+
+// @desc    Get user document
+// @route   GET /api/admin/documents/:filename
+// @access  Private/Admin
+const getDocument = asyncHandler(async (req, res) => {
+  const filePath = path.resolve(__dirname, '..', 'uploads', 'documents', req.params.filename);
+
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    res.status(404);
+    throw new Error('Document not found');
+  }
+});
+
+// @desc    Get configuration (includes banner path)
+// @route   GET /api/admin/config
+// @access  Private/Admin
+const getConfigController = asyncHandler(async (req, res) => {
+  const config = await getConfig();
+  res.json(config);
+});
+
+
+export { getUsers, updateUserStatus, toggleMaintenanceMode, getMaintenanceStatus, uploadBrandLogo, uploadBanner, getDocument, getConfigController };

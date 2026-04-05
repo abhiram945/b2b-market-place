@@ -27,7 +27,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
             <XIcon className="w-6 h-6" />
           </button>
         </div>
-        <div className="p-8 overflow-y-auto">
+        <div className="p-6 overflow-y-auto">
           {children}
         </div>
       </div>

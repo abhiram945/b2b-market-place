@@ -14,16 +14,19 @@ interface MainLayoutProps {
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const cartItems = useSelector((state: RootState) => state.cart.items);
   const isInitialMount = useRef(true);
 
   useEffect(() => {
     if (isAuthenticated) {
       dispatch(fetchUserSubscriptions());
-      dispatch(fetchCart());
+      // Only fetch cart if the user is not an admin
+      if (user?.role !== 'admin') {
+        dispatch(fetchCart());
+      }
     }
-  }, [dispatch, isAuthenticated]);
+  }, [dispatch, isAuthenticated, user?.role]);
 
   useEffect(() => {
     if (isAuthenticated && !isInitialMount.current) {

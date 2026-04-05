@@ -238,7 +238,7 @@ export const generateInvoice = async (order, buyer) => {
                 await sendEmail(
                     buyer.email,
                     `Invoice for Order ${order._id.toString().slice(-8).toUpperCase()}`,
-                    `Dear ${buyer.fullName},\n\nPlease find attached the commercial invoice for your order.\n\nBest regards,\nTechtronics Technologies`,
+                    `Dear ${toTitleCase(buyer.fullName)},\n\nPlease find attached the commercial invoice for your order.\n\nBest regards,\nTechtronics Technologies`,
                     [{ filename: invoiceName, path: filePath }]
                 );
             } catch (err) {

@@ -19,6 +19,9 @@ type RegisterFormInputs = {
   role: 'buyer' | 'vendor' | '';
   password: string;
   confirmPassword: string;
+  tradeLicense: FileList;
+  idDocument: FileList;
+  vatRegistration: FileList;
 };
 
 const InputWrapper = ({ label, children, error }: any) => (
@@ -59,23 +62,22 @@ const Register: React.FC = () => {
   const onSubmit: SubmitHandler<RegisterFormInputs> = (data) => {
     if (data.role === '') return;
 
-    const { confirmPassword, ...registerData } = data;
-    const payload = {
-      ...registerData,
-      fullName: registerData.fullName.toLowerCase(),
-      email: registerData.email.toLowerCase(),
-      companyName: registerData.companyName.toLowerCase(),
-      website: registerData.website ? registerData.website.toLowerCase() : undefined,
-      address: registerData.address ? registerData.address.toLowerCase() : undefined,
-      role: data.role as 'buyer' | 'vendor',
-      _id: ''
-    };
+    const formData = new FormData();
+    formData.append('fullName', data.fullName);
+    formData.append('email', data.email);
+    formData.append('phoneNumber', data.phoneNumber);
+    formData.append('companyName', data.companyName);
+    formData.append('password', data.password);
+    formData.append('role', data.role);
+    
+    if (data.website) formData.append('website', data.website);
+    if (data.role === 'buyer') formData.append('address', data.address);
 
-    if (payload.role !== 'buyer') {
-      delete payload.address;
-    }
+    if (data.tradeLicense?.[0]) formData.append('tradeLicense', data.tradeLicense[0]);
+    if (data.idDocument?.[0]) formData.append('idDocument', data.idDocument[0]);
+    if (data.vatRegistration?.[0]) formData.append('vatRegistration', data.vatRegistration[0]);
 
-    dispatch(registerUser(payload)).then(action => {
+    dispatch(registerUser(formData)).then(action => {
       if (registerUser.fulfilled.match(action)) {
         toast.success('Registration successful! Please log in.');
         navigate('/login');
@@ -174,6 +176,36 @@ const Register: React.FC = () => {
                   />
                 </InputWrapper>
               </div>
+            )}
+
+            {(role === 'buyer' || role === 'vendor') && (
+              <>
+                <InputWrapper label="Trade License (PDF)" error={errors.tradeLicense}>
+                  <input
+                    {...register('tradeLicense', { required: 'Trade License is required' })}
+                    type="file"
+                    accept=".pdf"
+                    className="w-full px-4 py-2 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red transition-all font-bold text-sm"
+                  />
+                </InputWrapper>
+                <InputWrapper label="Owner ID Document (PDF)" error={errors.idDocument}>
+                  <input
+                    {...register('idDocument', { required: 'ID Document is required' })}
+                    type="file"
+                    accept=".pdf"
+                    className="w-full px-4 py-2 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red transition-all font-bold text-sm"
+                  />
+                </InputWrapper>
+                <InputWrapper label="VAT Registration (PDF)" error={errors.vatRegistration}>
+                  <input
+                    {...register('vatRegistration', { required: 'VAT Registration is required' })}
+                    type="file"
+                    accept=".pdf"
+                    className="w-full px-4 py-2 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red transition-all font-bold text-sm"
+                  />
+                </InputWrapper>
+                <div></div> {/* Spacer for grid */}
+              </>
             )}
 
             <InputWrapper label="Password" error={errors.password}>

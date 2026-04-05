@@ -5,11 +5,6 @@ import User from '../models/User.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
-
-console.log('SMTP_HOST:', process.env.SMTP_HOST);
-console.log('SMTP_PORT:', process.env.SMTP_PORT);
-console.log('SMTP_USER:', process.env.SMTP_USER);
-console.log('SMTP_PASS:', process.env.SMTP_PASS);
 // Initialize Email Transporter
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST, 
@@ -35,7 +30,7 @@ if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
 export const sendEmail = async (to, subject, text, attachments = []) => {
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
         // Fallback to log if not configured
-        console.log(`[MOCK EMAIL] To: ${to} | Subject: ${subject} | Body: ${text}`);
+        console.log("No SMTP was configured")
         return;
     }
 
@@ -56,7 +51,6 @@ export const sendEmail = async (to, subject, text, attachments = []) => {
             `,
             attachments,
         });
-        console.log(`Email sent to ${to}: ${info.messageId}`);
     } catch (error) {
         console.error(`Error sending email to ${to}:`, error);
     }
@@ -79,8 +73,6 @@ export const sendWhatsApp = async (to, message) => {
             from: from,
             to: toUser
         });
-
-        console.log(`WhatsApp sent to ${to}: ${response.sid}`);
     } catch (error) {
         console.error(`Error sending WhatsApp to ${to}:`, error);
     }
@@ -95,8 +87,6 @@ export const checkAndSendNotifications = async (updatedProduct, oldPrice, oldSto
         });
 
         if (subscriptions.length === 0) return;
-
-        console.log(`Checking ${subscriptions.length} subscriptions for product ${updatedProduct.title}...`);
 
         for (const sub of subscriptions) {
             const user = await User.findById(sub.user);

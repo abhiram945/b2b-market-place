@@ -6,7 +6,7 @@ interface NavLink {
   text: string;
 }
 
-export const getNavLinks = (role: 'admin' | 'vendor' | 'buyer' | null): NavLink[] => {
+export const getNavLinks = (role: 'admin' | 'vendor' | 'buyer' | null | undefined): NavLink[] => {
   const buyerLinks: NavLink[] = [
     { to: '/buyer-dashboard', icon: Home, text: 'Dashboard' },
     { to: '/products', icon: Package, text: 'Products' },

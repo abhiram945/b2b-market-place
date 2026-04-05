@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL:'http://13.53.123.178:5000/api',
+  baseURL:import.meta.env.DEV ? 'http://localhost:5000/api' : 'http://13.53.123.178:5000/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -56,7 +56,6 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401 && !originalRequest._retry && !isLoginRequest && !isRefreshRequest) {
       
       if (isRefreshing) {
-        console.log('[API] Refresh already in progress, queueing request:', originalRequest.url);
         return new Promise(function(resolve, reject) {
           failedQueue.push({ resolve, reject });
         })
@@ -69,7 +68,6 @@ api.interceptors.response.use(
           });
       }
 
-      console.log('[API] 401 Unauthorized detected, attempting token refresh...');
       originalRequest._retry = true;
       isRefreshing = true;
 
@@ -78,7 +76,6 @@ api.interceptors.response.use(
         const { data } = await axios.post(`${api.defaults.baseURL}/auth/refresh`, {}, { withCredentials: true });
         
         const newToken = data.token;
-        console.log('[API] Token refresh successful. Resuming queued requests.');
         localStorage.setItem('token', newToken);
         
         // Update the authorization header for ALL subsequent requests

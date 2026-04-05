@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from '../../hooks/useAuth';
 import DashboardCard from '../../components/dashboard/DashboardCard';
-import { Package, Tag, ShoppingCart, AlertCircle, PlusCircle, Copy } from '../../components/icons';
+import { Package, Tag, ShoppingCart, AlertCircle, PlusCircle, Copy, CheckCircle } from '../../components/icons';
 import { fetchProducts } from '../../redux/slices/productSlice';
 import { fetchOrders } from '../../redux/slices/orderSlice';
 import { AppDispatch, RootState } from '../../redux/store';
@@ -14,6 +14,7 @@ const VendorDashboard: React.FC = () => {
     const { user } = useAuth();
     const { products } = useSelector((state: RootState) => state.products);
     const { orders } = useSelector((state: RootState) => state.orders);
+    const [copied, setCopied] = useState(false);
 
     useEffect(() => {
         dispatch(fetchProducts({}));
@@ -23,7 +24,9 @@ const VendorDashboard: React.FC = () => {
     const handleCopyId = () => {
         if (user?._id) {
             navigator.clipboard.writeText(user._id);
+            setCopied(true);
             toast.success('ID COPIED TO CLIPBOARD');
+            setTimeout(() => setCopied(false), 2000);
         }
     };
 
@@ -58,21 +61,27 @@ const VendorDashboard: React.FC = () => {
         <div className="max-w-[90%] mx-auto py-8">
             <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 mb-6">
                 <div>
-                    <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tight italic">
+                    <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tight">
                         Vendor <span className="text-brand-red font-black">Portal</span>
                     </h1>
-                    <div className="flex items-center gap-2 mt-2">
+                </div>
+                <div className="flex flex-col items-end">
+                    <div className="flex items-center gap-2">
                         <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest bg-zinc-100 px-2 py-1 rounded border border-zinc-200">ID: {user?._id}</span>
                         <button 
                             onClick={handleCopyId}
-                            className="p-1 hover:text-brand-red transition-colors text-zinc-400"
+                            className="p-1 hover:text-brand-red transition-colors text-zinc-400 cursor-pointer"
                             title="Copy ID"
                         >
-                            <Copy className="w-3.5 h-3.5" />
+                            {copied ? (
+                                <CheckCircle className="w-3.5 h-3.5 text-green-600" />
+                            ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                            )}
                         </button>
                     </div>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Managing Store: {user?.companyName}</p>
                 </div>
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1 italic underline decoration-brand-red/30">Managing Store: {user?.companyName}</p>
             </div>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-10">
                 <DashboardCard title="Active Listings" value={products.length} icon={<Package className="h-6 w-6 text-white" />} colorClass="bg-black" />
@@ -83,7 +92,7 @@ const VendorDashboard: React.FC = () => {
 
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
                 <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                    <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight italic">
+                    <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">
                         Recent <span className="text-brand-red">Orders</span>
                     </h2>
                 </div>

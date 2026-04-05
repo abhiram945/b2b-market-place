@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../redux/store';
 import { fetchProducts, deleteProduct } from '../../redux/slices/productSlice';
-import { PlusCircle } from '../../components/icons';
+import { PlusCircle, FileText } from '../../components/icons';
 import AddProductModal from '../../components/products/AddProductModal';
 import EditProductModal from '../../components/products/EditProductModal';
+import BulkUploadModal from '../../components/products/BulkUploadModal';
 import { toast } from 'react-toastify';
 import { Product } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
@@ -17,6 +18,7 @@ const AdminProductList: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProductForEdit, setSelectedProductForEdit] = useState<Product | null>(null);
+  const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false); // State for bulk upload modal
   const [currentPage, setCurrentPage] = useState(page);
   const [productsPerPage] = useState(10);
 
@@ -40,6 +42,16 @@ const AdminProductList: React.FC = () => {
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
     setSelectedProductForEdit(null);
+  };
+
+  const handleBulkUploadClick = () => {
+    setIsBulkUploadModalOpen(true);
+  };
+
+  const handleCloseBulkUploadModal = () => {
+    setIsBulkUploadModalOpen(false);
+    // Refresh product list after bulk upload, if successful
+    dispatch(fetchProducts({ page: currentPage, limit: productsPerPage }));
   };
 
   const handleDeleteClick = async (productId: string) => {
@@ -73,13 +85,22 @@ const AdminProductList: React.FC = () => {
           <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tight">PRODUCT <span className="text-brand-red">MANAGEMENT</span></h1>
           <p className="text-gray-500 font-bold uppercase tracking-widest mt-1">Global Inventory Control</p>
         </div>
-        <button
-          onClick={handleAddProductClick}
-          className="flex items-center px-6 py-3 bg-brand-red text-white font-bold rounded shadow-md hover:bg-brand-red-hover transition-all uppercase tracking-widest"
-        >
-          <PlusCircle className="w-5 h-5 mr-2" />
-          Add New Product
-        </button>
+        <div className="flex items-center">
+          <button
+            onClick={handleBulkUploadClick}
+            className="flex items-center px-6 py-3 bg-indigo-600 text-white font-bold rounded shadow-md hover:bg-indigo-700 transition-all uppercase tracking-widest mr-4"
+          >
+            <FileText className="w-5 h-5 mr-2" />
+            Bulk Upload CSV
+          </button>
+          <button
+            onClick={handleAddProductClick}
+            className="flex items-center px-6 py-3 bg-brand-red text-white font-bold rounded shadow-md hover:bg-brand-red-hover transition-all uppercase tracking-widest"
+          >
+            <PlusCircle className="w-5 h-5 mr-2" />
+            Add New Product
+          </button>
+        </div>
       </div>
 
       {products.length === 0 ? (
@@ -146,6 +167,7 @@ const AdminProductList: React.FC = () => {
           onProductUpdated={handleProductAddedOrUpdated}
         />
       )}
+      <BulkUploadModal isOpen={isBulkUploadModalOpen} onClose={handleCloseBulkUploadModal} />
     </div>
   );
 };

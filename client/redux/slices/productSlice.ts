@@ -15,6 +15,7 @@ interface ProductState {
     categories: string[];
     locations: string[];
     conditions: string[];
+    banner?: string;
   };
 }
 
@@ -90,6 +91,20 @@ export const deleteProduct = createAsyncThunk(
       return id; // Return the ID of the deleted product
     } catch (error: any) {
       return rejectWithValue(error.response.data.message || 'Failed to delete product');
+    }
+  }
+);
+
+export const bulkUploadProducts = createAsyncThunk(
+  'products/bulkUploadProducts',
+  async (products: Product[], { rejectWithValue, dispatch }) => {
+    try {
+      const { data } = await api.post('/admin/products/bulk', products);
+      // Optionally refetch products after successful bulk upload
+      dispatch(fetchProducts({}));
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.response.data.message || 'Failed to bulk upload products');
     }
   }
 );
@@ -176,6 +191,21 @@ const productSlice = createSlice({
         state.error = null;
       })
       .addCase(deleteProduct.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // Bulk Upload Products
+      .addCase(bulkUploadProducts.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(bulkUploadProducts.fulfilled, (state, action) => {
+        // The fetchProducts dispatch will update the products array.
+        // We can just set loading to false and clear error here.
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(bulkUploadProducts.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });

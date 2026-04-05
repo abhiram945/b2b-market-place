@@ -10,7 +10,6 @@ import { addToConfig, getConfig } from '../utils/jsonStore.js';
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
   const { fullName, email, password, companyName, address, phoneNumber, role, website } = req.body;
-  console.log(`[AUTH] Registration attempt for email: ${email}`);
 
   const userExists = await User.findOne({ email: email.toLowerCase() });
 
@@ -27,6 +26,16 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error('Address is required for buyers');
   }
 
+  // Handle file uploads
+  const tradeLicense = req.files?.tradeLicense ? `/uploads/documents/${req.files.tradeLicense[0].filename}` : null;
+  const idDocument = req.files?.idDocument ? `/uploads/documents/${req.files.idDocument[0].filename}` : null;
+  const vatRegistration = req.files?.vatRegistration ? `/uploads/documents/${req.files.vatRegistration[0].filename}` : null;
+
+  if ((selectedRole === ROLES.VENDOR || selectedRole === ROLES.BUYER) && (!tradeLicense || !idDocument || !vatRegistration)) {
+    res.status(400);
+    throw new Error('Trade License, ID Document, and VAT Registration certificates are required');
+  }
+
   const user = await User.create({
     fullName,
     email: email.toLowerCase(),
@@ -36,6 +45,9 @@ const registerUser = asyncHandler(async (req, res) => {
     role: selectedRole,
     phoneNumber,
     website,
+    tradeLicense,
+    idDocument,
+    vatRegistration,
   });
 
   if (user) {
@@ -43,8 +55,6 @@ const registerUser = asyncHandler(async (req, res) => {
     if (companyName) {
       await addToConfig('companyNames', companyName);
     }
-
-    console.log(`[AUTH] Registration successful for email: ${email}`);
     res.status(201).json({
       message: 'Registration successful. Your account is pending approval.',
     });
@@ -68,7 +78,6 @@ const getRegisterConfig = asyncHandler(async (req, res) => {
 // @access  Public
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  console.log(`[AUTH] Login attempt for email: ${email}`);
 
   const user = await User.findOne({ email: email.toLowerCase() });
 
@@ -107,7 +116,6 @@ const loginUser = asyncHandler(async (req, res) => {
       status: user.status,
       token: accessToken,
     });
-    console.log(`[AUTH] Login successful for user: ${email} (${user.role})`);
   } else {
     console.warn(`[AUTH] Login failed: Invalid credentials for ${email}`);
     res.status(401);
@@ -119,7 +127,6 @@ const loginUser = asyncHandler(async (req, res) => {
 // @route   POST /api/auth/logout
 // @access  Public
 const logoutUser = asyncHandler(async (req, res) => {
-  console.log(`[AUTH] Logout request received`);
   res.cookie('refreshToken', '', {
     httpOnly: true,
     expires: new Date(0),
@@ -150,7 +157,6 @@ const refreshToken = asyncHandler(async (req, res) => {
     }
 
     const accessToken = generateToken(user);
-    console.log(`[AUTH] Token refresh successful for user: ${user.email}`);
     res.json({ token: accessToken });
   } catch (error) {
     console.error(`[AUTH] Refresh failed: Invalid or expired refresh token: ${error.message}`);
