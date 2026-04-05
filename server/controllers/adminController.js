@@ -2,6 +2,7 @@ import asyncHandler from 'express-async-handler';
 import User from '../models/User.js';
 import { sendEmail, sendWhatsApp } from '../utils/notificationSender.js';
 import { USER_STATUS } from '../utils/constants.js';
+import { getConfig, updateConfig } from '../utils/jsonStore.js';
 
 // @desc    Get all users (with optional status filter)
 // @route   GET /api/admin/users
@@ -29,7 +30,7 @@ const updateUserStatus = asyncHandler(async (req, res) => {
     // Send notification
     if (status === USER_STATUS.APPROVED || status === USER_STATUS.REJECTED) {
       const subject = `Your Account has been ${status}`;
-      const message = `Hi ${user.fullName}, your registration on the B2B marketplace has been ${status}.`;
+      const message = `Hi ${user.fullName}, your registration on the Techtronics Ventures has been ${status}.`;
       
       await sendEmail(user.email, subject, message);
 
@@ -45,4 +46,23 @@ const updateUserStatus = asyncHandler(async (req, res) => {
   }
 });
 
-export { getUsers, updateUserStatus };
+// @desc    Toggle maintenance mode
+// @route   POST /api/admin/maintenance
+// @access  Private/Admin
+const toggleMaintenanceMode = asyncHandler(async (req, res) => {
+  const { maintenanceMode } = req.body;
+  const config = await getConfig();
+  config.maintenanceMode = maintenanceMode;
+  await updateConfig(config);
+  res.json({ message: `Maintenance mode ${maintenanceMode ? 'enabled' : 'disabled'}`, maintenanceMode });
+});
+
+// @desc    Get maintenance mode status
+// @route   GET /api/admin/maintenance
+// @access  Public
+const getMaintenanceStatus = asyncHandler(async (req, res) => {
+  const config = await getConfig();
+  res.json({ maintenanceMode: config.maintenanceMode });
+});
+
+export { getUsers, updateUserStatus, toggleMaintenanceMode, getMaintenanceStatus };

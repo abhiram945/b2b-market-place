@@ -13,6 +13,7 @@ import MainLayout from '../components/common/MainLayout';
 import { useAuth } from '../hooks/useAuth';
 import Cart from '../pages/Cart';
 import ContactUs from '../pages/ContactUs';
+import Maintenance from '../pages/Maintenance';
 import AdminDashboard from '../pages/dashboard/AdminDashboard'; // Import AdminDashboard
 import AdminProductList from '../pages/products/AdminProductList'; // Import AdminProductList
 
@@ -22,6 +23,7 @@ const AppRouter = () => {
     return (
         <Routes>
             <Route path="/" element={<Landing />} />
+            <Route path="/maintenance" element={<Maintenance />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/contact-us" element={<ContactUs />} />

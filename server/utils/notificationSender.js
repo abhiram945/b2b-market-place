@@ -47,7 +47,7 @@ export const sendEmail = async (to, subject, text, attachments = []) => {
             text, 
             html: `
                 <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-                    <h2 style="color: #2563eb;">B2B Marketplace Notification</h2>
+                    <h2 style="color: #2563eb;">Techtronics Ventures Notification</h2>
                     <h3 style="color: #444;">${subject}</h3>
                     <p style="font-size: 16px;">${text}</p>
                     <hr style="border: 1px solid #eee; margin: 20px 0;" />

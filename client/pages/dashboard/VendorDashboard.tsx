@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from '../../hooks/useAuth';
 import DashboardCard from '../../components/dashboard/DashboardCard';
-import { Package, Tag, ShoppingCart, AlertCircle, PlusCircle } from '../../components/icons';
+import { Package, Tag, ShoppingCart, AlertCircle, PlusCircle, Copy } from '../../components/icons';
 import { fetchProducts } from '../../redux/slices/productSlice';
 import { fetchOrders } from '../../redux/slices/orderSlice';
 import { AppDispatch, RootState } from '../../redux/store';
+import { toast } from 'react-toastify';
 
 const VendorDashboard: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -15,9 +16,16 @@ const VendorDashboard: React.FC = () => {
     const { orders } = useSelector((state: RootState) => state.orders);
 
     useEffect(() => {
-        dispatch(fetchProducts(undefined));
+        dispatch(fetchProducts({}));
         dispatch(fetchOrders());
     }, [dispatch]);
+
+    const handleCopyId = () => {
+        if (user?._id) {
+            navigator.clipboard.writeText(user._id);
+            toast.success('ID COPIED TO CLIPBOARD');
+        }
+    };
 
     const getStatusColor = (status: string) => {
         switch (status.toLowerCase()) {
@@ -49,10 +57,22 @@ const VendorDashboard: React.FC = () => {
     return (
         <div className="max-w-[90%] mx-auto py-8">
             <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 mb-6">
-                <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tight italic">
-                    Vendor <span className="text-brand-red font-black">Portal</span>
-                </h1>
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Managing Store: {user?.companyName}</p>
+                <div>
+                    <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tight italic">
+                        Vendor <span className="text-brand-red font-black">Portal</span>
+                    </h1>
+                    <div className="flex items-center gap-2 mt-2">
+                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest bg-zinc-100 px-2 py-1 rounded border border-zinc-200">ID: {user?._id}</span>
+                        <button 
+                            onClick={handleCopyId}
+                            className="p-1 hover:text-brand-red transition-colors text-zinc-400"
+                            title="Copy ID"
+                        >
+                            <Copy className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                </div>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1 italic underline decoration-brand-red/30">Managing Store: {user?.companyName}</p>
             </div>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-10">
                 <DashboardCard title="Active Listings" value={products.length} icon={<Package className="h-6 w-6 text-white" />} colorClass="bg-black" />

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL:'http://13.53.123.178:5000/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -41,6 +41,13 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    if (error.response && error.response.status === 503) {
+      if (window.location.pathname !== '/maintenance') {
+        window.location.href = '/maintenance';
+      }
+      return Promise.reject(error);
+    }
     
     // Do NOT attempt refresh for login requests or if the request has already been retried
     const isLoginRequest = originalRequest.url && originalRequest.url.includes('/auth/login');
@@ -92,6 +99,7 @@ api.interceptors.response.use(
         // Refresh token failed or expired, logout user
         console.warn('[API] Session expired. Redirecting to login.');
         localStorage.removeItem('token');
+        localStorage.removeItem('cart');
         // Avoid infinite loop if refresh itself fails with 401
         if (window.location.pathname !== '/login') {
             window.location.href = '/login';

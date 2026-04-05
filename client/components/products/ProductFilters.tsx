@@ -8,17 +8,30 @@ interface ProductFiltersProps {
   setFilters: (filters: any) => void;
 }
 
-const BRANDS_LIST = [
-  { name: 'Apple', logo: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg', width: 'w-6' },
-  { name: 'Samsung', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Samsung_Galaxy_logo.svg/1280px-Samsung_Galaxy_logo.svg.png?20221019181539', width: 'w-12' },
-  { name: 'Sony', logo: 'https://upload.wikimedia.org/wikipedia/commons/c/ca/Sony_logo.svg', width: 'w-10' },
-  { name: 'Dell', logo: 'https://upload.wikimedia.org/wikipedia/commons/1/18/Dell_logo_2016.svg', width: 'w-8' },
-  { name: 'HP', logo: 'https://upload.wikimedia.org/wikipedia/commons/a/ad/HP_logo_2012.svg', width: 'w-8' },
-  { name: 'Lenovo', logo: 'https://upload.wikimedia.org/wikipedia/commons/b/b8/Lenovo_logo_2015.svg', width: 'w-12' },
-];
+const BrandLogo: React.FC<{ brand: string }> = ({ brand }) => {
+  const [hasLogo, setHasLogo] = useState(true);
+  const logoUrl = `http://localhost:5000/uploads/brands/${brand.toLowerCase()}.png`;
+
+  if (!hasLogo) {
+    return (
+      <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 text-zinc-400">
+        {brand}
+      </span>
+    );
+  }
+
+  return (
+    <img
+      src={logoUrl}
+      alt={brand}
+      onError={() => setHasLogo(false)}
+      className="h-4 w-auto object-contain grayscale opacity-60 hover:opacity-100 transition-all max-w-[60px]"
+    />
+  );
+};
 
 const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters }) => {
-  const { products } = useSelector((state: RootState) => state.products);
+  const { products, config } = useSelector((state: RootState) => state.products);
   const [localSearch, setLocalSearch] = useState(filters.search || '');
 
   useEffect(() => {
@@ -85,19 +98,19 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters }) 
         </form>
 
         {/* Brands */}
-        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar max-w-[400px]">
           <button onClick={() => handleBrandClick('')} className={`text-[9px] font-black uppercase tracking-widest px-2 transition-colors ${filters.brand === '' ? 'text-brand-red underline' : 'text-gray-400 hover:text-gray-900'}`}>
             ALL
           </button>
-          <div className="flex gap-1">
-            {BRANDS_LIST.map(b => (
+          <div className="flex gap-1 flex-nowrap items-center">
+            {config.brands.map(b => (
               <button
-                key={b.name}
-                onClick={() => handleBrandClick(b.name)}
-                className={`p-1 rounded border transition-all bg-white ${filters.brand === b.name ? 'border-brand-red shadow-sm' : 'border-gray-50 hover:border-gray-200'}`}
-                title={b.name}
+                key={b}
+                onClick={() => handleBrandClick(b)}
+                className={`p-1.5 rounded-lg border transition-all bg-white flex items-center justify-center min-w-[40px] h-8 ${filters.brand === b.toLowerCase() ? 'border-brand-red shadow-sm bg-red-50/10' : 'border-gray-100 hover:border-gray-200'}`}
+                title={b}
               >
-                <img src={b.logo} alt={b.name} className={`${b.width} h-3 object-contain grayscale opacity-60 hover:opacity-100 transition-all`} />
+                <BrandLogo brand={b} />
               </button>
             ))}
           </div>

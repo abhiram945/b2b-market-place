@@ -1,0 +1,20 @@
+{
+  "brands": [
+    "apple"
+  ],
+  "categories": [
+    "mobile"
+  ],
+  "locations": [
+    "uae"
+  ],
+  "conditions": [
+    "New",
+    "Used",
+    "Refurbished"
+  ],
+  "companyNames": [
+    "rrr"
+  ],
+  "maintenanceMode": false
+}

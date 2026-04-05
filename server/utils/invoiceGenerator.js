@@ -29,6 +29,11 @@ const numberToWords = (num) => {
     return res + ' Only';
 };
 
+const toTitleCase = (str) => {
+    if (!str) return '';
+    return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
+
 export const generateInvoice = async (order, buyer) => {
     const doc = new PDFDocument({ size: 'A4', margin: 25 });
     const invoiceName = `invoice_${order._id}.pdf`;
@@ -85,8 +90,9 @@ export const generateInvoice = async (order, buyer) => {
     drawBoxedHeader(310, 'SHIP TO');
 
     y += 25;
-    doc.fillColor('#000').fontSize(14).font('Helvetica-Bold').text(buyer.companyName || buyer.fullName, 30, y);
-    doc.text(buyer.companyName || buyer.fullName, 310, y);
+    const customerName = toTitleCase(buyer.companyName || buyer.fullName);
+    doc.fillColor('#000').fontSize(14).font('Helvetica-Bold').text(customerName, 30, y);
+    doc.text(customerName, 310, y);
     y += 16;
     doc.fontSize(10).font('Helvetica').text(buyer.email, 30, y);
     doc.text(buyer.email, 310, y);

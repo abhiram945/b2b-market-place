@@ -9,7 +9,7 @@ const Footer: React.FC = () => {
         <div className="xl:grid xl:grid-cols-3 xl:gap-24">
           <div className="space-y-8 xl:col-span-1">
             <Link to="/" className="text-2xl font-black tracking-tighter italic uppercase">
-               <span className="text-red-600 mr-1">B2B</span>MARKET
+               <span className="text-red-600 mr-1">Techtronics</span> Ventures LLC
             </Link>
             <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest leading-relaxed">
               The premier industrial-grade distribution platform. <br/> Connecting global enterprise assets since 2024.
@@ -53,11 +53,7 @@ const Footer: React.FC = () => {
           </div>
         </div>
         <div className="mt-16 pt-8 border-t border-zinc-900 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.4em] italic">&copy; 2024 B2B MARKET VECTOR. ALL RIGHTS RESERVED.</p>
-          <div className="flex gap-6">
-             <div className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></div>
-             <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">System Status: Operational</span>
-          </div>
+          <p className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.4em] italic">&copy; {new Date().getFullYear()} Techtronics Ventures LLC. ALL RIGHTS RESERVED.</p>
         </div>
       </div>
     </footer>

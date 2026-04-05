@@ -33,7 +33,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:hidden ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
            <Link to={getDashboardLink()} className="text-xl font-black text-gray-900 tracking-tight italic" onClick={() => setIsOpen(false)}>
-            <span className="text-brand-red mr-1">B2B</span>MARKET
+            <span className="text-brand-red mr-1">Techtronics</span> Ventures LLC
           </Link>
           <button className="text-gray-400 hover:text-brand-red transition-all" onClick={() => setIsOpen(false)}>
             <XIcon className="w-6 h-6" />

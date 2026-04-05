@@ -3,6 +3,7 @@ import User from '../models/User.js';
 import { generateToken, generateRefreshToken } from '../utils/generateToken.js';
 import jwt from 'jsonwebtoken';
 import { ROLES, USER_STATUS } from '../utils/constants.js';
+import { addToConfig, getConfig } from '../utils/jsonStore.js';
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -38,6 +39,11 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   if (user) {
+    // Add company name to dynamic JSON config
+    if (companyName) {
+      await addToConfig('companyNames', companyName);
+    }
+
     console.log(`[AUTH] Registration successful for email: ${email}`);
     res.status(201).json({
       message: 'Registration successful. Your account is pending approval.',
@@ -47,6 +53,14 @@ const registerUser = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error('Invalid user data');
   }
+});
+
+// @desc    Get registration config (company names)
+// @route   GET /api/auth/register-config
+// @access  Public
+const getRegisterConfig = asyncHandler(async (req, res) => {
+  const config = await getConfig();
+  res.json({ companyNames: config.companyNames });
 });
 
 // @desc    Auth user & get token
@@ -168,4 +182,4 @@ const getUserProfile = asyncHandler(async (req, res) => {
   }
 });
 
-export { registerUser, loginUser, logoutUser, getUserProfile, refreshToken };
+export { registerUser, loginUser, logoutUser, getUserProfile, refreshToken, getRegisterConfig };

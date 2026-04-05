@@ -10,6 +10,12 @@ interface ProductState {
   page: number;
   pages: number;
   total: number;
+  config: {
+    brands: string[];
+    categories: string[];
+    locations: string[];
+    conditions: string[];
+  };
 }
 
 const initialState: ProductState = {
@@ -20,6 +26,12 @@ const initialState: ProductState = {
   page: 1,
   pages: 1,
   total: 0,
+  config: {
+    brands: [],
+    categories: [],
+    locations: [],
+    conditions: [],
+  },
 };
 
 export const fetchProducts = createAsyncThunk(
@@ -27,10 +39,9 @@ export const fetchProducts = createAsyncThunk(
   async (filters: { page?: number; limit?: number; search?: string; brand?: string; location?: string; category?: string; minPrice?: number; maxPrice?: number } = {}, { rejectWithValue }) => {
     try {
       const { data } = await api.get('/products', { params: filters });
-      console.log(data);
       return data;
     } catch (error: any) {
-      return rejectWithValue(error.response.data.message || 'Failed to fetch products');
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch products');
     }
   }
 );
@@ -94,11 +105,14 @@ const productSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchProducts.fulfilled, (state, action: PayloadAction<{ products: Product[]; page: number; pages: number; total: number }>) => {
+      .addCase(fetchProducts.fulfilled, (state, action: PayloadAction<{ products: Product[]; page: number; pages: number; total: number; config: any }>) => {
         state.products = action.payload.products;
         state.page = action.payload.page;
         state.pages = action.payload.pages;
         state.total = action.payload.total;
+        if (action.payload.config) {
+          state.config = action.payload.config;
+        }
         state.loading = false;
       })
       .addCase(fetchProducts.rejected, (state, action) => {

@@ -2,6 +2,7 @@ import asyncHandler from 'express-async-handler';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import User from '../models/User.js';
+import Cart from '../models/Cart.js';
 import { generateInvoice } from '../utils/invoiceGenerator.js';
 import path from 'path';
 import fs from 'fs';
@@ -13,91 +14,86 @@ import mongoose from 'mongoose';
 // @route   POST /api/orders
 // @access  Private
 const createOrder = asyncHandler(async (req, res) => {
-  const { items } = req.body; // Expecting an array of { productId, quantity }
+  const { items } = req.body;
 
   if (!items || !Array.isArray(items) || items.length === 0) {
     res.status(400);
     throw new Error('No items in order');
   }
-  
-  const orderItems = [];
-  let totalPrice = 0;
 
-  // 1. Validation Loop: Check if all products exist and have enough stock
-  for (const item of items) {
-    const product = await Product.findById(item.productId);
-    if (!product) {
-      res.status(404);
-      throw new Error(`Product not found: ${item.productId}`);
-    }
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-    if (item.quantity < product.minOrderQty) {
-      res.status(400);
-      throw new Error(`Quantity for ${product.title} must be at least ${product.minOrderQty}`);
-    }
-    if (item.quantity > product.maxOrderQty) {
-      res.status(400);
-      throw new Error(`Quantity for ${product.title} cannot exceed ${product.maxOrderQty}`);
-    }
-    if (product.stockQty < item.quantity) {
-      res.status(400);
-      throw new Error(`Insufficient stock for ${product.title}`);
-    }
-  }
-
-  // 2. Execution Loop: Atomic Stock Updates using findOneAndUpdate
-  // This approach is safe without full transactions as it uses atomic $inc and condition check
-  for (const item of items) {
-    const product = await Product.findOneAndUpdate(
-      { _id: item.productId, stockQty: { $gte: item.quantity } },
-      { $inc: { stockQty: -item.quantity } },
-      { new: true }
-    );
-
-    if (!product) {
-      // This could happen if stock was taken by someone else between our validation and this update
-      // We throw error here; already decremented items from previous iterations remain decremented
-      // (This is the tradeoff for avoiding full replica-set transactions)
-      res.status(400);
-      throw new Error(`Stock conflict for ${item.productId}. Please try again.`);
-    }
-
-    const itemTotalPrice = product.price * item.quantity;
-    totalPrice += itemTotalPrice;
-
-    orderItems.push({
-      product: product._id,
-      productTitle: product.title,
-      productBrand: product.brand,
-      quantity: item.quantity,
-      price: product.price,
-      location: product.location,
-      vendor: product.user,
-    });
-  }
-
-  const order = new Order({
-    user: req.user._id,
-    items: orderItems,
-    totalPrice,
-  });
-
-  const createdOrder = await order.save();
-
-  // Generate Invoice and send email (outside transaction logic)
   try {
-    const buyer = await User.findById(req.user._id);
-    console.log(`Attempting to generate invoice for order: ${createdOrder._id}`);
-    const invoiceUrlPath = await generateInvoice(createdOrder, buyer);
-    console.log(`Invoice generated successfully: ${invoiceUrlPath}`);
-    createdOrder.invoiceUrl = invoiceUrlPath;
-    await createdOrder.save();
-    console.log(`Order updated with invoiceUrl: ${createdOrder.invoiceUrl}`);
-  } catch (error) {
-    console.error('CRITICAL: Invoice generation failed for order:', createdOrder._id, error.message);
-  }
+    const orderItems = [];
+    let totalPrice = 0;
 
-  return res.status(201).json(createdOrder);
+    // 1. Validation & Execution: Loop through items and update stock
+    for (const item of items) {
+      const product = await Product.findById(item.productId).session(session);
+      if (!product) {
+        throw new Error(`Product not found: ${item.productId}`);
+      }
+
+      if (item.quantity < product.minOrderQty) {
+        throw new Error(`Quantity for ${product.title} must be at least ${product.minOrderQty}`);
+      }
+      if (item.quantity > product.maxOrderQty) {
+        throw new Error(`Quantity for ${product.title} cannot exceed ${product.maxOrderQty}`);
+      }
+      if (product.stockQty < item.quantity) {
+        throw new Error(`Insufficient stock for ${product.title}`);
+      }
+
+      // Update stock
+      product.stockQty -= item.quantity;
+      await product.save({ session });
+
+      const itemTotalPrice = product.price * item.quantity;
+      totalPrice += itemTotalPrice;
+
+      orderItems.push({
+        product: product._id,
+        productTitle: product.title,
+        productBrand: product.brand,
+        quantity: item.quantity,
+        price: product.price,
+        location: product.location,
+        vendor: product.user,
+      });
+    }
+
+    const order = new Order({
+      user: req.user._id,
+      items: orderItems,
+      totalPrice,
+    });
+
+    const createdOrder = await order.save({ session });
+
+    // Clear cart in DB
+    await Cart.findOneAndUpdate({ user: req.user._id }, { items: [] }).session(session);
+
+    await session.commitTransaction();
+    session.endSession();
+
+    // Generate Invoice (outside transaction logic)
+    try {
+      const buyer = await User.findById(req.user._id);
+      const invoiceUrlPath = await generateInvoice(createdOrder, buyer);
+      createdOrder.invoiceUrl = invoiceUrlPath;
+      await createdOrder.save();
+    } catch (error) {
+      console.error('CRITICAL: Invoice generation failed for order:', createdOrder._id, error.message);
+    }
+
+    return res.status(201).json(createdOrder);
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    res.status(400);
+    throw new Error(error.message || 'Order creation failed');
+  }
 });
 
 // @desc    Get logged in user orders

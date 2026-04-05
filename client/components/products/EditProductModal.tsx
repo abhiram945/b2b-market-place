@@ -1,12 +1,14 @@
 
 import React, { useEffect } from 'react';
-import { useForm, SubmitHandler } from 'react-hook-form';
+import { useForm, SubmitHandler, UseFormRegister, FieldErrors } from 'react-hook-form';
+import { useSelector } from 'react-redux';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import Modal from '../common/Modal';
 import { Product } from '../../types';
 import api from '../../api';
 import { toast } from 'react-toastify';
+import { RootState } from '../../redux/store';
 
 interface EditProductModalProps {
   isOpen: boolean;
@@ -31,10 +33,37 @@ const schema = yup.object().shape({
   eta: yup.string().optional(),
 });
 
+interface InputFieldProps {
+  label: string;
+  name: keyof EditProductFormData;
+  type?: string;
+  step?: string;
+  list?: string;
+  register: UseFormRegister<EditProductFormData>;
+  errors: FieldErrors<EditProductFormData>;
+}
+
+const InputField: React.FC<InputFieldProps> = ({ label, name, type = "text", step, list, register, errors }) => (
+  <div className="flex flex-col gap-1.5">
+    <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest ml-1">{label}</label>
+    <input
+      type={type}
+      step={step}
+      list={list}
+      {...register(name)}
+      className="w-full h-11 bg-white border-2 border-gray-100 rounded-lg px-4 text-sm font-bold text-gray-900 outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all"
+    />
+    {errors[name] && <p className="text-[9px] font-bold text-red-600 uppercase mt-0.5 ml-1">{errors[name]?.message as string}</p>}
+  </div>
+);
+
 const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, product, role, onProductUpdated }) => {
-  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<EditProductFormData>({
+  const { config } = useSelector((state: RootState) => state.products);
+  const { register, handleSubmit, formState: { errors, isSubmitting }, reset, watch } = useForm<EditProductFormData>({
     resolver: yupResolver(schema) as any,
   });
+
+  const watchedPrice = watch('price');
 
   useEffect(() => {
     if (product) reset(product);
@@ -42,6 +71,13 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
 
   const onSubmit: SubmitHandler<EditProductFormData> = async (data) => {
     if (!product) return;
+    
+    // Vendor specific check
+    if (role === 'vendor' && data.price && data.price > product.price) {
+      toast.error('PRICE INCREASE NOT PERMITTED');
+      return;
+    }
+
     try {
       const payload = { ...data };
       if (payload.title) payload.title = payload.title.toLowerCase();
@@ -56,22 +92,9 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
       onProductUpdated();
       onClose();
     } catch (err: any) {
-      toast.error('RE-ENTRY FAILED');
+      toast.error(err.response?.data?.message || 'RE-ENTRY FAILED');
     }
   };
-
-  const InputField = ({ label, name, type = "text", step }: { label: string, name: keyof EditProductFormData, type?: string, step?: string }) => (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest ml-1">{label}</label>
-      <input
-        type={type}
-        step={step}
-        {...register(name)}
-        className="w-full h-11 bg-white border-2 border-gray-100 rounded-lg px-4 text-sm font-bold text-gray-900 outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all"
-      />
-      {errors[name] && <p className="text-[9px] font-bold text-red-600 uppercase mt-0.5 ml-1">{errors[name]?.message as string}</p>}
-    </div>
-  );
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Update Product">
@@ -81,21 +104,60 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
             {role === 'admin' ? (
               <>
                 <div className="md:col-span-2">
-                    <InputField label="title" name="title" />
+                    <InputField label="title" name="title" register={register} errors={errors} />
                 </div>
-                <InputField label="brand" name="brand" />
-                <InputField label="category" name="category" />
-                <InputField label="location" name="location" />
-                <InputField label="price" name="price" type="number" step="0.01" />
-                <InputField label="stockQty" name="stockQty" type="number" />
-                <InputField label="minOrderQty" name="minOrderQty" type="number" />
-                <InputField label="maxOrderQty" name="maxOrderQty" type="number" />
-                <InputField label="eta" name="eta" />
+                
+                <div className="relative">
+                  <InputField label="brand" name="brand" list="brand-list-edit" register={register} errors={errors} />
+                  <datalist id="brand-list-edit">
+                    {config.brands.map(b => <option key={b} value={b} />)}
+                  </datalist>
+                </div>
+
+                <div className="relative">
+                  <InputField label="category" name="category" list="category-list-edit" register={register} errors={errors} />
+                  <datalist id="category-list-edit">
+                    {config.categories.map(c => <option key={c} value={c} />)}
+                  </datalist>
+                </div>
+
+                <div className="relative">
+                  <InputField label="location" name="location" list="location-list-edit" register={register} errors={errors} />
+                  <datalist id="location-list-edit">
+                    {config.locations.map(l => <option key={l} value={l} />)}
+                  </datalist>
+                </div>
+
+                <InputField label="price" name="price" type="number" step="0.01" register={register} errors={errors} />
+
+                <div className="relative">
+                  <InputField label="condition" name="condition" list="condition-list-edit" register={register} errors={errors} />
+                  <datalist id="condition-list-edit">
+                    {config.conditions.map(c => <option key={c} value={c} />)}
+                  </datalist>
+                </div>
+
+                <InputField label="stockQty" name="stockQty" type="number" register={register} errors={errors} />
+                <InputField label="minOrderQty" name="minOrderQty" type="number" register={register} errors={errors} />
+                <InputField label="maxOrderQty" name="maxOrderQty" type="number" register={register} errors={errors} />
+                <InputField label="eta" name="eta" register={register} errors={errors} />
+
+                <div className="flex items-center space-x-4 pt-6 ml-1">
+                    <input type="checkbox" {...register('isStockEnabled')} className="w-5 h-5 accent-brand-red rounded cursor-pointer" />
+                    <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest cursor-pointer">isStockEnabled</label>
+                </div>
               </>
             ) : (
               <>
-                <InputField label="price" name="price" type="number" step="0.01" />
-                <InputField label="stockQty" name="stockQty" type="number" />
+                <div className="flex flex-col">
+                  <InputField label="price" name="price" type="number" step="0.01" register={register} errors={errors} />
+                  {watchedPrice && product && watchedPrice > product.price && (
+                    <p className="text-[9px] font-black text-red-600 uppercase mt-1.5 ml-1 animate-pulse">
+                      Vendors aren't allowed to increase price
+                    </p>
+                  )}
+                </div>
+                <InputField label="stockQty" name="stockQty" type="number" register={register} errors={errors} />
                 <div className="flex items-center space-x-4 pt-6 ml-1">
                     <input type="checkbox" {...register('isStockEnabled')} className="w-5 h-5 accent-brand-red rounded cursor-pointer" />
                     <label className="text-[11px] font-black text-gray-600 uppercase tracking-widest cursor-pointer">isStockEnabled</label>

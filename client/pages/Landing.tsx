@@ -20,7 +20,7 @@ const Landing: React.FC = () => {
                 <nav className="flex items-center justify-between p-6 lg:px-8 max-w-7xl mx-auto" aria-label="Global">
                     <div className="flex lg:flex-1">
                         <Link to="/" className="text-2xl font-black text-gray-900 dark:text-white tracking-tighter italic uppercase">
-                             <span className="text-red-600 mr-1">B2B</span>MARKET
+                             <span className="text-red-600 mr-1">Techtronics</span> Ventures
                         </Link>
                     </div>
                     <div className="flex flex-1 justify-end space-x-6">

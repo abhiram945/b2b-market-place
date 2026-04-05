@@ -23,3 +23,4 @@ export { default as X } from './X';
 export { default as FileText } from './FileText';
 export { default as Sun } from './Sun';
 export { default as Moon } from './Moon';
+export { default as Copy } from './Copy';

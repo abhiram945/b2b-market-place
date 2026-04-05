@@ -124,7 +124,7 @@ const ProductsList: React.FC = () => {
           <tbody className="bg-white divide-y divide-zinc-100">
             {loading ? (
                 <tr>
-                    <td colSpan={10} className="py-40">
+                    <td colSpan={11} className="py-40">
                         <div className="flex flex-col items-center justify-center gap-4">
                             <div className="w-10 h-10 border-4 border-zinc-100 border-t-red-600 rounded-full animate-spin"></div>
                             <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest animate-pulse italic">Connecting Inventory Vector...</span>
@@ -133,7 +133,7 @@ const ProductsList: React.FC = () => {
                 </tr>
             ) : error ? (
                 <tr>
-                    <td colSpan={10} className="py-20 px-6">
+                    <td colSpan={11} className="py-20 px-6">
                         <div className="bg-red-50 border-l-4 border-red-600 p-6 text-center max-w-2xl mx-auto">
                             <p className="text-red-600 font-black uppercase tracking-widest italic">{error}</p>
                         </div>
@@ -150,8 +150,11 @@ const ProductsList: React.FC = () => {
                 ))
             ) : (
                 <tr>
-                    <td colSpan={10} className="py-32 text-center">
-                        <p className="text-zinc-400 font-black uppercase tracking-widest text-sm italic">NO COMPATIBLE STOCK DETECTED</p>
+                    <td colSpan={11} className="px-6 py-12">
+                        <div className="w-full py-32 text-center bg-white border border-zinc-200 rounded-2xl shadow-sm">
+                            <p className="text-zinc-400 font-black uppercase tracking-widest text-sm italic">NO COMPATIBLE STOCK DETECTED</p>
+                            <p className="text-zinc-300 text-[10px] font-bold uppercase tracking-[0.2em] mt-2">Check filters or contact support for manual sourcing</p>
+                        </div>
                     </td>
                 </tr>
             )}

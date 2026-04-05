@@ -4,6 +4,7 @@ import Product from '../models/Product.js';
 import User from '../models/User.js';
 import { checkAndSendNotifications } from '../utils/notificationSender.js';
 import { ROLES } from '../utils/constants.js';
+import { getConfig, addToConfig } from '../utils/jsonStore.js';
 
 // @desc    Fetch all products
 // @route   GET /api/products
@@ -63,7 +64,9 @@ const getProducts = asyncHandler(async (req, res) => {
     .limit(pageSize)
     .skip(pageSize * (page - 1));
 
-  res.json({ products, page, pages: Math.ceil(count / pageSize), total: count });
+  const config = await getConfig();
+
+  res.json({ products, page, pages: Math.ceil(count / pageSize), total: count, config });
 });
 
 // @desc    Create a product
@@ -87,6 +90,13 @@ const createProduct = asyncHandler(async (req, res) => {
   });
 
   const createdProduct = await product.save();
+
+  // Update dynamic config
+  if (brand) await addToConfig('brands', brand);
+  if (category) await addToConfig('categories', category);
+  if (location) await addToConfig('locations', location);
+  if (condition) await addToConfig('conditions', condition);
+
   res.status(201).json(createdProduct);
 });
 
@@ -116,6 +126,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     isStockEnabled,
     minOrderQty,
     maxOrderQty,
+    condition,
     eta,
   } = req.body;
 
@@ -128,12 +139,19 @@ const updateProduct = asyncHandler(async (req, res) => {
   product.minOrderQty = minOrderQty !== undefined ? Number(minOrderQty) : product.minOrderQty;
   product.maxOrderQty = maxOrderQty !== undefined ? Number(maxOrderQty) : product.maxOrderQty;
   product.eta = eta !== undefined ? eta : product.eta;
+  product.condition = condition !== undefined ? condition : product.condition;
 
   if (isStockEnabled !== undefined) {
     product.isStockEnabled = isStockEnabled;
   }
 
   const updatedProduct = await product.save();
+
+  // Update dynamic config
+  if (brand) await addToConfig('brands', brand);
+  if (category) await addToConfig('categories', category);
+  if (location) await addToConfig('locations', location);
+  if (condition) await addToConfig('conditions', condition);
 
   // Trigger notification check
   checkAndSendNotifications(updatedProduct, oldPrice, oldStock);

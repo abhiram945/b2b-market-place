@@ -10,12 +10,15 @@ import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import connectDB from './config/db.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
+import { optionalProtect } from './middleware/authMiddleware.js';
+import { checkMaintenance } from './middleware/maintenanceMiddleware.js';
 
 import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import cartRoutes from './routes/cartRoutes.js';
 
 
 import path from 'path';
@@ -47,6 +50,7 @@ app.use(cookieParser());
 // Serve static files (but not sensitive ones like invoices)
 // Protected route will handle invoices
 app.use('/uploads/logos', express.static(path.join(__dirname, '/uploads/logos')));
+app.use('/uploads/brands', express.static(path.join(__dirname, '/uploads/brands')));
 
 // Rate limiting
 const limiter = rateLimit({
@@ -59,11 +63,13 @@ const limiter = rateLimit({
 
 
 // API Routes
+app.use('/api', optionalProtect, checkMaintenance);
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/cart', cartRoutes);
 
 // Error Handling Middleware
 app.use(notFound);

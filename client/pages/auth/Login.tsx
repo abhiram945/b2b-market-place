@@ -45,7 +45,7 @@ const Login: React.FC = () => {
         <div>
           <Link to="/" className="mx-auto h-12 w-auto flex items-center justify-center text-3xl font-black text-gray-900 tracking-tighter italic">
             <Building className="w-10 h-10 text-brand-red mr-2" />
-            <span>B2B<span className="text-brand-red">MARKET</span></span>
+            <span>Techtronics<span className="text-brand-red"> Ventures</span></span>
           </Link>
           <h2 className="mt-8 text-center text-3xl font-black text-gray-900 uppercase tracking-tight">
             SIGN IN
@@ -69,7 +69,7 @@ const Login: React.FC = () => {
                 id="email-address"
                 type="email"
                 className="appearance-none relative block w-full px-4 py-3 border-2 border-gray-100 placeholder-gray-300 text-gray-900 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all sm:text-sm font-bold"
-                placeholder="admin@b2bmarket.com"
+                placeholder="user@gmail.com"
               />
               <p className="text-red-600 text-[10px] font-bold mt-1 uppercase ml-1">{errors.email?.message}</p>
             </div>
@@ -107,7 +107,7 @@ const Login: React.FC = () => {
 
         <div className="mt-8 pt-8 border-t border-gray-100 text-center space-y-4">
             <p className="text-xs text-gray-500 font-bold tracking-wider">
-                Need here?{' '}
+                New here?{' '}
                 <Link to="/register" className="text-brand-red hover:underline decoration-2 underline-offset-4">
                   Create account
                 </Link>

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
@@ -7,6 +7,7 @@ import { registerUser } from '../../redux/slices/userSlice';
 import { Building } from '../../components/icons';
 import { AppDispatch, RootState } from '../../redux/store';
 import { toast } from 'react-toastify';
+import api from '../../api';
 
 type RegisterFormInputs = {
   fullName: string;
@@ -32,12 +33,25 @@ const Register: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { loading, error } = useSelector((state: RootState) => state.user);
+  const [companyNames, setCompanyNames] = useState<string[]>([]);
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterFormInputs>({
     defaultValues: {
       role: ''
     }
   });
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const { data } = await api.get('/auth/register-config');
+        setCompanyNames(data.companyNames);
+      } catch (err) {
+        console.error('Failed to fetch registration config');
+      }
+    };
+    fetchConfig();
+  }, []);
 
   const password = watch('password');
   const role = watch('role');
@@ -75,7 +89,7 @@ const Register: React.FC = () => {
         <div className="text-center">
           <Link to="/" className="inline-flex items-center text-3xl font-black text-gray-900 tracking-tighter italic">
             <Building className="w-10 h-10 text-brand-red mr-2" />
-            <span>B2B<span className="text-brand-red">MARKET</span></span>
+            <span>Techtronics<span className="text-brand-red"> Ventures</span></span>
           </Link>
           <h2 className="mt-3 text-2xl font-black text-gray-900 uppercase tracking-tight">
             Create account
@@ -119,9 +133,15 @@ const Register: React.FC = () => {
             <InputWrapper label="Company Name" error={errors.companyName}>
               <input
                 {...register('companyName', { required: 'Company name is required' })}
-                placeholder="Company Name"
+                placeholder="Select or enter company"
+                list="company-names"
                 className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
               />
+              <datalist id="company-names">
+                {companyNames.map((name) => (
+                  <option key={name} value={name} />
+                ))}
+              </datalist>
             </InputWrapper>
 
             <InputWrapper label="Website Link" error={errors.website}>

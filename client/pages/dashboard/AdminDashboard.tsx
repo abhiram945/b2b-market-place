@@ -17,11 +17,14 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [updateType, setUpdateType] = useState<'approving' | 'rejecting' | null>(null);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [isMaintenanceLoading, setIsMaintenanceLoading] = useState(false);
   const effectRan = useRef(false);
 
   useEffect(() => {
     if (!effectRan.current) {
       fetchUsers();
+      fetchMaintenanceStatus();
       effectRan.current = true;
     }
   }, []);
@@ -35,6 +38,29 @@ const AdminDashboard: React.FC = () => {
       toast.error('Failed to fetch users');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMaintenanceStatus = async () => {
+    try {
+      const { data } = await api.get('/admin/maintenance');
+      setMaintenanceMode(data.maintenanceMode);
+    } catch (err) {
+      console.error('Failed to fetch maintenance status');
+    }
+  };
+
+  const handleMaintenanceToggle = async () => {
+    try {
+      setIsMaintenanceLoading(true);
+      const newStatus = !maintenanceMode;
+      await api.post('/admin/maintenance', { maintenanceMode: newStatus });
+      setMaintenanceMode(newStatus);
+      toast.success(`MAINTENANCE MODE ${newStatus ? 'ENABLED' : 'DISABLED'}`);
+    } catch (err) {
+      toast.error('FAILED TO TOGGLE MAINTENANCE MODE');
+    } finally {
+      setIsMaintenanceLoading(false);
     }
   };
 
@@ -61,9 +87,27 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="max-w-[90%] mx-auto py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tight">ADMIN <span className="text-brand-red">DASHBOARD</span></h1>
-        <p className="text-gray-500 font-bold uppercase tracking-widest mt-1">User Management & Authorization</p>
+      <div className="mb-8 flex justify-between items-end">
+        <div>
+          <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tight">ADMIN <span className="text-brand-red">DASHBOARD</span></h1>
+          <p className="text-gray-500 font-bold uppercase tracking-widest mt-1">User Management & Authorization</p>
+        </div>
+        
+        <div className="flex flex-col items-end gap-2">
+          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] italic">Critical Systems Control</span>
+          <button
+            onClick={handleMaintenanceToggle}
+            disabled={isMaintenanceLoading}
+            className={`px-6 py-3 rounded-none font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl flex items-center gap-3 cursor-pointer ${
+              maintenanceMode 
+              ? 'bg-red-600 text-white hover:bg-zinc-900 ring-4 ring-red-600/20' 
+              : 'bg-zinc-900 text-white hover:bg-red-600'
+            }`}
+          >
+            <div className={`w-2 h-2 rounded-full ${maintenanceMode ? 'bg-white animate-pulse' : 'bg-red-600'}`}></div>
+            {isMaintenanceLoading ? 'Syncing...' : maintenanceMode ? 'Disable Maintenance' : 'Enable Maintenance'}
+          </button>
+        </div>
       </div>
       
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">

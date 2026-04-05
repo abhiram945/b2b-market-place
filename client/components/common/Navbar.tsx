@@ -35,7 +35,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
                     <MenuIcon className="h-6 w-6" />
                 </button>
                 <Link to="/" className="text-2xl font-black text-gray-900 tracking-tight">
-                    <span className="text-brand-red">B2B</span>MARKET
+                    <span className="text-brand-red">Techtronics</span> Ventures
                 </Link>
                 
                 <nav className="hidden lg:ml-10 lg:flex items-center space-x-6">

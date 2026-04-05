@@ -134,6 +134,7 @@ const userSlice = createSlice({
   reducers: {
     logout(state) {
       localStorage.removeItem('token');
+      localStorage.removeItem('cart');
       state.isAuthenticated = false;
       state.user = null;
       state.token = null;
