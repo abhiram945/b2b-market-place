@@ -6,6 +6,15 @@ import { checkAndSendNotifications } from '../utils/notificationSender.js';
 import { ROLES } from '../utils/constants.js';
 import { getConfig, updateConfig, addToConfig } from '../utils/jsonStore.js';
 
+const normalizeString = (value) => typeof value === 'string' ? value.trim().toLowerCase() : value;
+const normalizeInteger = (value) => {
+  if (value === undefined || value === null || value === '') return undefined;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isNaN(parsed) ? undefined : parsed;
+};
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const exactCaseInsensitive = (value) => ({ $regex: `^${escapeRegex(value)}$`, $options: 'i' });
+
 // @desc    Fetch all products
 // @route   GET /api/products
 // @access  Public
@@ -30,13 +39,13 @@ const getProducts = asyncHandler(async (req, res) => {
     query.title = { $regex: search, $options: 'i' };
   }
   if (brand) {
-    query.brand = brand;
+    query.brand = exactCaseInsensitive(normalizeString(brand));
   }
   if (category) {
-    query.category = category;
+    query.category = exactCaseInsensitive(normalizeString(category));
   }
   if (location) {
-    query.location = location;
+    query.location = exactCaseInsensitive(normalizeString(location));
   }
   if (minPrice || maxPrice) {
     query.price = {};
@@ -77,16 +86,16 @@ const createProduct = asyncHandler(async (req, res) => {
 
   const product = new Product({
     user,
-    title,
-    brand,
-    category,
-    location,
+    title: normalizeString(title),
+    brand: normalizeString(brand),
+    category: normalizeString(category),
+    location: normalizeString(location),
     price,
     minOrderQty,
     maxOrderQty,
     stockQty,
-    condition,
-    eta,
+    condition: normalizeString(condition),
+    eta: normalizeInteger(eta),
   });
 
   const createdProduct = await product.save();
@@ -130,16 +139,16 @@ const updateProduct = asyncHandler(async (req, res) => {
     eta,
   } = req.body;
 
-  product.title = title !== undefined ? title : product.title;
-  product.brand = brand !== undefined ? brand : product.brand;
-  product.category = category !== undefined ? category : product.category;
-  product.location = location !== undefined ? location : product.location;
+  product.title = title !== undefined ? normalizeString(title) : product.title;
+  product.brand = brand !== undefined ? normalizeString(brand) : product.brand;
+  product.category = category !== undefined ? normalizeString(category) : product.category;
+  product.location = location !== undefined ? normalizeString(location) : product.location;
   product.price = price !== undefined ? Number(price) : product.price;
   product.stockQty = stockQty !== undefined ? Number(stockQty) : product.stockQty;
   product.minOrderQty = minOrderQty !== undefined ? Number(minOrderQty) : product.minOrderQty;
   product.maxOrderQty = maxOrderQty !== undefined ? Number(maxOrderQty) : product.maxOrderQty;
-  product.eta = eta !== undefined ? eta : product.eta;
-  product.condition = condition !== undefined ? condition : product.condition;
+  product.eta = eta !== undefined ? normalizeInteger(eta) : product.eta;
+  product.condition = condition !== undefined ? normalizeString(condition) : product.condition;
 
   if (isStockEnabled !== undefined) {
     product.isStockEnabled = isStockEnabled;
@@ -259,16 +268,16 @@ const bulkCreateProducts = asyncHandler(async (req, res) => {
 
       const product = new Product({
         user: productData.user,
-        title: productData.title,
-        brand: productData.brand,
-        category: productData.category,
-        location: productData.location,
+        title: normalizeString(productData.title),
+        brand: normalizeString(productData.brand),
+        category: normalizeString(productData.category),
+        location: normalizeString(productData.location),
         price: productData.price,
         minOrderQty: productData.minOrderQty,
         maxOrderQty: productData.maxOrderQty,
         stockQty: productData.stockQty,
-        condition: productData.condition,
-        eta: productData.eta,
+        condition: normalizeString(productData.condition),
+        eta: normalizeInteger(productData.eta),
         isStockEnabled: productData.isStockEnabled !== undefined ? productData.isStockEnabled : true,
       });
 
@@ -305,7 +314,7 @@ const bulkCreateProducts = asyncHandler(async (req, res) => {
         const exists = config[key].some(v => v && v.toLowerCase() === normalized);
         
         if (!exists) {
-          config[key].push(val.trim());
+          config[key].push(normalized);
           configUpdated = true;
         }
       }

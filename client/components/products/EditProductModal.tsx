@@ -9,6 +9,7 @@ import { Product } from '../../types';
 import api from '../../api';
 import { toast } from 'react-toastify';
 import { RootState } from '../../redux/store';
+import { toLowerTrim } from '../../utils/normalize';
 
 interface EditProductModalProps {
   isOpen: boolean;
@@ -30,7 +31,7 @@ const schema = yup.object().shape({
   isStockEnabled: yup.boolean().optional(),
   minOrderQty: yup.number().integer().positive().optional(),
   maxOrderQty: yup.number().integer().positive().min(yup.ref('minOrderQty'), 'Max cannot be less than Min').optional(),
-  eta: yup.string().optional(),
+  eta: yup.number().integer().min(0).optional(),
 });
 
 interface InputFieldProps {
@@ -80,11 +81,12 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
 
     try {
       const payload = { ...data };
-      if (payload.title) payload.title = payload.title.toLowerCase();
-      if (payload.brand) payload.brand = payload.brand.toLowerCase();
-      if (payload.category) payload.category = payload.category.toLowerCase();
-      if (payload.location) payload.location = payload.location.toLowerCase();
-      if (payload.eta) payload.eta = payload.eta.toLowerCase();
+      if (payload.title) payload.title = toLowerTrim(payload.title);
+      if (payload.brand) payload.brand = toLowerTrim(payload.brand);
+      if (payload.category) payload.category = toLowerTrim(payload.category);
+      if (payload.location) payload.location = toLowerTrim(payload.location);
+      if (payload.condition) payload.condition = toLowerTrim(payload.condition);
+      if (payload.eta !== undefined) payload.eta = Number(payload.eta);
 
       const url = role === 'admin' ? `/products/${product._id}` : `/products/${product._id}/vendor-update`;
       await api.put(url, payload);
@@ -140,7 +142,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
                 <InputField label="stockQty" name="stockQty" type="number" register={register} errors={errors} />
                 <InputField label="minOrderQty" name="minOrderQty" type="number" register={register} errors={errors} />
                 <InputField label="maxOrderQty" name="maxOrderQty" type="number" register={register} errors={errors} />
-                <InputField label="eta" name="eta" register={register} errors={errors} />
+                <InputField label="eta" name="eta" type="number" register={register} errors={errors} />
 
                 <div className="flex items-center space-x-4 pt-6 ml-1">
                     <input type="checkbox" {...register('isStockEnabled')} className="w-5 h-5 accent-brand-red rounded cursor-pointer" />

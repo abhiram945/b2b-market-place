@@ -8,6 +8,7 @@ import { Building } from '../../components/icons';
 import { AppDispatch, RootState } from '../../redux/store';
 import { toast } from 'react-toastify';
 import api from '../../api';
+import { toLowerTrim, toLowerTrimOptional } from '../../utils/normalize';
 
 type RegisterFormInputs = {
   fullName: string;
@@ -62,16 +63,17 @@ const Register: React.FC = () => {
   const onSubmit: SubmitHandler<RegisterFormInputs> = (data) => {
     if (data.role === '') return;
 
+    const normalizedWebsite = toLowerTrimOptional(data.website);
     const formData = new FormData();
-    formData.append('fullName', data.fullName);
-    formData.append('email', data.email);
-    formData.append('phoneNumber', data.phoneNumber);
-    formData.append('companyName', data.companyName);
+    formData.append('fullName', toLowerTrim(data.fullName));
+    formData.append('email', toLowerTrim(data.email));
+    formData.append('phoneNumber', toLowerTrim(data.phoneNumber));
+    formData.append('companyName', toLowerTrim(data.companyName));
     formData.append('password', data.password);
-    formData.append('role', data.role);
+    formData.append('role', toLowerTrim(data.role));
     
-    if (data.website) formData.append('website', data.website);
-    if (data.role === 'buyer') formData.append('address', data.address);
+    if (normalizedWebsite) formData.append('website', normalizedWebsite);
+    if (data.role === 'buyer') formData.append('address', toLowerTrim(data.address));
 
     if (data.tradeLicense?.[0]) formData.append('tradeLicense', data.tradeLicense[0]);
     if (data.idDocument?.[0]) formData.append('idDocument', data.idDocument[0]);

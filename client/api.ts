@@ -24,6 +24,7 @@ api.interceptors.request.use(
 // Add response interceptor to handle 401 and refresh token
 let isRefreshing = false;
 let failedQueue: any[] = [];
+let hasHandledSessionExpiry = false;
 
 const processQueue = (error: any, token: string | null = null) => {
   failedQueue.forEach((prom) => {
@@ -41,8 +42,9 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const status = error.response?.status;
 
-    if (error.response && error.response.status === 503) {
+    if (status === 503) {
       if (window.location.pathname !== '/maintenance') {
         window.location.href = '/maintenance';
       }
@@ -53,7 +55,7 @@ api.interceptors.response.use(
     const isLoginRequest = originalRequest.url && originalRequest.url.includes('/auth/login');
     const isRefreshRequest = originalRequest.url && originalRequest.url.includes('/auth/refresh');
     
-    if (error.response && error.response.status === 401 && !originalRequest._retry && !isLoginRequest && !isRefreshRequest) {
+    if (status === 401 && originalRequest && !originalRequest._retry && !isLoginRequest && !isRefreshRequest) {
       
       if (isRefreshing) {
         return new Promise(function(resolve, reject) {
@@ -77,6 +79,7 @@ api.interceptors.response.use(
         
         const newToken = data.token;
         localStorage.setItem('token', newToken);
+        hasHandledSessionExpiry = false;
         
         // Update the authorization header for ALL subsequent requests
         api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
@@ -89,22 +92,31 @@ api.interceptors.response.use(
         // CRITICAL: Return the same api call but with the NEW token
         return api(originalRequest);
       } catch (refreshError: any) {
-        console.error('[API] Token refresh failed:', refreshError.response?.data?.message || refreshError.message);
         processQueue(refreshError, null);
         isRefreshing = false;
         
         // Refresh token failed or expired, logout user
-        console.warn('[API] Session expired. Redirecting to login.');
         localStorage.removeItem('token');
         localStorage.removeItem('cart');
-        // Avoid infinite loop if refresh itself fails with 401
-        if (window.location.pathname !== '/login') {
+        delete api.defaults.headers.common['Authorization'];
+
+        // Avoid repeated console noise and redirect loops on expected session expiry
+        if (!hasHandledSessionExpiry) {
+          hasHandledSessionExpiry = true;
+          if (window.location.pathname !== '/login') {
             window.location.href = '/login';
+          }
         }
         return Promise.reject(refreshError);
       }
     }
     
+    if (status === 401 && isRefreshRequest) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('cart');
+      delete api.defaults.headers.common['Authorization'];
+    }
+
     // For login requests or other non-refreshable 401s, return the original error
     return Promise.reject(error);
   }

@@ -3,6 +3,9 @@ import asyncHandler from 'express-async-handler';
 import User from '../models/User.js';
 import { ROLES } from '../utils/constants.js';
 
+const isExpectedJwtError = (error) =>
+  error?.name === 'TokenExpiredError' || error?.name === 'JsonWebTokenError';
+
 const protect = asyncHandler(async (req, res, next) => {
   let token;
   if (
@@ -26,7 +29,9 @@ const protect = asyncHandler(async (req, res, next) => {
 
       return next(); // Use return to prevent fall-through
     } catch (error) {
-      console.error('Auth middleware error:', error);
+      if (!isExpectedJwtError(error)) {
+        console.error('Auth middleware error:', error);
+      }
       res.status(401);
       throw new Error('Not authorized, token failed');
     }
@@ -86,7 +91,9 @@ const optionalProtect = asyncHandler(async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       req.user = await User.findById(decoded._id).select('-password');
     } catch (error) {
-      console.error('Optional auth error:', error);
+      if (!isExpectedJwtError(error)) {
+        console.error('Optional auth error:', error);
+      }
       // Don't throw error, just continue without req.user
     }
   }

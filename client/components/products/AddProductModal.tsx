@@ -8,6 +8,7 @@ import { Product } from '../../types';
 import api from '../../api';
 import { toast } from 'react-toastify';
 import { RootState } from '../../redux/store';
+import { toLowerTrim } from '../../utils/normalize';
 
 interface AddProductModalProps {
   isOpen: boolean;
@@ -28,7 +29,7 @@ const schema = yup.object().shape({
   minOrderQty: yup.number().integer().positive().required('Min order qty is required'),
   maxOrderQty: yup.number().integer().positive().min(yup.ref('minOrderQty'), 'Max cannot be less than Min').required('Max order qty is required'),
   stockQty: yup.number().integer().min(0).required('Stock qty is required'),
-  eta: yup.string().optional(),
+  eta: yup.number().integer().min(0).optional(),
 });
 
 interface InputFieldProps {
@@ -65,12 +66,12 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onPr
     try {
       const payload = {
         ...data,
-        title: data.title.toLowerCase(),
-        brand: data.brand.toLowerCase(),
-        category: data.category.toLowerCase(),
-        location: data.location.toLowerCase(),
-        condition: data.condition.toLowerCase(),
-        eta: data.eta ? data.eta.toLowerCase() : undefined,
+        title: toLowerTrim(data.title),
+        brand: toLowerTrim(data.brand),
+        category: toLowerTrim(data.category),
+        location: toLowerTrim(data.location),
+        condition: toLowerTrim(data.condition),
+        eta: data.eta !== undefined ? Number(data.eta) : undefined,
       };
       await api.post('/products', payload);
       toast.success('Inventory Entry Created');
@@ -124,7 +125,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onPr
           <InputField label="Min Order Qty" name="minOrderQty" type="number" register={register} errors={errors} />
           <InputField label="max Order Qty" name="maxOrderQty" type="number" register={register} errors={errors} />
           <InputField label="stock Qty" name="stockQty" type="number" register={register} errors={errors} />
-          <InputField label="eta" name="eta" register={register} errors={errors} />
+          <InputField label="eta" name="eta" type="number" register={register} errors={errors} />
         </div>
 
         <div className="pt-8 border-t border-gray-100 flex justify-end items-center gap-6">

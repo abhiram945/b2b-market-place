@@ -189,11 +189,11 @@ export const generateInvoice = async (order, buyer) => {
     drawBankRow('Beneficiary Name:', 'Techtronics Technologies FZCO');
     drawBankRow('Beneficiary Address:', '101,Building A2, Dubai Digital Park, Dubai Silicon Oasis, Dubai, UAE');
     drawBankRow('Currency:', 'USD ($)');
-    drawBankRow('Bank Name:', 'NATIONAL BANK OF RAS AL KHAIMAH (PJSC)');
-    drawBankRow('Account Number:', '332930994001');
-    drawBankRow('IBAN Number:', 'AE24 0400 0003 3293 0994 001');
-    drawBankRow('SWIFT Code:', 'NRAKAEAKXXX');
-    drawBankRow('Bank Branch:', 'Umm Hurrair, Dubai, UAE');
+    drawBankRow('Bank Name:', process.env.BANK_NAME);
+    drawBankRow('Account Number:', process.env.BANK_ACC_NUMBER);
+    drawBankRow('IBAN Number:', process.env.IBAN_NUMBER);
+    drawBankRow('SWIFT Code:', process.env.SWIFT_CODE);
+    drawBankRow('Bank Branch:', process.env.BANK_BRANCH);
 
     y += 10;
     doc.fontSize(8).font('Helvetica-Bold').text('Total Quantity In Word :', 30, y);

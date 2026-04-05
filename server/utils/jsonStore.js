@@ -7,6 +7,8 @@ const __dirname = path.dirname(__filename);
 
 const configPath = path.join(__dirname, '../data/config.json');
 
+const normalizeValue = (value) => typeof value === 'string' ? value.trim().toLowerCase() : value;
+
 export const getConfig = async () => {
   try {
     const data = await fs.readFile(configPath, 'utf8');
@@ -17,7 +19,7 @@ export const getConfig = async () => {
       brands: [],
       categories: [],
       locations: [],
-      conditions: ["New", "Used", "Refurbished"],
+      conditions: ['new', 'used', 'refurbished'],
       companyNames: [],
       maintenanceMode: false
     };
@@ -40,9 +42,9 @@ export const addToConfig = async (key, value) => {
   if (!value) return;
   try {
     const config = await getConfig();
-    const normalizedValue = value.toLowerCase().trim();
+    const normalizedValue = normalizeValue(value);
     if (!config[key].map(v => v.toLowerCase()).includes(normalizedValue)) {
-      config[key].push(value.trim());
+      config[key].push(normalizedValue);
       await updateConfig(config);
     }
   } catch (error) {

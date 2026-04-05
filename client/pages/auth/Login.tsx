@@ -5,6 +5,7 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { loginUser } from '../../redux/slices/userSlice';
 import { RootState, AppDispatch } from '../../redux/store';
 import { Building } from '../../components/icons';
+import { toLowerTrim } from '../../utils/normalize';
 
 type LoginFormInputs = {
   email: string;
@@ -36,7 +37,10 @@ const Login: React.FC = () => {
   }, [isAuthenticated, navigate, from, user]);
 
   const onSubmit: SubmitHandler<LoginFormInputs> = (data) => {
-    dispatch(loginUser(data));
+    dispatch(loginUser({
+      email: toLowerTrim(data.email),
+      password: data.password,
+    }));
   };
 
   return (

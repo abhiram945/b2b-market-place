@@ -22,7 +22,7 @@ export interface Product {
   maxOrderQty: number;
   stockQty: number;
   isStockEnabled: boolean;
-  eta?: string;
+  eta?: number;
 }
 
 export interface OrderItem {

@@ -50,8 +50,6 @@ const AdminProductList: React.FC = () => {
 
   const handleCloseBulkUploadModal = () => {
     setIsBulkUploadModalOpen(false);
-    // Refresh product list after bulk upload, if successful
-    dispatch(fetchProducts({ page: currentPage, limit: productsPerPage }));
   };
 
   const handleDeleteClick = async (productId: string) => {
@@ -71,12 +69,6 @@ const AdminProductList: React.FC = () => {
   };
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
-
-  if (loading) return (
-    <div className="flex justify-center items-center py-32">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-red"></div>
-    </div>
-  );
 
   return (
     <div className="max-w-[90%] mx-auto py-8">
@@ -103,12 +95,21 @@ const AdminProductList: React.FC = () => {
         </div>
       </div>
 
-      {products.length === 0 ? (
+      {loading && products.length === 0 ? (
+        <div className="flex justify-center items-center py-32">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-red"></div>
+        </div>
+      ) : products.length === 0 ? (
         <div className="bg-white p-8 rounded-lg border border-gray-200 text-center shadow-sm">
           <p className="text-gray-500 font-bold uppercase tracking-widest">No products found in the inventory.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-200">
+        <div className="relative overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-200">
+          {loading && (
+            <div className="absolute inset-0 z-10 bg-white/65 backdrop-blur-[1px] flex items-center justify-center">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-red"></div>
+            </div>
+          )}
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -167,7 +168,11 @@ const AdminProductList: React.FC = () => {
           onProductUpdated={handleProductAddedOrUpdated}
         />
       )}
-      <BulkUploadModal isOpen={isBulkUploadModalOpen} onClose={handleCloseBulkUploadModal} />
+      <BulkUploadModal
+        isOpen={isBulkUploadModalOpen}
+        onClose={handleCloseBulkUploadModal}
+        onUploadSuccess={handleProductAddedOrUpdated}
+      />
     </div>
   );
 };

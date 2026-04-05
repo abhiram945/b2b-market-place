@@ -2,20 +2,25 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { ROLES, USER_STATUS } from '../utils/constants.js';
 
+const lowerTrim = (value) => typeof value === 'string' ? value.trim().toLowerCase() : value;
+
 const userSchema = mongoose.Schema(
   {
     fullName: {
       type: String,
       required: true,
+      set: lowerTrim,
     },
     email: {
       type: String,
       required: true,
       unique: true,
+      set: lowerTrim,
     },
     phoneNumber: {
       type: String,
       required: false, // Optional for now, but recommended for WhatsApp
+      set: lowerTrim,
     },
     password: {
       type: String,
@@ -24,10 +29,12 @@ const userSchema = mongoose.Schema(
     companyName: {
       type: String,
       required: true,
+      set: lowerTrim,
     },
     address: {
       type: String,
       required: false, // Required only for buyers, handled in controller
+      set: lowerTrim,
     },
     role: {
       type: String,
@@ -43,6 +50,7 @@ const userSchema = mongoose.Schema(
     website: {
       type: String,
       required: false,
+      set: lowerTrim,
     },
     tradeLicense: {
       type: String,

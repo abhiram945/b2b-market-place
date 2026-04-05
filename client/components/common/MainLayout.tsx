@@ -41,11 +41,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   }, [dispatch, isAuthenticated, cartItems]);
 
   return (
-    <div className="flex bg-gray-50 text-gray-900">
+    <div className="flex min-h-screen bg-gray-50 text-gray-900">
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setSidebarOpen} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1">
+        <main className="flex-1 pt-16">
           <div className="w-full">
             {children}
           </div>

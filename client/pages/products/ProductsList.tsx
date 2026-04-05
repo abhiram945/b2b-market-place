@@ -58,6 +58,9 @@ const ProductsList: React.FC = () => {
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
     setSelectedProductForEdit(null);
+  };
+
+  const handleEditSuccess = () => {
     dispatch(fetchProducts(Object.fromEntries(searchParams.entries())));
   };
 
@@ -165,12 +168,17 @@ const ProductsList: React.FC = () => {
 
       <ProductDetailsModal isOpen={isDetailsModalOpen} onClose={() => setIsDetailsModalOpen(false)} product={selectedProduct} />
       {isEditModalOpen && selectedProductForEdit && (
-        <EditProductModal isOpen={isEditModalOpen} onClose={handleCloseEditModal} product={selectedProductForEdit} role={role} onProductUpdated={handleCloseEditModal} />
+        <EditProductModal
+          isOpen={isEditModalOpen}
+          onClose={handleCloseEditModal}
+          product={selectedProductForEdit}
+          role={role}
+          onProductUpdated={handleEditSuccess}
+        />
       )}
     </div>
   );
 };
 
 export default ProductsList;
-
 

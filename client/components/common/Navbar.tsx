@@ -27,7 +27,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
   const navLinks = getNavLinks(user?.role as any || null);
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+    <header className="fixed inset-x-0 top-0 bg-white border-b border-gray-200 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
             <div className="flex items-center">
@@ -70,7 +70,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
                 {isAuthenticated ? (
                     <div className="flex items-center gap-4 pl-6 border-l border-gray-200">
                         <div className="hidden sm:block text-right">
-                            <p className="text-sm font-bold text-gray-900 leading-none">{user?.fullName}</p>
+                            <p className="text-sm font-bold text-gray-900 leading-none capitalize">{user?.fullName}</p>
                             <p className="text-[10px] font-bold text-brand-red uppercase tracking-wider">{user?.role}</p>
                         </div>
                         <button onClick={handleLogout} className="text-gray-400 hover:text-brand-red transition-colors" title="Logout">

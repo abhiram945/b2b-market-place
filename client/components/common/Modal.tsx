@@ -6,9 +6,10 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  closeButtonClassName?: string;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, closeButtonClassName = 'text-gray-400 hover:text-brand-red' }) => {
   if (!isOpen) return null;
 
   return (
@@ -22,7 +23,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
           </h2>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-brand-red transition-all transform hover:rotate-90"
+            className={`p-2 transition-all transform hover:rotate-90 ${closeButtonClassName}`}
           >
             <XIcon className="w-6 h-6" />
           </button>

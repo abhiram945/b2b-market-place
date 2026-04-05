@@ -7,6 +7,8 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
+const normalizeString = (value) => typeof value === 'string' ? value.trim().toLowerCase() : value;
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -75,7 +77,7 @@ const getMaintenanceStatus = asyncHandler(async (req, res) => {
 const uploadBrandLogo = asyncHandler(async (req, res) => {
   console.log("uploadBrandLogo req.body = ")
   console.log(req.body)
-  const { name } = req.body;
+  const name = normalizeString(req.body.name);
   if (!name) {
     res.status(400);
     throw new Error('Brand name is required');

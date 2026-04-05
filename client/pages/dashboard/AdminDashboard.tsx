@@ -3,6 +3,7 @@ import api from '../../api';
 import { toast } from 'react-toastify';
 import { fetchUserSubscriptions } from '../../redux/slices/notificationSlice'; // Assuming this is an async thunk
 import { useDispatch } from 'react-redux'; // Import useDispatch
+import { toLowerTrim } from '../../utils/normalize';
 
 interface User {
   _id: string;
@@ -147,7 +148,7 @@ const AdminDashboard: React.FC = () => {
 
     setIsBrandLogoUploading(true);
     const formData = new FormData();
-    formData.append('name', brandName); // Send brand name
+    formData.append('name', toLowerTrim(brandName)); // Send brand name
     formData.append('image', brandLogo);
 
     try {

@@ -1,27 +1,27 @@
 {
   "brands": [
-    "Samsung",
-    "Dell",
-    "HP",
-    "Sony",
-    "Lenovo",
+    "samsung",
+    "dell",
+    "hp",
+    "sony",
+    "lenovo",
     "apple"
   ],
   "categories": [
     "mobile",
-    "Laptop",
-    "Audio",
-    "Tablet",
-    "Gaming",
-    "Monitor"
+    "laptop",
+    "audio",
+    "tablet",
+    "gaming",
+    "monitor"
   ],
   "locations": [
     "uae"
   ],
   "conditions": [
-    "New",
-    "Used",
-    "Refurbished"
+    "new",
+    "used",
+    "refurbished"
   ],
   "companyNames": [
     "rrr"

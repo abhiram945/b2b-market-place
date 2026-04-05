@@ -5,13 +5,16 @@ import jwt from 'jsonwebtoken';
 import { ROLES, USER_STATUS } from '../utils/constants.js';
 import { addToConfig, getConfig } from '../utils/jsonStore.js';
 
+const normalizeString = (value) => typeof value === 'string' ? value.trim().toLowerCase() : value;
+
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
   const { fullName, email, password, companyName, address, phoneNumber, role, website } = req.body;
 
-  const userExists = await User.findOne({ email: email.toLowerCase() });
+  const normalizedEmail = normalizeString(email);
+  const userExists = await User.findOne({ email: normalizedEmail });
 
   if (userExists) {
     console.warn(`[AUTH] Registration failed: User ${email} already exists`);
@@ -19,7 +22,7 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error('User already exists');
   }
 
-  const selectedRole = role || ROLES.BUYER;
+  const selectedRole = normalizeString(role) || ROLES.BUYER;
 
   if (selectedRole === ROLES.BUYER && !address) {
     res.status(400);
@@ -37,14 +40,14 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const user = await User.create({
-    fullName,
-    email: email.toLowerCase(),
+    fullName: normalizeString(fullName),
+    email: normalizedEmail,
     password,
-    companyName,
-    address,
+    companyName: normalizeString(companyName),
+    address: normalizeString(address),
     role: selectedRole,
-    phoneNumber,
-    website,
+    phoneNumber: normalizeString(phoneNumber),
+    website: normalizeString(website),
     tradeLicense,
     idDocument,
     vatRegistration,
@@ -79,7 +82,8 @@ const getRegisterConfig = asyncHandler(async (req, res) => {
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email: email.toLowerCase() });
+  const normalizedEmail = normalizeString(email);
+  const user = await User.findOne({ email: normalizedEmail });
 
   if (user && (await user.matchPassword(password))) {
     if (user.status === USER_STATUS.PENDING) {
