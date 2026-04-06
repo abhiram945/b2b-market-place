@@ -1,6 +1,6 @@
-techtronics-backend.pem
-changes.txt
-data.csv
+resources
+server/uploads/documents/*
+server/uploads/invoices/*
 client/.env
 server/.env
 # Logs
