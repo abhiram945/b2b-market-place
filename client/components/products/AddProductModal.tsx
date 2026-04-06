@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { X } from '../icons';
 import { useForm, SubmitHandler, UseFormRegister, FieldErrors } from 'react-hook-form';
 import { useSelector } from 'react-redux';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -6,7 +7,6 @@ import * as yup from 'yup';
 import Modal from '../common/Modal';
 import { Product } from '../../types';
 import api from '../../api';
-import { toast } from 'react-toastify';
 import { RootState } from '../../redux/store';
 import { toLowerTrim } from '../../utils/normalize';
 
@@ -26,8 +26,8 @@ const schema = yup.object().shape({
   location: yup.string().required('Location is required'),
   price: yup.number().positive('Price must be positive').required('Price is required'),
   condition: yup.string().required('Condition is required'),
-  minOrderQty: yup.number().integer().positive().required('Min order qty is required'),
-  maxOrderQty: yup.number().integer().positive().min(yup.ref('minOrderQty'), 'Max cannot be less than Min').required('Max order qty is required'),
+  minOrderQty: yup.number().integer().positive().optional(),
+  maxOrderQty: yup.number().integer().positive().min(yup.ref('minOrderQty'), 'Max cannot be less than Min').optional(),
   stockQty: yup.number().integer().min(0).required('Stock qty is required'),
   eta: yup.number().integer().min(0).optional(),
 });
@@ -62,8 +62,32 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onPr
     resolver: yupResolver(schema) as any,
   });
 
+  const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
+  useEffect(() => {
+    if (message?.type === 'success') {
+      const t = setTimeout(() => setMessage(null), 2000);
+      return () => clearTimeout(t);
+    }
+  }, [message]);
+
   const onSubmit: SubmitHandler<AddProductFormData> = async (data) => {
     try {
+      // Apply defaults consistent with bulk upload: minOrderQty defaults to 1, maxOrderQty defaults to stockQty
+      const computedMin = data.minOrderQty !== undefined && data.minOrderQty !== null && String(data.minOrderQty).trim() !== ''
+        ? Number(data.minOrderQty)
+        : 1;
+      const computedStock = data.stockQty !== undefined && data.stockQty !== null && String(data.stockQty).trim() !== ''
+        ? Number(data.stockQty)
+        : 0;
+      const computedMax = data.maxOrderQty !== undefined && data.maxOrderQty !== null && String(data.maxOrderQty).trim() !== ''
+        ? Number(data.maxOrderQty)
+        : computedStock;
+
+      // Ensure max >= min
+      const finalMin = computedMin;
+      const finalMax = computedMax < finalMin ? finalMin : computedMax;
+
       const payload = {
         ...data,
         title: toLowerTrim(data.title),
@@ -72,20 +96,33 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onPr
         location: toLowerTrim(data.location),
         condition: toLowerTrim(data.condition),
         eta: data.eta !== undefined ? Number(data.eta) : undefined,
+        minOrderQty: finalMin,
+        maxOrderQty: finalMax,
+        stockQty: computedStock,
       };
       await api.post('/products', payload);
-      toast.success('Inventory Entry Created');
+      setMessage({ type: 'success', text: 'Inventory Entry Created' });
       reset();
       onProductAdded();
       onClose();
     } catch (err: any) {
-      toast.error('Operation Failed');
+      setMessage({ type: 'error', text: 'Operation Failed' });
     }
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Add new product">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 py-2">
+        {message && (
+          <div className={`${message.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded-md flex justify-between items-start`} role="alert">
+            <div className="text-sm font-bold">{message.text}</div>
+            {message.type === 'error' ? (
+              <button type="button" onClick={() => setMessage(null)} className="ml-4 text-xs font-black uppercase tracking-widest">
+                <X className="w-4 h-4" />
+              </button>
+            ) : null}
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
           <div className="md:col-span-2">
             <InputField label="title" name="title" register={register} errors={errors} />

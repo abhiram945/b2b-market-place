@@ -1,11 +1,11 @@
 {
   "brands": [
+    "apple",
     "samsung",
     "dell",
     "hp",
     "sony",
-    "lenovo",
-    "apple"
+    "lenovo"
   ],
   "categories": [
     "mobile",
@@ -24,8 +24,9 @@
     "refurbished"
   ],
   "companyNames": [
-    "rrr"
+    "rrr",
+    "techtronics"
   ],
   "maintenanceMode": false,
-  "banner": "/uploads/banners/user-dashboard-banner.jpg"
+  "banner": "/uploads/banners/user-dashboard-banner.png"
 }

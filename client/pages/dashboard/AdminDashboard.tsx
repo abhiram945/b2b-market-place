@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { X } from '../../components/icons';
 import api from '../../api';
-import { toast } from 'react-toastify';
 import { fetchUserSubscriptions } from '../../redux/slices/notificationSlice'; // Assuming this is an async thunk
 import { useDispatch } from 'react-redux'; // Import useDispatch
+import { AppDispatch } from '../../redux/store';
 import { toLowerTrim } from '../../utils/normalize';
 
 interface User {
@@ -19,7 +20,7 @@ interface User {
 }
 
 const AdminDashboard: React.FC = () => {
-  const dispatch = useDispatch(); // Initialize useDispatch
+  const dispatch = useDispatch<AppDispatch>(); // Initialize useDispatch
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
@@ -36,6 +37,14 @@ const AdminDashboard: React.FC = () => {
   const [currentBannerUrl, setCurrentBannerUrl] = useState<string | null>(null); // State for current banner URL
   const [isBrandLogoUploading, setIsBrandLogoUploading] = useState(false); // Specific state for brand logo upload
   const [isBannerUploading, setIsBannerUploading] = useState(false); // Specific state for banner upload
+  const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
+  useEffect(() => {
+    if (message?.type === 'success') {
+      const t = setTimeout(() => setMessage(null), 2000);
+      return () => clearTimeout(t);
+    }
+  }, [message]);
 
   // --- Functions to fetch data ---
   const fetchUsers = async () => {
@@ -44,7 +53,7 @@ const AdminDashboard: React.FC = () => {
       const { data } = await api.get('/admin/users');
       setUsers(data);
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to fetch users');
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to fetch users' });
     } finally {
       setLoading(false);
     }
@@ -56,7 +65,7 @@ const AdminDashboard: React.FC = () => {
       setMaintenanceMode(data.maintenanceMode);
     } catch (err) {
       console.error('Failed to fetch maintenance status:', err);
-      toast.error('Failed to load maintenance status.');
+      setMessage({ type: 'error', text: 'Failed to load maintenance status.' });
     }
   };
 
@@ -67,7 +76,7 @@ const AdminDashboard: React.FC = () => {
       setCurrentBannerUrl(data.banner || null);
     } catch (err) {
       console.error('Failed to fetch configuration:', err);
-      toast.error('Failed to load banner configuration.');
+      setMessage({ type: 'error', text: 'Failed to load banner configuration.' });
     }
   };
 
@@ -89,9 +98,8 @@ const AdminDashboard: React.FC = () => {
       const newStatus = !maintenanceMode;
       await api.post('/admin/maintenance', { maintenanceMode: newStatus });
       setMaintenanceMode(newStatus);
-      toast.success(`MAINTENANCE MODE ${newStatus ? 'ENABLED' : 'DISABLED'}`);
     } catch (err) {
-      toast.error('FAILED TO TOGGLE MAINTENANCE MODE');
+      setMessage({ type: 'error', text: 'FAILED TO TOGGLE MAINTENANCE MODE' });
     } finally {
       setIsMaintenanceLoading(false);
     }
@@ -103,10 +111,10 @@ const AdminDashboard: React.FC = () => {
       setUpdatingUserId(userId);
       setUpdateType(status === 'approved' ? 'approving' : 'rejecting');
       await api.put(`/admin/users/${userId}/status`, { status });
-      toast.success(`User ${status} successfully!`);
+      setMessage({ type: 'success', text: `User ${status} successfully!` });
       fetchUsers(); // Refresh users list after status update
     } catch (err: any) {
-      toast.error(err.response?.data?.message || `Failed to ${status} user`);
+      setMessage({ type: 'error', text: err.response?.data?.message || `Failed to ${status} user` });
     } finally {
       setUpdatingUserId(null);
       setUpdateType(null);
@@ -119,30 +127,37 @@ const AdminDashboard: React.FC = () => {
     try {
       const filename = docPath.split('/').pop(); // Extract filename from path
       if (!filename) {
-        toast.error('Invalid document path.');
+        setMessage({ type: 'error', text: 'Invalid document path.' });
         return;
       }
       const response = await api.get(`/admin/documents/${filename}`, {
         responseType: 'blob',
       });
-      const file = new Blob([response.data]); // MIME type can be inferred or set if known
+      const file = new Blob([response.data], { type: 'application/pdf' });
       const fileURL = URL.createObjectURL(file);
       window.open(fileURL, '_blank');
     } catch (err) {
       console.error('Failed to view document:', err);
-      toast.error('FAILED TO VIEW DOCUMENT');
+      setMessage({ type: 'error', text: 'FAILED TO VIEW DOCUMENT' });
     }
   };
 
   // --- Handlers for brand logo upload ---
   const handleBrandLogoUpload = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!brandLogo) {
-      toast.error('Please select a logo image.');
+      setMessage({ type: 'error', text: 'Please select a logo image.' });
       return;
     }
     if (!brandName) {
-      toast.error('Please enter a brand name.');
+      setMessage({ type: 'error', text: 'Please enter a brand name.' });
+      return;
+    }
+    if (brandLogo.type !== 'image/png') {
+      setMessage({ type: 'error', text: 'Only PNG files are allowed. Please select a PNG image.' });
+      setBrandLogo(null);
+      setBrandLogoPreviewUrl(null);
       return;
     }
 
@@ -157,7 +172,7 @@ const AdminDashboard: React.FC = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
-      toast.success(data.message || 'Brand logo uploaded successfully!');
+      setMessage({ type: 'success', text: data.message || 'Brand logo uploaded successfully!' });
       // Optionally update currentBannerUrl if the backend returns it, or refetch config
       fetchConfig(); // Refetch config to update current banner URL if needed
       setBrandLogo(null); // Clear selection
@@ -165,7 +180,7 @@ const AdminDashboard: React.FC = () => {
       setBrandName(''); // Clear brand name input
     } catch (err: any) {
       console.error('Brand logo upload failed:', err);
-      toast.error(err.response?.data?.message || 'Brand logo upload failed.');
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Brand logo upload failed.' });
     } finally {
       setIsBrandLogoUploading(false);
     }
@@ -174,8 +189,14 @@ const AdminDashboard: React.FC = () => {
   // --- Handlers for banner upload ---
   const handleBannerUpload = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!banner) {
-      toast.error('Please select a banner image.');
+      setMessage({ type: 'error', text: 'Please select a banner image.' });
+      return;
+    }
+    if (banner.type !== 'image/png') {
+      setMessage({ type: 'error', text: 'Only PNG files are allowed. Please select a PNG image.' });
+      setBanner(null);
       return;
     }
 
@@ -188,12 +209,12 @@ const AdminDashboard: React.FC = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
-      toast.success(data.message || 'Banner uploaded successfully!');
+      setMessage({ type: 'success', text: data.message || 'Banner uploaded successfully!' });
       setCurrentBannerUrl(data.bannerPath); // Update the current banner URL from response
       setBanner(null); // Clear selection
     } catch (err: any) {
       console.error('Banner upload failed:', err);
-      toast.error(err.response?.data?.message || 'Banner upload failed.');
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Banner upload failed.' });
     } finally {
       setIsBannerUploading(false);
     }
@@ -257,6 +278,16 @@ const AdminDashboard: React.FC = () => {
           </button>
         </div>
       </div>
+      {message && (
+        <div className={`${message.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded-md mb-4 flex justify-between items-start`} role="alert">
+          <div className="text-sm font-bold">{message.text}</div>
+          {message.type === 'error' ? (
+            <button type="button" onClick={() => setMessage(null)} className="ml-4 text-xs font-black uppercase tracking-widest">
+              <X className="w-4 h-4" />
+            </button>
+          ) : null}
+        </div>
+      )}
 
       <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Brand Logo Upload */}
@@ -276,13 +307,13 @@ const AdminDashboard: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Logo Image (PNG Recommended)</label>
+                  <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Logo Image (PNG Only)</label>
                   <input
                     type="file"
                     onChange={(e) => {
                       setBrandLogo(e.target.files?.[0] || null);
                     }}
-                    accept="image/*"
+                    accept=".png,image/png"
                     className="w-full text-xs file:bg-zinc-100 file:border-0 file:rounded file:px-3 file:py-1 file:text-[10px] file:font-black file:uppercase file:tracking-widest cursor-pointer"
                   />
                 </div>
@@ -296,7 +327,7 @@ const AdminDashboard: React.FC = () => {
             <button
               type="submit"
               disabled={isBrandLogoUploading} // Use specific upload state
-              className="w-full bg-zinc-900 text-white font-black text-[10px] uppercase tracking-widest py-2 hover:bg-brand-red transition-all disabled:opacity-50"
+              className="w-full bg-zinc-900 text-white font-black text-[10px] uppercase tracking-widest py-2 hover:bg-brand-red transition-all disabled:opacity-50 cursor-pointer"
             >
               {isBrandLogoUploading ? 'Uploading...' : 'Upload Brand Assets'}
             </button>
@@ -309,12 +340,12 @@ const AdminDashboard: React.FC = () => {
           <form onSubmit={handleBannerUpload} className="space-y-4">
             <div className='flex w-full'>
               <div className='w-2/3'>
-                <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Global Banner Image</label>
+                <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Global Banner Image (PNG Only)</label>
                 <div className="flex items-center gap-4 mt-2"> {/* Flex container for input and display section */}
                   <input
                     type="file"
                     onChange={(e) => setBanner(e.target.files?.[0] || null)}
-                    accept="image/*"
+                    accept=".png,image/png"
                     className="w-full text-xs file:bg-zinc-100 file:border-0 file:rounded file:px-3 file:py-1 file:text-[10px] file:font-black file:uppercase file:tracking-widest cursor-pointer"
                   />
                 </div>
@@ -328,7 +359,7 @@ const AdminDashboard: React.FC = () => {
             <button
               type="submit"
               disabled={isBannerUploading} // Use specific upload state
-              className="w-full bg-zinc-900 text-white font-black text-[10px] uppercase tracking-widest py-2 hover:bg-brand-red transition-all disabled:opacity-50"
+              className="w-full bg-zinc-900 text-white font-black text-[10px] uppercase tracking-widest py-2 hover:bg-brand-red transition-all disabled:opacity-50 cursor-pointer"
             >
               {isBannerUploading ? 'Uploading...' : 'Update Global Banner'}
             </button>

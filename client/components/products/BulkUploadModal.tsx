@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { X } from '../icons';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '../../redux/store';
 import Modal from '../common/Modal'; 
@@ -6,8 +7,7 @@ import * as Papa from 'papaparse'; // Import papaparse
 import { Product } from '../../types';
 import { bulkUploadProducts } from '../../redux/slices/productSlice';
 import * as yup from 'yup';
-import { toast } from 'react-toastify';
-import { toLowerTrim, toLowerTrimOptional } from '../../utils/normalize';
+import { toLowerTrim } from '../../utils/normalize';
 import { CheckCircle } from '../icons';
 
 interface BulkUploadModalProps {
@@ -53,6 +53,15 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
   const [isUploading, setIsUploading] = useState(false);
   const [uploadComplete, setUploadComplete] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
+  const [message, setMessage] = useState<{ type: 'error' | 'success' | 'info'; text: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (message?.type === 'success') {
+      const t = setTimeout(() => setMessage(null), 2000);
+      return () => clearTimeout(t);
+    }
+  }, [message]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -80,7 +89,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
 
   const parseCsv = () => {
     if (!file) {
-      toast.error('Please select a CSV file first.');
+      setMessage({ type: 'error', text: 'Please select a CSV file first.' });
       return;
     }
 
@@ -95,6 +104,13 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
 
         results.data.forEach((row: any, index:number) => {
           const rowNumber = index + 1; // CSV rows are 1-indexed
+          const stockQty = parseInt(row.stockQty, 10);
+          const minOrderQty = row.minOrderQty === undefined || row.minOrderQty === null || String(row.minOrderQty).trim() === ''
+            ? 1
+            : parseInt(row.minOrderQty, 10);
+          const maxOrderQty = row.maxOrderQty === undefined || row.maxOrderQty === null || String(row.maxOrderQty).trim() === ''
+            ? stockQty
+            : parseInt(row.maxOrderQty, 10);
 
           // Convert string numbers to actual numbers where needed for validation
           const processedRow = {
@@ -108,9 +124,9 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
               ? parseInt(String(row.eta), 10)
               : undefined,
             price: parseFloat(row.price),
-            minOrderQty: parseInt(row.minOrderQty),
-            maxOrderQty: parseInt(row.maxOrderQty),
-            stockQty: parseInt(row.stockQty),
+            minOrderQty,
+            maxOrderQty,
+            stockQty,
             isStockEnabled: row.isStockEnabled !== undefined ? (String(row.isStockEnabled).toLowerCase() === 'true' || row.isStockEnabled === true) : true,
           };
 
@@ -132,21 +148,25 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
         setValidationErrors(errors);
         setIsParsing(false);
         if (errors.length > 0) {
-            toast.warn(`Found ${errors.length} validation errors in the CSV.`);
+            setMessage({ type: 'error', text: `Found ${errors.length} validation errors in the CSV.` });
         } else if (products.length > 0) {
-            toast.success(`Successfully parsed and validated ${products.length} products.`);
+            setMessage({ type: 'success', text: `Successfully parsed and validated ${products.length} products.` });
         }
       },
       error: (err: any) => {
         setIsParsing(false);
-        toast.error(`Error parsing CSV: ${err.message}`);
+        setParsedData([]);
+        setValidationErrors([]);
+        setFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        setMessage({ type: 'error', text: `Error parsing CSV: ${err?.message || String(err)}` });
       }
     });
   };
 
   const handleBulkUpload = () => {
     if (parsedData.length === 0 || validationErrors.length > 0) {
-      toast.error('Cannot upload: no valid products or validation errors present.');
+      setMessage({ type: 'error', text: 'Cannot upload: no valid products or validation errors present.' });
       return;
     }
     
@@ -156,16 +176,16 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
     dispatch(bulkUploadProducts(parsedData as any))
         .unwrap()
         .then((response) => {
-            toast.success(response.message || 'Products uploaded successfully!');
-            setIsUploading(false);
-            setUploadComplete(true);
-            onUploadSuccess();
+          setMessage({ type: 'success', text: response.message || 'Products uploaded successfully!' });
+          setIsUploading(false);
+          setUploadComplete(true);
+          onUploadSuccess();
         })
         .catch((err: any) => {
             console.error('[BULK UPLOAD] Server error:', err);
             setIsUploading(false);
             const errorMessage = typeof err === 'string' ? err : (err.message || 'Failed to bulk upload products');
-            toast.error(errorMessage);
+          setMessage({ type: 'error', text: errorMessage });
         });
   };
 
@@ -183,8 +203,18 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
             <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest animate-pulse">Syncing Products to Global Inventory...</p>
           </div>
         )}
+        {message && (
+          <div className={`${message.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded-md mb-4 flex justify-between items-start`} role="alert">
+            <div className="text-sm font-bold">{message.text}</div>
+            {message.type === 'error' ? (
+              <button type="button" onClick={() => setMessage(null)} className="ml-4 text-xs font-black uppercase tracking-widest">
+                <X className="w-4 h-4" />
+              </button>
+            ) : null}
+          </div>
+        )}
         {uploadComplete && (
-          <div className="mb-6 rounded-2xl border border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 px-6 py-7 shadow-sm">
+          <div className="mb-6 rounded-2xl border border-green-200 bg-linear-to-br from-green-50 to-emerald-50 px-6 py-7 shadow-sm">
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-600 text-white shadow-md">
                 <CheckCircle className="h-6 w-6" />

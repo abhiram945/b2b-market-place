@@ -1,5 +1,6 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { X } from '../icons';
 import { useForm, SubmitHandler, UseFormRegister, FieldErrors } from 'react-hook-form';
 import { useSelector } from 'react-redux';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -7,7 +8,6 @@ import * as yup from 'yup';
 import Modal from '../common/Modal';
 import { Product } from '../../types';
 import api from '../../api';
-import { toast } from 'react-toastify';
 import { RootState } from '../../redux/store';
 import { toLowerTrim } from '../../utils/normalize';
 
@@ -64,6 +64,23 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
     resolver: yupResolver(schema) as any,
   });
 
+  const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
+  useEffect(() => {
+    if (message?.type === 'success') {
+      const t = setTimeout(() => setMessage(null), 2000);
+      return () => clearTimeout(t);
+    }
+  }, [message]);
+
+  const closeTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+  }, []);
+
   const watchedPrice = watch('price');
 
   useEffect(() => {
@@ -75,7 +92,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
     
     // Vendor specific check
     if (role === 'vendor' && data.price && data.price > product.price) {
-      toast.error('PRICE INCREASE NOT PERMITTED');
+      setMessage({ type: 'error', text: 'PRICE INCREASE NOT PERMITTED' });
       return;
     }
 
@@ -90,11 +107,10 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
 
       const url = role === 'admin' ? `/products/${product._id}` : `/products/${product._id}/vendor-update`;
       await api.put(url, payload);
-      toast.success('SPECIFICATIONS UPDATED');
+      setMessage({ type: 'success', text: 'PRODUCT UPDATED' });
       onProductUpdated();
-      onClose();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'RE-ENTRY FAILED');
+      setMessage({ type: 'error', text: err.response?.data?.message || 'RE-ENTRY FAILED' });
     }
   };
 
@@ -167,6 +183,17 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
               </>
             )}
           </div>
+
+          {message && (
+            <div className={`${message.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded-md flex justify-between items-start`} role="alert">
+              <div className="text-sm font-bold">{message.text}</div>
+              {message.type === 'error' ? (
+                <button type="button" onClick={() => setMessage(null)} className="ml-4 text-xs font-black uppercase tracking-widest">
+                  <X className="w-4 h-4" />
+                </button>
+              ) : null}
+            </div>
+          )}
 
           <div className="pt-8 border-t border-gray-100 flex justify-end items-center gap-6">
             <button type="button" onClick={onClose} className="text-[11px] font-black uppercase tracking-[0.2em] px-10 py-4 text-gray-400 hover:text-gray-900 transition-colors cursor-pointer">Cancel</button>

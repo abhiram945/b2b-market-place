@@ -7,6 +7,7 @@ import { logout } from '../../redux/slices/userSlice';
 import { Menu as MenuIcon, ShoppingCart as ShoppingCartIcon, LogOut as LogOutIcon } from '../icons';
 import { RootState, AppDispatch } from '../../redux/store';
 import { getNavLinks } from '../../utils/navigation';
+import api from '../../api';
 
 interface NavbarProps {
   onMenuClick: () => void;
@@ -19,9 +20,17 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
   const { user, isAuthenticated } = useAuth();
   const { items: cartItems } = useSelector((state: RootState) => state.cart);
 
-  const handleLogout = () => {
-    dispatch(logout());
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      // Call logout endpoint to clear refresh token from server
+      await api.post('/auth/logout');
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      // Clear local state regardless of API call result
+      dispatch(logout());
+      navigate('/login');
+    }
   };
 
   const navLinks = getNavLinks(user?.role as any || null);

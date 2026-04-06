@@ -5,7 +5,6 @@ import { AppDispatch, RootState } from '../../redux/store';
 import { fetchOrders, updateOrderStatus } from '../../redux/slices/orderSlice';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../api';
-import { toast } from 'react-toastify';
 import { FileText, Search, X } from '../../components/icons';
 import { User as UserType } from '../../types';
 
@@ -16,8 +15,17 @@ const MyOrders: React.FC = () => {
   const { role } = useAuth();
   const isAdmin = role === 'admin';
   const isBuyer = role === 'buyer';
+  const showProviderColumn = !isBuyer;
   const [viewingInvoiceId, setViewingInvoiceId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
+  useEffect(() => {
+    if (message?.type === 'success') {
+      const t = setTimeout(() => setMessage(null), 2000);
+      return () => clearTimeout(t);
+    }
+  }, [message]);
 
   useEffect(() => {
     dispatch(fetchOrders());
@@ -33,7 +41,7 @@ const MyOrders: React.FC = () => {
       const fileURL = URL.createObjectURL(file);
       window.open(fileURL, '_blank');
     } catch (err: any) {
-      toast.error('Failed to view invoice');
+      setMessage({ type: 'error', text: 'Failed to view invoice' });
     } finally {
       setViewingInvoiceId(null);
     }
@@ -42,9 +50,9 @@ const MyOrders: React.FC = () => {
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     try {
       await dispatch(updateOrderStatus({ orderId, status: newStatus })).unwrap();
-      toast.success('Order status updated successfully!');
+      setMessage({ type: 'success', text: 'Order status updated successfully!' });
     } catch (err: any) {
-      toast.error(err || 'Failed to update order status');
+      setMessage({ type: 'error', text: err || 'Failed to update order status' });
     }
   };
 
@@ -70,6 +78,10 @@ const MyOrders: React.FC = () => {
     }
   };
 
+  const getVendorId = (vendor: any) => typeof vendor === 'object' ? vendor?._id : vendor;
+  const getVendorName = (vendor: any) => (vendor as UserType)?.companyName || 'Verified Vendor';
+  const getCustomerId = (user: any) => typeof user === 'object' ? user?._id : user;
+
   if (loading) return (
     <div className="flex justify-center items-center py-32">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-red"></div>
@@ -82,6 +94,17 @@ const MyOrders: React.FC = () => {
         <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tight">ORDER <span className="text-brand-red">MANAGEMENT</span></h1>
         <p className="text-gray-500 font-bold uppercase tracking-widest text-xs mt-1">Transaction History & Fulfilment</p>
       </div>
+
+      {message && (
+        <div className={`${message.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded-md mb-4 flex justify-between items-start`} role="alert">
+          <div className="text-sm font-bold">{message.text}</div>
+          {message.type === 'error' ? (
+            <button type="button" onClick={() => setMessage(null)} className="ml-4 text-xs font-black uppercase tracking-widest">
+              <X className="w-4 h-4" />
+            </button>
+          ) : null}
+        </div>
+      )}
 
       {isAdmin && (
         <div className="mb-8 relative max-w-2xl">
@@ -122,6 +145,12 @@ const MyOrders: React.FC = () => {
                   <p className="text-lg font-black text-gray-900 font-mono">{order._id.toUpperCase()}</p>
                   <p className="text-xs font-bold text-gray-500 uppercase italic mt-1">{new Date(order.orderDate).toLocaleDateString()}</p>
                 </div>
+                {isAdmin && (
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Customer ID</p>
+                    <p className="text-sm font-black text-gray-900 font-mono">{getCustomerId(order.user)}</p>
+                  </div>
+                )}
                 
                 <div className="flex items-center gap-8">
                   <div className="text-right">
@@ -165,7 +194,12 @@ const MyOrders: React.FC = () => {
                   <thead className="bg-white">
                     <tr>
                       <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Product Description</th>
-                      <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Provider</th>
+                      {showProviderColumn && (
+                        <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Provider</th>
+                      )}
+                      {isAdmin && (
+                        <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Vendor ID</th>
+                      )}
                       <th className="px-8 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-wider">Vol.</th>
                       <th className="px-8 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Unit Value</th>
                       <th className="px-8 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Subtotal</th>
@@ -175,7 +209,12 @@ const MyOrders: React.FC = () => {
                     {order.items.map((item, idx) => (
                       <tr key={idx} className="hover:bg-gray-50/50">
                         <td className="px-8 py-5 text-sm font-bold text-gray-900 tracking-tight capitalize">{item.productTitle}</td>
-                        <td className="px-8 py-5 text-xs font-bold text-gray-500 capitalize">{(item.vendor as UserType)?.companyName || 'Verified Vendor'}</td>
+                        {showProviderColumn && (
+                          <td className="px-8 py-5 text-xs font-bold text-gray-500 capitalize">{getVendorName(item.vendor)}</td>
+                        )}
+                        {isAdmin && (
+                          <td className="px-8 py-5 text-[11px] font-bold text-gray-500 font-mono">{getVendorId(item.vendor)}</td>
+                        )}
                         <td className="px-8 py-5 text-sm font-bold text-gray-900 text-center italic">{item.quantity}</td>
                         <td className="px-8 py-5 text-sm font-bold text-gray-500 text-right font-mono">${item.price.toFixed(2)}</td>
                         <td className="px-8 py-5 text-sm font-black text-brand-red text-right font-mono">${(item.quantity * item.price).toFixed(2)}</td>

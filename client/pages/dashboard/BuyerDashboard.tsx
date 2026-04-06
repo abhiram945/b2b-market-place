@@ -23,7 +23,6 @@ const BuyerDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { orders } = useSelector((state: RootState) => state.orders);
-  const { config } = useSelector((state: RootState) => state.products);
 
   useEffect(() => {
     dispatch(fetchOrders());
@@ -31,7 +30,7 @@ const BuyerDashboard: React.FC = () => {
   }, [dispatch]);
 
   const pendingOrders = orders.filter(o => o.status.toLowerCase() === 'pending').length;
-  const bannerUrl = import.meta.env.DEV ? 'http://localhost:5000/uploads/banners/user-dashboard-banner.jpg' : 'http://13.53.123.178:5000/uploads/banners/user-dashboard-banner.jpg';
+  const bannerUrl = import.meta.env.DEV ? 'http://localhost:5000/uploads/banners/user-dashboard-banner.png' : 'http://13.53.123.178:5000/uploads/banners/user-dashboard-banner.png';
   return (
     <div className="max-w-[90%] mx-auto py-8">
       <div className="pb-6">

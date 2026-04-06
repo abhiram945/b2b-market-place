@@ -78,6 +78,33 @@ const getProducts = asyncHandler(async (req, res) => {
   res.json({ products, page, pages: Math.ceil(count / pageSize), total: count, config });
 });
 
+// @desc    Get filter options (independent of current filters)
+// @route   GET /api/products/filter-options
+// @access  Public
+const getFilterOptions = asyncHandler(async (req, res) => {
+  const user = req.user;
+
+  let query = {};
+
+  // Apply role-based filtering if user is authenticated and is a vendor
+  if (user && user.role === ROLES.VENDOR) {
+    query.user = user._id;
+  }
+
+  // Get all unique categories and locations from products
+  const categories = await Product.distinct('category', query);
+  const locations = await Product.distinct('location', query);
+
+  // Get config for brands
+  const config = await getConfig();
+
+  res.json({
+    categories: categories.filter(Boolean).sort(),
+    locations: locations.filter(Boolean).sort(),
+    brands: config.brands || []
+  });
+});
+
 // @desc    Create a product
 // @route   POST /api/products
 // @access  Private/Admin
@@ -342,4 +369,5 @@ export {
   updateProductByVendor,
   deleteProduct,
   bulkCreateProducts,
+  getFilterOptions,
 };

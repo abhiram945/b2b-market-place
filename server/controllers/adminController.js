@@ -75,8 +75,6 @@ const getMaintenanceStatus = asyncHandler(async (req, res) => {
 // @route   POST /api/admin/upload/brand-logo
 // @access  Private/Admin
 const uploadBrandLogo = asyncHandler(async (req, res) => {
-  console.log("uploadBrandLogo req.body = ")
-  console.log(req.body)
   const name = normalizeString(req.body.name);
   if (!name) {
     res.status(400);

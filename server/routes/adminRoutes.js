@@ -40,16 +40,14 @@ const imageStorage = multer.diskStorage({
 const uploadImage = multer({
   storage: imageStorage,
   fileFilter: function (req, file, cb) {
-    console.log("uploadImage-multer req.body = ")
-    console.log(req.body)
-    const filetypes = /jpg|jpeg|png|webp/;
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = filetypes.test(file.mimetype);
+    // Only allow PNG files
+    const isValidExtension = path.extname(file.originalname).toLowerCase() === '.png';
+    const isValidMimetype = file.mimetype === 'image/png';
 
-    if (extname && mimetype) {
+    if (isValidExtension && isValidMimetype) {
       return cb(null, true);
     } else {
-      cb('Only images are allowed!');
+      cb(new Error('Only PNG files are allowed. Please upload a valid PNG image.'));
     }
   },
 });

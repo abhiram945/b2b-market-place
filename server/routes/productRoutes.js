@@ -7,11 +7,13 @@ import {
   updateProduct,
   deleteProduct,
   updateProductByVendor,
+  getFilterOptions,
 } from '../controllers/productController.js';
 import { protect, vendor, admin, optionalProtect } from '../middleware/authMiddleware.js';
 import { productCreationValidation, productUpdateByVendorValidation, validate } from '../middleware/validationMiddleware.js';
 
 router.route('/').get(optionalProtect, getProducts).post(protect, admin, productCreationValidation, validate, createProduct);
+router.route('/filter-options').get(optionalProtect, getFilterOptions);
 
 router
   .route('/:id')

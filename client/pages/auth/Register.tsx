@@ -6,7 +6,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { registerUser } from '../../redux/slices/userSlice';
 import { Building } from '../../components/icons';
 import { AppDispatch, RootState } from '../../redux/store';
-import { toast } from 'react-toastify';
 import api from '../../api';
 import { toLowerTrim, toLowerTrimOptional } from '../../utils/normalize';
 
@@ -38,6 +37,7 @@ const Register: React.FC = () => {
   const navigate = useNavigate();
   const { loading, error } = useSelector((state: RootState) => state.user);
   const [companyNames, setCompanyNames] = useState<string[]>([]);
+  const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterFormInputs>({
     defaultValues: {
@@ -81,8 +81,8 @@ const Register: React.FC = () => {
 
     dispatch(registerUser(formData)).then(action => {
       if (registerUser.fulfilled.match(action)) {
-        toast.success('Registration successful! Please log in.');
-        navigate('/login');
+        setMessage({ type: 'success', text: 'Registration successful! Please log in.' });
+        setTimeout(() => navigate('/login'), 1000);
       }
     });
   };
@@ -101,6 +101,12 @@ const Register: React.FC = () => {
         </div>
 
         <form className="mt-8" onSubmit={handleSubmit(onSubmit)}>
+          {message && (
+            <div className={`${message.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded-md mb-4 flex justify-between items-start`} role="alert">
+              <div className="text-sm font-bold">{message.text}</div>
+              <button type="button" onClick={() => setMessage(null)} className="ml-4 text-xs font-black uppercase tracking-widest">Close</button>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
             <InputWrapper label="Full Name" error={errors.fullName}>
               <input

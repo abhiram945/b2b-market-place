@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { X } from '../../components/icons';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from '../../hooks/useAuth';
@@ -7,7 +8,6 @@ import { Package, Tag, ShoppingCart, AlertCircle, PlusCircle, Copy, CheckCircle 
 import { fetchProducts } from '../../redux/slices/productSlice';
 import { fetchOrders } from '../../redux/slices/orderSlice';
 import { AppDispatch, RootState } from '../../redux/store';
-import { toast } from 'react-toastify';
 
 const VendorDashboard: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -15,6 +15,14 @@ const VendorDashboard: React.FC = () => {
     const { products } = useSelector((state: RootState) => state.products);
     const { orders } = useSelector((state: RootState) => state.orders);
     const [copied, setCopied] = useState(false);
+    const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
+    useEffect(() => {
+        if (message?.type === 'success') {
+            const t = setTimeout(() => setMessage(null), 2000);
+            return () => clearTimeout(t);
+        }
+    }, [message]);
 
     useEffect(() => {
         dispatch(fetchProducts({}));
@@ -25,7 +33,7 @@ const VendorDashboard: React.FC = () => {
         if (user?._id) {
             navigator.clipboard.writeText(user._id);
             setCopied(true);
-            toast.success('ID COPIED TO CLIPBOARD');
+            setMessage({ type: 'success', text: 'ID COPIED TO CLIPBOARD' });
             setTimeout(() => setCopied(false), 2000);
         }
     };
@@ -83,6 +91,16 @@ const VendorDashboard: React.FC = () => {
                     <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Managing Store: {user?.companyName}</p>
                 </div>
             </div>
+            {message && (
+                <div className={`${message.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded-md mb-4 flex justify-between items-start`} role="alert">
+                    <div className="text-sm font-bold">{message.text}</div>
+                    {message.type === 'error' ? (
+                        <button type="button" onClick={() => setMessage(null)} className="ml-4 text-xs font-black uppercase tracking-widest">
+                            <X className="w-4 h-4" />
+                        </button>
+                    ) : null}
+                </div>
+            )}
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-10">
                 <DashboardCard title="Active Listings" value={products.length} icon={<Package className="h-6 w-6 text-white" />} colorClass="bg-black" />
                 <DashboardCard title="Total Revenue" value={`$${totalSales.toFixed(2)}`} icon={<Tag className="h-6 w-6 text-white" />} colorClass="bg-brand-red" />

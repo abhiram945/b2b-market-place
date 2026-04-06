@@ -17,6 +17,11 @@ interface ProductState {
     conditions: string[];
     banner?: string;
   };
+  filterOptions: {
+    categories: string[];
+    locations: string[];
+    brands: string[];
+  };
 }
 
 const initialState: ProductState = {
@@ -32,6 +37,11 @@ const initialState: ProductState = {
     categories: [],
     locations: [],
     conditions: [],
+  },
+  filterOptions: {
+    categories: [],
+    locations: [],
+    brands: [],
   },
 };
 
@@ -103,6 +113,18 @@ export const bulkUploadProducts = createAsyncThunk(
       return data;
     } catch (error: any) {
       return rejectWithValue(error.response.data.message || 'Failed to bulk upload products');
+    }
+  }
+);
+
+export const fetchFilterOptions = createAsyncThunk(
+  'products/fetchFilterOptions',
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get('/products/filter-options');
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch filter options');
     }
   }
 );
@@ -201,6 +223,10 @@ const productSlice = createSlice({
       })
       .addCase(bulkUploadProducts.rejected, (state, action) => {
         state.error = action.payload as string;
+      })
+      // Fetch Filter Options
+      .addCase(fetchFilterOptions.fulfilled, (state, action: PayloadAction<{ categories: string[]; locations: string[]; brands: string[] }>) => {
+        state.filterOptions = action.payload;
       });
   },
 });

@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../redux/store';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState, AppDispatch } from '../../redux/store';
+import { fetchFilterOptions } from '../../redux/slices/productSlice';
 import { ChevronDown, Search, X } from '../icons';
 import { toLowerTrim } from '../../utils/normalize';
 
@@ -11,7 +12,7 @@ interface ProductFiltersProps {
 
 const BrandLogo: React.FC<{ brand: string }> = ({ brand }) => {
   const [hasLogo, setHasLogo] = useState(true);
-  const logoUrl = `http://localhost:5000/uploads/brands/${brand.toLowerCase()}.png`;
+  const logoUrl = import.meta.env.DEV ? `http://localhost:5000/uploads/brands/${brand.toLowerCase()}.png` : `http://13.53.123.178:5000/uploads/brands/${brand.toLowerCase()}.png`;
 
   if (!hasLogo) {
     return (
@@ -32,7 +33,8 @@ const BrandLogo: React.FC<{ brand: string }> = ({ brand }) => {
 };
 
 const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters }) => {
-  const { products, config } = useSelector((state: RootState) => state.products);
+  const dispatch = useDispatch<AppDispatch>();
+  const { products, config, filterOptions } = useSelector((state: RootState) => state.products);
   const [localSearch, setLocalSearch] = useState(filters.search || '');
   const hasActiveFilters = Boolean(filters.search || filters.brand || filters.category || filters.location || filters.sort);
 
@@ -40,18 +42,10 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters }) 
     setLocalSearch(filters.search || '');
   }, [filters.search]);
 
-  const uniqueValues = useMemo(() => {
-    const locations = new Set<string>();
-    const categories = new Set<string>();
-    products.forEach(p => {
-      locations.add(p.location);
-      categories.add(p.category);
-    });
-    return {
-      locations: Array.from(locations).sort(),
-      categories: Array.from(categories).sort(),
-    };
-  }, [products]);
+  // Fetch filter options on component mount
+  useEffect(() => {
+    dispatch(fetchFilterOptions());
+  }, [dispatch]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -117,7 +111,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters }) 
             ALL
           </button>
           <div className="flex gap-1 flex-nowrap items-center">
-            {config.brands.map(b => (
+            {filterOptions.brands.map(b => (
               <button
                 key={b}
                 onClick={() => handleBrandClick(b)}
@@ -132,18 +126,18 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters }) 
 
         {/* Category */}
         <div className="relative">
-          <select name="category" value={filters.category} onChange={handleInputChange} className="h-10 pl-3 pr-9 bg-gray-50 border border-gray-200 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-700 outline-none focus:border-brand-red cursor-pointer appearance-none min-w-[140px] capitalize">
+          <select name="category" value={filters.category} onChange={handleInputChange} className="h-10 pl-3 pr-9 bg-gray-50 border border-gray-200 rounded-lg text-[10px] font-black tracking-widest text-gray-700 outline-none focus:border-brand-red cursor-pointer appearance-none min-w-[140px] capitalize">
             <option value="">All Categories</option>
-            {uniqueValues.categories.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
+            {filterOptions.categories.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
           </select>
           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
         </div>
 
         {/* Location */}
         <div className="relative">
-          <select name="location" value={filters.location} onChange={handleInputChange} className="h-10 pl-3 pr-9 bg-gray-50 border border-gray-200 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-700 outline-none focus:border-brand-red cursor-pointer appearance-none min-w-[140px] capitalize">
+          <select name="location" value={filters.location} onChange={handleInputChange} className="h-10 pl-3 pr-9 bg-gray-50 border border-gray-200 rounded-lg text-[10px] font-black tracking-widest text-gray-700 outline-none focus:border-brand-red cursor-pointer appearance-none min-w-[140px] capitalize">
             <option value="">All Locations</option>
-            {uniqueValues.locations.map(l => <option key={l} value={l} className="capitalize">{l}</option>)}
+            {filterOptions.locations.map(l => <option key={l} value={l} className="capitalize">{l}</option>)}
           </select>
           <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
         </div>

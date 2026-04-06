@@ -1,15 +1,17 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Building } from '../components/icons';
 
 const ContactUs: React.FC = () => {
     const navigate = useNavigate();
 
+    const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        alert('Thank you for your message! We will get back to you soon.');
-        navigate('/');
+        setMessage({ type: 'success', text: 'Thank you for your message! We will get back to you soon.' });
+        setTimeout(() => navigate('/'), 1000);
     };
 
     return (
@@ -28,6 +30,12 @@ const ContactUs: React.FC = () => {
                     </p>
                 </div>
                 <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                    {message && (
+                        <div className={`${message.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded-md mb-4 flex justify-between items-start`} role="alert">
+                            <div className="text-sm font-bold">{message.text}</div>
+                            <button type="button" onClick={() => setMessage(null)} className="ml-4 text-xs font-black uppercase tracking-widest">Close</button>
+                        </div>
+                    )}
                     <div className="rounded-md shadow-sm space-y-4">
                         <div>
                             <label htmlFor="name" className="sr-only">Full Name</label>

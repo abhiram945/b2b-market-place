@@ -11,15 +11,15 @@ function App() {
   useEffect(() => {
     // Force light theme root
     document.documentElement.classList.remove('dark');
-    
+
     // On initial app load, try to rehydrate session from token or cookie.
     dispatch(rehydrateAuth());
   }, [dispatch]);
 
   return (
-    <BrowserRouter>
-      <AppRouter />
-    </BrowserRouter>
+      <BrowserRouter>
+        <AppRouter />
+      </BrowserRouter>
   );
 }
 

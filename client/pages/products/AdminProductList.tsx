@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { X } from '../../components/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../redux/store';
 import { fetchProducts, deleteProduct } from '../../redux/slices/productSlice';
@@ -6,7 +7,6 @@ import { PlusCircle, FileText } from '../../components/icons';
 import AddProductModal from '../../components/products/AddProductModal';
 import EditProductModal from '../../components/products/EditProductModal';
 import BulkUploadModal from '../../components/products/BulkUploadModal';
-import { toast } from 'react-toastify';
 import { Product } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -21,6 +21,14 @@ const AdminProductList: React.FC = () => {
   const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false); // State for bulk upload modal
   const [currentPage, setCurrentPage] = useState(page);
   const [productsPerPage] = useState(10);
+  const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
+  useEffect(() => {
+    if (message?.type === 'success') {
+      const t = setTimeout(() => setMessage(null), 2002);
+      return () => clearTimeout(t);
+    }
+  }, [message]);
 
   useEffect(() => {
     dispatch(fetchProducts({ page: currentPage, limit: productsPerPage }));
@@ -56,10 +64,10 @@ const AdminProductList: React.FC = () => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       try {
         await dispatch(deleteProduct(productId)).unwrap();
-        toast.success('Product deleted successfully!');
+        setMessage({ type: 'success', text: 'Product deleted successfully!' });
         dispatch(fetchProducts({ page: currentPage, limit: productsPerPage }));
       } catch (err: any) {
-        toast.error(err || 'Failed to delete product.');
+        setMessage({ type: 'error', text: err || 'Failed to delete product.' });
       }
     }
   };
@@ -94,6 +102,16 @@ const AdminProductList: React.FC = () => {
           </button>
         </div>
       </div>
+      {message && (
+        <div className={`${message.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded-md mb-4 flex justify-between items-start`} role="alert">
+          <div className="text-sm font-bold">{message.text}</div>
+          {message.type === 'error' ? (
+            <button type="button" onClick={() => setMessage(null)} className="ml-4 text-xs font-black uppercase tracking-widest">
+              <X className="w-4 h-4" />
+            </button>
+          ) : null}
+        </div>
+      )}
 
       {loading && products.length === 0 ? (
         <div className="flex justify-center items-center py-32">
