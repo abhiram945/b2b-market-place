@@ -58,7 +58,7 @@ export const registerUser = createAsyncThunk(
             });
             return response.data;
         } catch (error: any) {
-            return rejectWithValue(error.response.data.message || 'Registration failed');
+            return rejectWithValue(error.response?.data?.message || 'Registration failed');
         }
     }
 );
@@ -195,6 +195,18 @@ const userSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
         localStorage.removeItem('token');
+      })
+      .addCase(registerUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(registerUser.fulfilled, (state) => {
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(registerUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
       })
       .addCase(fetchUserProfile.pending, (state) => {
         state.loading = true;

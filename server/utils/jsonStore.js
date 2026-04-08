@@ -21,7 +21,10 @@ export const getConfig = async () => {
       locations: [],
       conditions: ['new', 'used', 'refurbished'],
       companyNames: [],
-      maintenanceMode: false
+      maintenanceMode: false,
+      banner: '/uploads/banners/user-dashboard-banner.png',
+      heroHeading: '',
+      heroSubheading: ''
     };
   }
 };

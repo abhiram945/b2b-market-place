@@ -99,17 +99,30 @@ const uploadBrandLogo = asyncHandler(async (req, res) => {
 // @route   POST /api/admin/upload/banner
 // @access  Private/Admin
 const uploadBanner = asyncHandler(async (req, res) => {
-  if (!req.file) {
+  const config = await getConfig();
+  const heroHeading = req.body.heroHeading?.trim() || '';
+  const heroSubheading = req.body.heroSubheading?.trim() || '';
+
+  if (!req.file && !heroHeading && !heroSubheading) {
     res.status(400);
-    throw new Error('Banner image is required');
+    throw new Error('Banner image, heading, or subheading is required');
   }
 
-  const config = await getConfig();
-  const bannerPath = `/uploads/banners/${req.file.filename}`;
-  config.banner = bannerPath;
+  if (req.file) {
+    const bannerPath = `/uploads/banners/${req.file.filename}`;
+    config.banner = bannerPath;
+  }
+
+  config.heroHeading = heroHeading;
+  config.heroSubheading = heroSubheading;
   await updateConfig(config);
 
-  res.json({ message: 'Banner uploaded successfully', bannerPath });
+  res.json({
+    message: 'Banner settings updated successfully',
+    bannerPath: config.banner,
+    heroHeading: config.heroHeading,
+    heroSubheading: config.heroSubheading,
+  });
 });
 
 // @desc    Get user document

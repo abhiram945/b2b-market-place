@@ -8,6 +8,7 @@ import DashboardCard from '../../components/dashboard/DashboardCard';
 import { Truck, Package } from '../../components/icons';
 import { fetchOrders } from '../../redux/slices/orderSlice';
 import { fetchProducts } from '../../redux/slices/productSlice';
+import api from '../../api';
 
 const BRANDS = [
   { name: 'Apple', logo: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg', width: 'w-12' },
@@ -18,19 +19,42 @@ const BRANDS = [
   { name: 'Lenovo', logo: 'https://upload.wikimedia.org/wikipedia/commons/b/b8/Lenovo_logo_2015.svg', width: 'w-24' },
 ];
 
+const DEFAULT_HERO_HEADING = 'Exclusive B2B Deals';
+const DEFAULT_HERO_SUBHEADING = 'Bulk purchase discounts on top brands this week!';
+
 const BuyerDashboard: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { orders } = useSelector((state: RootState) => state.orders);
+  const [bannerPath, setBannerPath] = React.useState('/uploads/banners/user-dashboard-banner.png');
+  const [heroHeading, setHeroHeading] = React.useState(DEFAULT_HERO_HEADING);
+  const [heroSubheading, setHeroSubheading] = React.useState(DEFAULT_HERO_SUBHEADING);
 
   useEffect(() => {
     dispatch(fetchOrders());
     dispatch(fetchProducts({}));
   }, [dispatch]);
 
+  useEffect(() => {
+    const fetchDashboardConfig = async () => {
+      try {
+        const { data } = await api.get('/auth/dashboard-config');
+        setBannerPath(data.banner || '/uploads/banners/user-dashboard-banner.png');
+        setHeroHeading(data.heroHeading || DEFAULT_HERO_HEADING);
+        setHeroSubheading(data.heroSubheading || DEFAULT_HERO_SUBHEADING);
+      } catch (error) {
+        setBannerPath('/uploads/banners/user-dashboard-banner.png');
+        setHeroHeading(DEFAULT_HERO_HEADING);
+        setHeroSubheading(DEFAULT_HERO_SUBHEADING);
+      }
+    };
+
+    fetchDashboardConfig();
+  }, []);
+
   const pendingOrders = orders.filter(o => o.status.toLowerCase() === 'pending').length;
-  const bannerUrl = import.meta.env.DEV ? 'http://localhost:5000/uploads/banners/user-dashboard-banner.png' : 'http://13.53.123.178:5000/uploads/banners/user-dashboard-banner.png';
+  const bannerUrl = `${import.meta.env.DEV ? 'http://localhost:5000' : 'http://13.53.123.178:5000'}${bannerPath}`;
   return (
     <div className="max-w-[90%] mx-auto py-8">
       <div className="pb-6">
@@ -64,8 +88,8 @@ const BuyerDashboard: React.FC = () => {
             />
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                 <div className="text-center px-4">
-                    <h2 className="text-3xl md:text-5xl font-black text-white mb-4 uppercase italic tracking-tighter">Exclusive B2B <span className="text-red-600">Deals</span></h2>
-                    <p className="text-sm md:text-base text-gray-300 mb-8 uppercase font-bold tracking-widest">Bulk purchase discounts on top brands this week!</p>
+                    <h2 className="text-3xl md:text-5xl font-black text-white mb-4 uppercase italic tracking-tighter">{heroHeading}</h2>
+                    <p className="text-sm md:text-base text-gray-300 mb-8 uppercase font-bold tracking-widest">{heroSubheading}</p>
                     <button 
                         onClick={() => navigate('/products')}
                         className="btn-primary py-4 px-10 rounded-none font-black uppercase italic tracking-tighter transition-all hover:px-12 bg-brand-red text-white cursor-pointer"

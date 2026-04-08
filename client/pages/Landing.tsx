@@ -3,6 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Footer from '../components/common/Footer';
 import { CheckCircle, LogIn, UserPlus } from '../components/icons';
+import logo from "../assets/pdf-logo.png"
 
 const Landing: React.FC = () => {
     
@@ -17,9 +18,10 @@ const Landing: React.FC = () => {
         <div className="bg-white dark:bg-zinc-950 font-sans selection:bg-red-600 selection:text-white">
             {/* Header */}
             <header className="absolute inset-x-0 top-0 z-50 border-b border-gray-100/10 backdrop-blur-sm">
-                <nav className="flex items-center justify-between p-6 lg:px-8 max-w-7xl mx-auto" aria-label="Global">
+                <nav className="flex items-center justify-between p-4 lg:px-8 max-w-7xl mx-auto" aria-label="Global">
                     <div className="flex lg:flex-1">
-                        <Link to="/" className="text-2xl font-black text-gray-900 dark:text-white tracking-tighter italic uppercase">
+                        <Link to="/" className="flex items-center text-2xl font-black text-gray-900 dark:text-white tracking-tighter italic uppercase">
+                            <img src={logo} alt='techtronics ventures' className='w-12 h-12 mr-2'/>
                              <span className="text-red-600 mr-1">Techtronics</span> Ventures
                         </Link>
                     </div>

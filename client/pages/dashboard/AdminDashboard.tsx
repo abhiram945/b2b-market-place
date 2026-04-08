@@ -25,9 +25,12 @@ const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [updateType, setUpdateType] = useState<'approving' | 'rejecting' | null>(null);
+  const [userIdSearch, setUserIdSearch] = useState('');
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [isMaintenanceLoading, setIsMaintenanceLoading] = useState(false);
   const effectRan = useRef(false);
+  const brandLogoInputRef = useRef<HTMLInputElement | null>(null);
+  const bannerInputRef = useRef<HTMLInputElement | null>(null);
 
   // State for uploads and previews
   const [brandName, setBrandName] = useState('');
@@ -35,9 +38,27 @@ const AdminDashboard: React.FC = () => {
   const [brandLogoPreviewUrl, setBrandLogoPreviewUrl] = useState<string | null>(null); // State for brand logo preview
   const [banner, setBanner] = useState<File | null>(null);
   const [currentBannerUrl, setCurrentBannerUrl] = useState<string | null>(null); // State for current banner URL
+  const [heroHeading, setHeroHeading] = useState('');
+  const [heroSubheading, setHeroSubheading] = useState('');
   const [isBrandLogoUploading, setIsBrandLogoUploading] = useState(false); // Specific state for brand logo upload
   const [isBannerUploading, setIsBannerUploading] = useState(false); // Specific state for banner upload
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
+  const resetBrandUploadForm = () => {
+    setBrandName('');
+    setBrandLogo(null);
+    setBrandLogoPreviewUrl(null);
+    if (brandLogoInputRef.current) {
+      brandLogoInputRef.current.value = '';
+    }
+  };
+
+  const resetBannerUploadForm = () => {
+    setBanner(null);
+    if (bannerInputRef.current) {
+      bannerInputRef.current.value = '';
+    }
+  };
 
   useEffect(() => {
     if (message?.type === 'success') {
@@ -74,6 +95,8 @@ const AdminDashboard: React.FC = () => {
       // Fetch configuration including banner path
       const { data } = await api.get('/admin/config');
       setCurrentBannerUrl(data.banner || null);
+      setHeroHeading(data.heroHeading || '');
+      setHeroSubheading(data.heroSubheading || '');
     } catch (err) {
       console.error('Failed to fetch configuration:', err);
       setMessage({ type: 'error', text: 'Failed to load banner configuration.' });
@@ -111,8 +134,12 @@ const AdminDashboard: React.FC = () => {
       setUpdatingUserId(userId);
       setUpdateType(status === 'approved' ? 'approving' : 'rejecting');
       await api.put(`/admin/users/${userId}/status`, { status });
+      setUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user._id === userId ? { ...user, status } : user
+        )
+      );
       setMessage({ type: 'success', text: `User ${status} successfully!` });
-      fetchUsers(); // Refresh users list after status update
     } catch (err: any) {
       setMessage({ type: 'error', text: err.response?.data?.message || `Failed to ${status} user` });
     } finally {
@@ -156,8 +183,7 @@ const AdminDashboard: React.FC = () => {
     }
     if (brandLogo.type !== 'image/png') {
       setMessage({ type: 'error', text: 'Only PNG files are allowed. Please select a PNG image.' });
-      setBrandLogo(null);
-      setBrandLogoPreviewUrl(null);
+      resetBrandUploadForm();
       return;
     }
 
@@ -175,12 +201,11 @@ const AdminDashboard: React.FC = () => {
       setMessage({ type: 'success', text: data.message || 'Brand logo uploaded successfully!' });
       // Optionally update currentBannerUrl if the backend returns it, or refetch config
       fetchConfig(); // Refetch config to update current banner URL if needed
-      setBrandLogo(null); // Clear selection
-      setBrandLogoPreviewUrl(null); // Clear preview
-      setBrandName(''); // Clear brand name input
+      resetBrandUploadForm();
     } catch (err: any) {
       console.error('Brand logo upload failed:', err);
       setMessage({ type: 'error', text: err.response?.data?.message || 'Brand logo upload failed.' });
+      resetBrandUploadForm();
     } finally {
       setIsBrandLogoUploading(false);
     }
@@ -190,35 +215,46 @@ const AdminDashboard: React.FC = () => {
   const handleBannerUpload = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!banner) {
-      setMessage({ type: 'error', text: 'Please select a banner image.' });
+    if (banner && banner.type !== 'image/png') {
+      setMessage({ type: 'error', text: 'Only PNG files are allowed. Please select a PNG image.' });
+      resetBannerUploadForm();
       return;
     }
-    if (banner.type !== 'image/png') {
-      setMessage({ type: 'error', text: 'Only PNG files are allowed. Please select a PNG image.' });
-      setBanner(null);
+    if (!banner && !heroHeading.trim() && !heroSubheading.trim()) {
+      setMessage({ type: 'error', text: 'Please provide a banner image, main heading, or sub heading.' });
       return;
     }
 
     setIsBannerUploading(true);
     const formData = new FormData();
-    formData.append('banner', banner); // Use 'banner' as the field name expected by backend
+    formData.append('heroHeading', heroHeading.trim());
+    formData.append('heroSubheading', heroSubheading.trim());
+    if (banner) {
+      formData.append('banner', banner); // Use 'banner' as the field name expected by backend
+    }
     try {
       const { data } = await api.post('/admin/upload/banner', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
-      setMessage({ type: 'success', text: data.message || 'Banner uploaded successfully!' });
+      setMessage({ type: 'success', text: data.message || 'Banner settings updated successfully!' });
       setCurrentBannerUrl(data.bannerPath); // Update the current banner URL from response
-      setBanner(null); // Clear selection
+      setHeroHeading(data.heroHeading || '');
+      setHeroSubheading(data.heroSubheading || '');
+      resetBannerUploadForm();
     } catch (err: any) {
       console.error('Banner upload failed:', err);
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Banner upload failed.' });
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Banner settings update failed.' });
+      resetBannerUploadForm();
     } finally {
       setIsBannerUploading(false);
     }
   };
+
+  const filteredUsers = users.filter((user) =>
+    user._id.toLowerCase().includes(userIdSearch.trim().toLowerCase())
+  );
 
   // --- Effect for handling file inputs and previews ---
   useEffect(() => {
@@ -279,10 +315,10 @@ const AdminDashboard: React.FC = () => {
         </div>
       </div>
       {message && (
-        <div className={`${message.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded-md mb-4 flex justify-between items-start`} role="alert">
+        <div className={`${message.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded-md mb-4 flex justify-between items-center`} role="alert">
           <div className="text-sm font-bold">{message.text}</div>
           {message.type === 'error' ? (
-            <button type="button" onClick={() => setMessage(null)} className="ml-4 text-xs font-black uppercase tracking-widest">
+            <button type="button" onClick={() => setMessage(null)} className="ml-4 text-xs font-black uppercase tracking-widest cursor-pointer">
               <X className="w-4 h-4" />
             </button>
           ) : null}
@@ -309,6 +345,7 @@ const AdminDashboard: React.FC = () => {
                 <div>
                   <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Logo Image (PNG Only)</label>
                   <input
+                    ref={brandLogoInputRef}
                     type="file"
                     onChange={(e) => {
                       setBrandLogo(e.target.files?.[0] || null);
@@ -338,11 +375,32 @@ const AdminDashboard: React.FC = () => {
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
           <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 italic">Core Banner System</h3>
           <form onSubmit={handleBannerUpload} className="space-y-4">
+            <div>
+              <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Main Heading</label>
+              <input
+                type="text"
+                value={heroHeading}
+                onChange={(e) => setHeroHeading(e.target.value)}
+                placeholder="e.g. Exclusive B2B Deals"
+                className="w-full px-3 py-2 border border-zinc-200 rounded text-xs font-bold focus:outline-none focus:border-brand-red"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Sub Heading</label>
+              <input
+                type="text"
+                value={heroSubheading}
+                onChange={(e) => setHeroSubheading(e.target.value)}
+                placeholder="e.g. Bulk purchase discounts on top brands this week!"
+                className="w-full px-3 py-2 border border-zinc-200 rounded text-xs font-bold focus:outline-none focus:border-brand-red"
+              />
+            </div>
             <div className='flex w-full'>
               <div className='w-2/3'>
                 <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Global Banner Image (PNG Only)</label>
                 <div className="flex items-center gap-4 mt-2"> {/* Flex container for input and display section */}
                   <input
+                    ref={bannerInputRef}
                     type="file"
                     onChange={(e) => setBanner(e.target.files?.[0] || null)}
                     accept=".png,image/png"
@@ -361,30 +419,41 @@ const AdminDashboard: React.FC = () => {
               disabled={isBannerUploading} // Use specific upload state
               className="w-full bg-zinc-900 text-white font-black text-[10px] uppercase tracking-widest py-2 hover:bg-brand-red transition-all disabled:opacity-50 cursor-pointer"
             >
-              {isBannerUploading ? 'Uploading...' : 'Update Global Banner'}
+              {isBannerUploading ? 'Updating...' : 'Update Banner Content'}
             </button>
           </form>
         </div>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        <div className="border-b border-gray-200 px-6 py-4">
+          <input
+            type="text"
+            value={userIdSearch}
+            onChange={(e) => setUserIdSearch(e.target.value)}
+            placeholder="Search users by ID"
+            className="w-full max-w-md px-3 py-2 border border-zinc-200 rounded text-sm font-bold focus:outline-none focus:border-brand-red"
+          />
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">User</th>
                 <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">Organization</th>
+                <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">Documents</th>
                 <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">Role</th>
                 <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-4 text-center font-bold text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <tr key={user._id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-bold text-gray-900 capitalize">{user.fullName}</div>
                     <div className="text-xs text-gray-500 font-mono">{user.email}</div>
+                    <div className="text-[10px] text-zinc-400 font-mono mt-1">{user._id}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
                     <div className="font-bold capitalize">{user.companyName}</div>
@@ -393,24 +462,35 @@ const AdminDashboard: React.FC = () => {
                         href={user.website.startsWith('http') ? user.website : `https://${user.website}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[10px] text-brand-red hover:underline font-black italic block mt-0.5"
+                        className="text-[10px] text-brand-red hover:underline font-black italic block mt-0.5 w-max"
                       >
                         {user.website.replace(/^https?:\/\//, '')}
                       </a>
                     )}
-                    {(user.role === 'vendor' || user.role === 'buyer') && (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {user.tradeLicense && (
-                          <button onClick={() => handleViewDocument(user.tradeLicense)} className="text-[9px] bg-zinc-100 px-2 py-0.5 rounded border border-zinc-200 hover:bg-zinc-200 transition-colors font-black uppercase tracking-widest text-zinc-600 cursor-pointer">Trade License</button>
-                        )}
-                        {user.idDocument && (
-                          <button onClick={() => handleViewDocument(user.idDocument)} className="text-[9px] bg-zinc-100 px-2 py-0.5 rounded border border-zinc-200 hover:bg-zinc-200 transition-colors font-black uppercase tracking-widest text-zinc-600 cursor-pointer">ID Document</button>
-                        )}
-                        {user.vatRegistration && (
-                          <button onClick={() => handleViewDocument(user.vatRegistration)} className="text-[9px] bg-zinc-100 px-2 py-0.5 rounded border border-zinc-200 hover:bg-zinc-200 transition-colors font-black uppercase tracking-widest text-zinc-600 cursor-pointer">VAT/Tax</button>
-                        )}
-                      </div>
-                    )}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600 font-medium">
+                    <div className="flex flex-col items-start gap-2">
+                      {user.tradeLicense && (
+                        <button onClick={() => handleViewDocument(user.tradeLicense)} className="text-[9px] bg-zinc-100 px-2 py-1 rounded border border-zinc-200 hover:bg-zinc-200 transition-colors font-black uppercase tracking-widest text-zinc-600 cursor-pointer w-[80%] text-center">
+                          Trade License
+                        </button>
+                      )}
+                      {user.idDocument && (
+                        <button onClick={() => handleViewDocument(user.idDocument)} className="text-[9px] bg-zinc-100 px-2 py-1 rounded border border-zinc-200 hover:bg-zinc-200 transition-colors font-black uppercase tracking-widest text-zinc-600 cursor-pointer w-[80%] text-center">
+                          ID Document
+                        </button>
+                      )}
+                      {user.vatRegistration && (
+                        <button onClick={() => handleViewDocument(user.vatRegistration)} className="text-[9px] bg-zinc-100 px-2 py-1 rounded border border-zinc-200 hover:bg-zinc-200 transition-colors font-black uppercase tracking-widest text-zinc-600 cursor-pointer w-[80%] text-center">
+                          VAT/Tax
+                        </button>
+                      )}
+                      {!user.tradeLicense && !user.idDocument && !user.vatRegistration && (
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                          No Documents
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-black text-brand-red italic">{user.role}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -445,6 +525,13 @@ const AdminDashboard: React.FC = () => {
                   </td>
                 </tr>
               ))}
+              {filteredUsers.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-10 text-center text-sm font-bold text-zinc-400 uppercase tracking-widest">
+                    No users found
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

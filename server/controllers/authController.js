@@ -15,7 +15,6 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const normalizedEmail = normalizeString(email);
   const userExists = await User.findOne({ email: normalizedEmail });
-
   if (userExists) {
     console.warn(`[AUTH] Registration failed: User ${email} already exists`);
     res.status(400);
@@ -23,11 +22,6 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const selectedRole = normalizeString(role) || ROLES.BUYER;
-
-  if (selectedRole === ROLES.BUYER && !address) {
-    res.status(400);
-    throw new Error('Address is required for buyers');
-  }
 
   // Handle file uploads
   const tradeLicense = req.files?.tradeLicense ? `/uploads/documents/${req.files.tradeLicense[0].filename}` : null;
@@ -74,6 +68,18 @@ const registerUser = asyncHandler(async (req, res) => {
 const getRegisterConfig = asyncHandler(async (req, res) => {
   const config = await getConfig();
   res.json({ companyNames: config.companyNames });
+});
+
+// @desc    Get dashboard config
+// @route   GET /api/auth/dashboard-config
+// @access  Public
+const getDashboardConfig = asyncHandler(async (req, res) => {
+  const config = await getConfig();
+  res.json({
+    banner: config.banner || '/uploads/banners/user-dashboard-banner.png',
+    heroHeading: config.heroHeading || '',
+    heroSubheading: config.heroSubheading || '',
+  });
 });
 
 // @desc    Auth user & get token
@@ -192,4 +198,4 @@ const getUserProfile = asyncHandler(async (req, res) => {
   }
 });
 
-export { registerUser, loginUser, logoutUser, getUserProfile, refreshToken, getRegisterConfig };
+export { registerUser, loginUser, logoutUser, getUserProfile, refreshToken, getRegisterConfig, getDashboardConfig };

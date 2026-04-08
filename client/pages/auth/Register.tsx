@@ -4,7 +4,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { registerUser } from '../../redux/slices/userSlice';
-import { Building } from '../../components/icons';
+import { Building, X } from '../../components/icons';
 import { AppDispatch, RootState } from '../../redux/store';
 import api from '../../api';
 import { toLowerTrim, toLowerTrimOptional } from '../../utils/normalize';
@@ -39,7 +39,7 @@ const Register: React.FC = () => {
   const [companyNames, setCompanyNames] = useState<string[]>([]);
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterFormInputs>({
+  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<RegisterFormInputs>({
     defaultValues: {
       role: ''
     }
@@ -71,9 +71,9 @@ const Register: React.FC = () => {
     formData.append('companyName', toLowerTrim(data.companyName));
     formData.append('password', data.password);
     formData.append('role', toLowerTrim(data.role));
-    
+
     if (normalizedWebsite) formData.append('website', normalizedWebsite);
-    if (data.role === 'buyer') formData.append('address', toLowerTrim(data.address));
+    formData.append('address', toLowerTrim(data.address));
 
     if (data.tradeLicense?.[0]) formData.append('tradeLicense', data.tradeLicense[0]);
     if (data.idDocument?.[0]) formData.append('idDocument', data.idDocument[0]);
@@ -81,8 +81,18 @@ const Register: React.FC = () => {
 
     dispatch(registerUser(formData)).then(action => {
       if (registerUser.fulfilled.match(action)) {
-        setMessage({ type: 'success', text: 'Registration successful! Please log in.' });
-        setTimeout(() => navigate('/login'), 1000);
+        setMessage({ type: 'success', text: 'Registration successful! Your account is pending approval.' });
+        reset({
+          fullName: '',
+          email: '',
+          phoneNumber: '',
+          companyName: '',
+          website: '',
+          address: '',
+          role: '',
+          password: '',
+          confirmPassword: '',
+        });
       }
     });
   };
@@ -101,12 +111,6 @@ const Register: React.FC = () => {
         </div>
 
         <form className="mt-8" onSubmit={handleSubmit(onSubmit)}>
-          {message && (
-            <div className={`${message.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded-md mb-4 flex justify-between items-start`} role="alert">
-              <div className="text-sm font-bold">{message.text}</div>
-              <button type="button" onClick={() => setMessage(null)} className="ml-4 text-xs font-black uppercase tracking-widest">Close</button>
-            </div>
-          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
             <InputWrapper label="Full Name" error={errors.fullName}>
               <input
@@ -173,48 +177,42 @@ const Register: React.FC = () => {
               </select>
             </InputWrapper>
 
-            {role === 'buyer' && (
-              <div className="md:col-span-2">
-                <InputWrapper label="Address" error={errors.address}>
-                  <textarea
-                    {...register('address', { required: 'Address is required' })}
-                    placeholder="Full Address"
-                    rows={3}
-                    className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm resize-none"
-                  />
-                </InputWrapper>
-              </div>
-            )}
+            <div className="md:col-span-2">
+              <InputWrapper label="Address" error={errors.address}>
+                <textarea
+                  {...register('address', { required: 'Address is required' })}
+                  placeholder="Full Address"
+                  rows={3}
+                  className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm resize-none"
+                />
+              </InputWrapper>
+            </div>
 
-            {(role === 'buyer' || role === 'vendor') && (
-              <>
-                <InputWrapper label="Trade License (PDF)" error={errors.tradeLicense}>
-                  <input
-                    {...register('tradeLicense', { required: 'Trade License is required' })}
-                    type="file"
-                    accept=".pdf"
-                    className="w-full px-4 py-2 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red transition-all font-bold text-sm"
-                  />
-                </InputWrapper>
-                <InputWrapper label="Owner ID Document (PDF)" error={errors.idDocument}>
-                  <input
-                    {...register('idDocument', { required: 'ID Document is required' })}
-                    type="file"
-                    accept=".pdf"
-                    className="w-full px-4 py-2 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red transition-all font-bold text-sm"
-                  />
-                </InputWrapper>
-                <InputWrapper label="VAT Registration (PDF)" error={errors.vatRegistration}>
-                  <input
-                    {...register('vatRegistration', { required: 'VAT Registration is required' })}
-                    type="file"
-                    accept=".pdf"
-                    className="w-full px-4 py-2 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red transition-all font-bold text-sm"
-                  />
-                </InputWrapper>
-                <div></div> {/* Spacer for grid */}
-              </>
-            )}
+            <InputWrapper label="Trade License (PDF)" error={errors.tradeLicense}>
+              <input
+                {...register('tradeLicense', { required: 'Trade License is required' })}
+                type="file"
+                accept=".pdf"
+                className="w-full px-4 py-2 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red transition-all font-bold text-sm"
+              />
+            </InputWrapper>
+            <InputWrapper label="Owner ID Document (PDF)" error={errors.idDocument}>
+              <input
+                {...register('idDocument', { required: 'ID Document is required' })}
+                type="file"
+                accept=".pdf"
+                className="w-full px-4 py-2 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red transition-all font-bold text-sm"
+              />
+            </InputWrapper>
+            <InputWrapper label="VAT Registration (PDF)" error={errors.vatRegistration}>
+              <input
+                {...register('vatRegistration', { required: 'VAT Registration is required' })}
+                type="file"
+                accept=".pdf"
+                className="w-full px-4 py-2 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red transition-all font-bold text-sm"
+              />
+            </InputWrapper>
+            <div></div>
 
             <InputWrapper label="Password" error={errors.password}>
               <input
@@ -244,6 +242,12 @@ const Register: React.FC = () => {
           {error && (
             <div className="bg-red-50 border-l-4 border-red-600 p-4 mb-6">
               <p className="text-red-600 text-xs font-black uppercase tracking-widest text-center">{error}</p>
+            </div>
+          )}
+          {message && (
+            <div className={`${message.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded-md mb-4 flex justify-between items-center`} role="alert">
+              <div className="text-sm font-bold">{message.text}</div>
+              <button type="button" onClick={() => setMessage(null)} className="ml-4 text-xs font-black uppercase tracking-widest cursor-pointer"><X className='text-green-400 w-5 h-5'/></button>
             </div>
           )}
 

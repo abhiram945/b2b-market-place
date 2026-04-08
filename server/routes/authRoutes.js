@@ -7,6 +7,7 @@ import {
   getUserProfile,
   refreshToken,
   getRegisterConfig,
+  getDashboardConfig,
 } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { registerValidation, loginValidation, validate } from '../middleware/validationMiddleware.js'; // Import validation middleware
@@ -52,6 +53,7 @@ router.post('/register',
   registerUser
 );
 router.get('/register-config', getRegisterConfig);
+router.get('/dashboard-config', getDashboardConfig);
 router.post('/login', loginValidation, validate, loginUser);
 router.post('/logout', logoutUser);
 router.post('/refresh', refreshToken);

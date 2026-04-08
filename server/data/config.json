@@ -28,5 +28,7 @@
     "techtronics"
   ],
   "maintenanceMode": false,
-  "banner": "/uploads/banners/user-dashboard-banner.png"
+  "banner": "/uploads/banners/user-dashboard-banner.png",
+  "heroHeading": "exclusive deals available now",
+  "heroSubheading": ""
 }

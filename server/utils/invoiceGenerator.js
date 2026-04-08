@@ -46,7 +46,7 @@ export const generateInvoice = async (order, buyer) => {
     doc.pipe(stream);
 
     const RED = '#ed1c24';
-    const logoPath = path.join(__dirname, '..', 'pdf-logo.png');
+    const logoPath = path.join(__dirname, '..', 'data', 'pdf-logo.png');
 
     // --- Header ---
     if (fs.existsSync(logoPath)) {
