@@ -5,6 +5,8 @@ import api from '../../api';
 interface CartState {
   items: CartItem[];
   loading: boolean;
+  syncing: boolean;
+  isDirty: boolean;
   error: string | null;
 }
 
@@ -20,6 +22,8 @@ const loadCartFromStorage = (): CartItem[] => {
 const initialState: CartState = {
   items: loadCartFromStorage(),
   loading: false,
+  syncing: false,
+  isDirty: false,
   error: null,
 };
 
@@ -67,11 +71,13 @@ const cartSlice = createSlice({
       const existingItem = state.items.find(item => item._id === product._id);
       if (!existingItem) {
         state.items.push({ ...product, quantity });
+        state.isDirty = true;
       }
       localStorage.setItem('cart', JSON.stringify(state.items));
     },
     removeFromCart(state, action: PayloadAction<string>) {
       state.items = state.items.filter(item => item._id !== action.payload);
+      state.isDirty = true;
       localStorage.setItem('cart', JSON.stringify(state.items));
     },
     updateQuantity(state, action: PayloadAction<{ id: string; quantity: number }>) {
@@ -79,11 +85,13 @@ const cartSlice = createSlice({
         const itemToUpdate = state.items.find(item => item._id === id);
         if (itemToUpdate) {
             itemToUpdate.quantity = quantity;
+            state.isDirty = true;
         }
         localStorage.setItem('cart', JSON.stringify(state.items));
     },
     clearCart(state) {
       state.items = [];
+      state.isDirty = false;
       localStorage.removeItem('cart');
     }
   },
@@ -95,10 +103,22 @@ const cartSlice = createSlice({
       .addCase(fetchCart.fulfilled, (state, action) => {
         state.items = action.payload;
         state.loading = false;
+        state.isDirty = false;
         localStorage.setItem('cart', JSON.stringify(state.items));
       })
       .addCase(fetchCart.rejected, (state, action) => {
         state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(syncCart.pending, (state) => {
+        state.syncing = true;
+      })
+      .addCase(syncCart.fulfilled, (state) => {
+        state.syncing = false;
+        state.isDirty = false;
+      })
+      .addCase(syncCart.rejected, (state, action) => {
+        state.syncing = false;
         state.error = action.payload as string;
       });
   }

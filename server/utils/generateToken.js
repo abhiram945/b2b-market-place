@@ -18,7 +18,17 @@ const generateToken = (user) => {
 
 const generateRefreshToken = (user) => {
   return jwt.sign(
-    { _id: user._id },
+    {
+      _id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      companyName: user.companyName,
+      address: user.address,
+      role: user.role,
+      status: user.status,
+      website: user.website,
+    },
     process.env.JWT_REFRESH_SECRET,
     {
       expiresIn: '7d', // Longer refresh token

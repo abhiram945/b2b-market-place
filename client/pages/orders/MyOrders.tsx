@@ -1,35 +1,102 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../redux/store';
-import { fetchOrders, updateOrderStatus } from '../../redux/slices/orderSlice';
+import { fetchOrders, restoreOrderList, updateOrderStatus } from '../../redux/slices/orderSlice';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../api';
-import { FileText, Search, X } from '../../components/icons';
-import { User as UserType } from '../../types';
+import { FileText } from '../../components/icons';
+import { Order, User as UserType } from '../../types';
+import { useAlert } from '../../contexts/AlertContext';
+import SearchBar from '../../components/common/SearchBar';
 
+const ADMIN_ORDER_SEARCH_CACHE_KEY = 'admin-order-search-cache';
+
+type OrderSearchCache = {
+  orders: Order[];
+  currentPage: number;
+};
 
 const MyOrders: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { orders, loading, error } = useSelector((state: RootState) => state.orders);
+  const { orders, loading, updatingOrderId } = useSelector((state: RootState) => state.orders);
   const { role } = useAuth();
   const isAdmin = role === 'admin';
   const isBuyer = role === 'buyer';
   const showProviderColumn = !isBuyer;
   const [viewingInvoiceId, setViewingInvoiceId] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+  const [searchInput, setSearchInput] = useState('');
+  const [activeSearchId, setActiveSearchId] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ordersPerPage = 10;
+  const { showAlert } = useAlert();
+  const skipNextFetchRef = useRef(false);
 
   useEffect(() => {
-    if (message?.type === 'success') {
-      const t = setTimeout(() => setMessage(null), 2000);
-      return () => clearTimeout(t);
+    if (skipNextFetchRef.current) {
+      skipNextFetchRef.current = false;
+      return;
     }
-  }, [message]);
+    dispatch(fetchOrders(isAdmin ? { search: activeSearchId || undefined } : {}));
+  }, [activeSearchId, dispatch, isAdmin]);
 
-  useEffect(() => {
-    dispatch(fetchOrders());
-  }, [dispatch]);
+  const cacheCurrentOrders = () => {
+    const payload: OrderSearchCache = {
+      orders,
+      currentPage,
+    };
+    localStorage.setItem(ADMIN_ORDER_SEARCH_CACHE_KEY, JSON.stringify(payload));
+  };
+
+  const restoreCachedOrders = () => {
+    const cachedValue = localStorage.getItem(ADMIN_ORDER_SEARCH_CACHE_KEY);
+    if (!cachedValue) {
+      return false;
+    }
+
+    try {
+      const cachedPayload = JSON.parse(cachedValue) as OrderSearchCache;
+      dispatch(restoreOrderList(cachedPayload.orders));
+      setCurrentPage(cachedPayload.currentPage);
+      localStorage.removeItem(ADMIN_ORDER_SEARCH_CACHE_KEY);
+      return true;
+    } catch (_error) {
+      localStorage.removeItem(ADMIN_ORDER_SEARCH_CACHE_KEY);
+      return false;
+    }
+  };
+
+  const handleSearchSubmit = () => {
+    const normalizedSearch = searchInput.trim();
+    if (!isAdmin || !normalizedSearch || normalizedSearch === activeSearchId) {
+      return;
+    }
+
+    if (!activeSearchId) {
+      cacheCurrentOrders();
+    }
+
+    setCurrentPage(1);
+    setActiveSearchId(normalizedSearch);
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput('');
+
+    if (!activeSearchId) {
+      return;
+    }
+
+    const restored = restoreCachedOrders();
+    if (restored) {
+      skipNextFetchRef.current = true;
+    }
+    setActiveSearchId('');
+
+    if (!restored) {
+      setCurrentPage(1);
+      dispatch(fetchOrders({}));
+    }
+  };
 
   const handleViewInvoice = async (orderId: string) => {
     try {
@@ -40,8 +107,8 @@ const MyOrders: React.FC = () => {
       const file = new Blob([response.data], { type: 'application/pdf' });
       const fileURL = URL.createObjectURL(file);
       window.open(fileURL, '_blank');
-    } catch (err: any) {
-      setMessage({ type: 'error', text: 'Failed to view invoice' });
+    } catch (_err: any) {
+      showAlert({ variant: 'error', title: 'invoice unavailable', message: 'failed to view invoice.' });
     } finally {
       setViewingInvoiceId(null);
     }
@@ -50,21 +117,24 @@ const MyOrders: React.FC = () => {
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     try {
       await dispatch(updateOrderStatus({ orderId, status: newStatus })).unwrap();
-      setMessage({ type: 'success', text: 'Order status updated successfully!' });
+      showAlert({ variant: 'success', title: 'order updated', message: 'order status updated successfully.' });
     } catch (err: any) {
-      setMessage({ type: 'error', text: err || 'Failed to update order status' });
+      showAlert({ variant: 'error', title: 'order update failed', message: err || 'failed to update order status.' });
     }
   };
 
-  const filteredOrders = orders.filter(order => {
-    if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
-    const buyerName = (order.user as UserType)?.fullName?.toLowerCase() || '';
-    const companyName = (order.user as UserType)?.companyName?.toLowerCase() || '';
-    const orderId = order._id.toLowerCase();
-    
-    return buyerName.includes(term) || companyName.includes(term) || orderId.includes(term);
-  });
+  const totalPages = Math.max(1, Math.ceil(orders.length / ordersPerPage));
+  const paginatedOrders = orders.slice((currentPage - 1) * ordersPerPage, currentPage * ordersPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeSearchId, isAdmin, orders.length]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -82,11 +152,13 @@ const MyOrders: React.FC = () => {
   const getVendorName = (vendor: any) => (vendor as UserType)?.companyName || 'Verified Vendor';
   const getCustomerId = (user: any) => typeof user === 'object' ? user?._id : user;
 
-  if (loading) return (
-    <div className="flex justify-center items-center py-32">
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-32">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-red"></div>
-    </div>
-  );
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[90%] mx-auto py-8">
@@ -95,49 +167,28 @@ const MyOrders: React.FC = () => {
         <p className="text-gray-500 font-bold uppercase tracking-widest text-xs mt-1">Transaction History & Fulfilment</p>
       </div>
 
-      {message && (
-        <div className={`${message.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded-md mb-4 flex justify-between items-start`} role="alert">
-          <div className="text-sm font-bold">{message.text}</div>
-          {message.type === 'error' ? (
-            <button type="button" onClick={() => setMessage(null)} className="ml-4 text-xs font-black uppercase tracking-widest">
-              <X className="w-4 h-4" />
-            </button>
-          ) : null}
+      {isAdmin && (
+        <div className="mb-8 max-w-md">
+          <SearchBar
+            value={searchInput}
+            onChange={setSearchInput}
+            onSubmit={handleSearchSubmit}
+            onClear={handleClearSearch}
+            placeholder="search order id"
+            showClear={Boolean(searchInput || activeSearchId)}
+          />
         </div>
       )}
 
-      {isAdmin && (
-        <div className="mb-8 relative max-w-2xl">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
-            <Search className="h-5 w-5" />
-          </div>
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by order ID, buyer name..."
-            className="block w-full h-14 pl-12 pr-12 bg-white border-2 border-gray-100 rounded-2xl text-sm font-bold text-gray-900 outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all shadow-sm"
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-brand-red transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          )}
+      {orders.length === 0 ? (
+        <div className="bg-white p-12 rounded-lg border border-gray-200 text-center shadow-sm">
+          <p className="text-gray-500 font-bold uppercase tracking-widest text-lg italic">
+            {activeSearchId ? 'No orders match that exact _id.' : 'No transaction records detected.'}
+          </p>
         </div>
-      )}
-      
-      {filteredOrders.length === 0 ? (
-         <div className="bg-white p-12 rounded-lg border border-gray-200 text-center shadow-sm">
-            <p className="text-gray-500 font-bold uppercase tracking-widest text-lg italic">
-              {searchTerm ? 'No orders match your search criteria.' : 'No transaction records detected.'}
-            </p>
-         </div>
       ) : (
         <div className="space-y-10">
-          {filteredOrders.map(order => (
+          {paginatedOrders.map(order => (
             <div key={order._id} className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden transition-all hover:shadow-md">
               <div className="p-6 bg-gray-50/50 border-b border-gray-200 flex flex-wrap justify-between items-center gap-6">
                 <div>
@@ -151,39 +202,40 @@ const MyOrders: React.FC = () => {
                     <p className="text-sm font-black text-gray-900 font-mono">{getCustomerId(order.user)}</p>
                   </div>
                 )}
-                
+
                 <div className="flex items-center gap-8">
                   <div className="text-right">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Grand Total</p>
                     <p className="text-3xl font-black text-gray-900 tracking-tighter">${order.totalPrice.toFixed(2)}</p>
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
                     {isAdmin ? (
-                        <select
+                      <select
                         value={order.status}
-                        onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
+                        onChange={(event) => handleStatusUpdate(order._id, event.target.value)}
+                        disabled={updatingOrderId === order._id}
                         className={`text-[10px] font-black uppercase tracking-widest rounded-lg px-4 py-2 border shadow-sm cursor-pointer outline-none transition-all focus:ring-2 focus:ring-brand-red ${getStatusColor(order.status)}`}
-                        >
-                        {['pending', 'shipped', 'ready', 'delivered', 'completed', 'cancelled'].map(s => (
-                            <option key={s} value={s}>{s}</option>
+                      >
+                        {['pending', 'shipped', 'ready', 'delivered', 'completed', 'cancelled'].map(status => (
+                          <option key={status} value={status}>{status}</option>
                         ))}
-                        </select>
+                      </select>
                     ) : (
-                        <span className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg border ${getStatusColor(order.status)}`}>
+                      <span className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg border ${getStatusColor(order.status)}`}>
                         {order.status}
-                        </span>
+                      </span>
                     )}
-                    
+
                     {(isAdmin || isBuyer) && order.invoiceUrl && (
-                        <button
+                      <button
                         onClick={() => handleViewInvoice(order._id)}
                         disabled={viewingInvoiceId === order._id}
                         className="bg-brand-red hover:bg-brand-red-hover p-2.5 rounded-lg text-white shadow-md disabled:opacity-50 transition-colors"
                         title="View Official Invoice"
-                        >
+                      >
                         <FileText className={`w-5 h-5 ${viewingInvoiceId === order._id ? 'animate-pulse' : ''}`} />
-                        </button>
+                      </button>
                     )}
                   </div>
                 </div>
@@ -206,8 +258,8 @@ const MyOrders: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50 bg-white">
-                    {order.items.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-gray-50/50">
+                    {order.items.map((item, index) => (
+                      <tr key={index} className="hover:bg-gray-50/50">
                         <td className="px-8 py-5 text-sm font-bold text-gray-900 tracking-tight capitalize">{item.productTitle}</td>
                         {showProviderColumn && (
                           <td className="px-8 py-5 text-xs font-bold text-gray-500 capitalize">{getVendorName(item.vendor)}</td>
@@ -224,6 +276,19 @@ const MyOrders: React.FC = () => {
                 </table>
               </div>
             </div>
+          ))}
+        </div>
+      )}
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-10 space-x-2">
+          {[...Array(totalPages)].map((_, index) => (
+            <button
+              key={index + 1}
+              onClick={() => setCurrentPage(index + 1)}
+              className={`w-10 h-10 rounded font-bold text-sm transition-all ${currentPage === index + 1 ? 'bg-zinc-900 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:border-brand-red'}`}
+            >
+              {index + 1}
+            </button>
           ))}
         </div>
       )}

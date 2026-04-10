@@ -1,5 +1,5 @@
 import asyncHandler from 'express-async-handler';
-import { getConfig } from '../utils/jsonStore.js';
+import { getConfig } from '../utils/appConfigStore.js';
 import { ROLES } from '../utils/constants.js';
 
 const checkMaintenance = asyncHandler(async (req, res, next) => {

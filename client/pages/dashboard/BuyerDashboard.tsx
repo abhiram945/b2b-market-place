@@ -1,14 +1,11 @@
 
 import React, { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { RootState, AppDispatch } from '../../redux/store';
 import DashboardCard from '../../components/dashboard/DashboardCard';
 import { Truck, Package } from '../../components/icons';
-import { fetchOrders } from '../../redux/slices/orderSlice';
-import { fetchProducts } from '../../redux/slices/productSlice';
 import api from '../../api';
+import { toAssetUrl } from '../../utils/runtimeConfig';
 
 const BRANDS = [
   { name: 'Apple', logo: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg', width: 'w-12' },
@@ -23,18 +20,28 @@ const DEFAULT_HERO_HEADING = 'Exclusive B2B Deals';
 const DEFAULT_HERO_SUBHEADING = 'Bulk purchase discounts on top brands this week!';
 
 const BuyerDashboard: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { orders } = useSelector((state: RootState) => state.orders);
   const [bannerPath, setBannerPath] = React.useState('/uploads/banners/user-dashboard-banner.png');
   const [heroHeading, setHeroHeading] = React.useState(DEFAULT_HERO_HEADING);
   const [heroSubheading, setHeroSubheading] = React.useState(DEFAULT_HERO_SUBHEADING);
+  const [summary, setSummary] = React.useState({ pendingOrders: 0, totalOrders: 0 });
 
   useEffect(() => {
-    dispatch(fetchOrders());
-    dispatch(fetchProducts({}));
-  }, [dispatch]);
+    const fetchSummary = async () => {
+      try {
+        const { data } = await api.get('/dashboard/summary');
+        setSummary({
+          pendingOrders: data.pendingOrders || 0,
+          totalOrders: data.totalOrders || 0,
+        });
+      } catch (error) {
+        setSummary({ pendingOrders: 0, totalOrders: 0 });
+      }
+    };
+
+    fetchSummary();
+  }, []);
 
   useEffect(() => {
     const fetchDashboardConfig = async () => {
@@ -53,8 +60,7 @@ const BuyerDashboard: React.FC = () => {
     fetchDashboardConfig();
   }, []);
 
-  const pendingOrders = orders.filter(o => o.status.toLowerCase() === 'pending').length;
-  const bannerUrl = `${import.meta.env.DEV ? 'http://localhost:5000' : 'http://13.53.123.178:5000'}${bannerPath}`;
+  const bannerUrl = toAssetUrl(bannerPath);
   return (
     <div className="max-w-[90%] mx-auto py-8">
       <div className="pb-6">
@@ -66,13 +72,13 @@ const BuyerDashboard: React.FC = () => {
         <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <DashboardCard 
               title="PENDING ORDERS" 
-              value={pendingOrders} 
+              value={summary.pendingOrders} 
               icon={<Truck className="h-6 w-6 text-white" />}
               colorClass="bg-red-600"
           />
           <DashboardCard 
               title="TOTAL ORDERS" 
-              value={orders.length} 
+              value={summary.totalOrders} 
               icon={<Package className="h-6 w-6 text-white" />}
               colorClass="bg-zinc-900 dark:bg-zinc-800"
           />

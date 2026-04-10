@@ -1,11 +1,13 @@
 import React, { useEffect } from 'react';
-import { useForm, SubmitHandler } from 'react-hook-form';
+import { useForm, SubmitHandler, SubmitErrorHandler } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { loginUser } from '../../redux/slices/userSlice';
 import { RootState, AppDispatch } from '../../redux/store';
 import { Building } from '../../components/icons';
 import { toLowerTrim } from '../../utils/normalize';
+import { useAlert } from '../../contexts/AlertContext';
+import { apiErrorsToAlertItems, formErrorsToAlertItems } from '../../utils/alertHelpers';
 
 type LoginFormInputs = {
   email: string;
@@ -16,11 +18,12 @@ const Login: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { loading, error, isAuthenticated, user } = useSelector((state: RootState) => state.user);
+  const { loading, isAuthenticated, user } = useSelector((state: RootState) => state.user);
+  const { showAlert } = useAlert();
   
   const from = location.state?.from?.pathname || '/dashboard';
 
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormInputs>();
+  const { register, handleSubmit } = useForm<LoginFormInputs>();
 
   useEffect(() => {
     if (isAuthenticated && user && user.role) {
@@ -40,7 +43,22 @@ const Login: React.FC = () => {
     dispatch(loginUser({
       email: toLowerTrim(data.email),
       password: data.password,
-    }));
+    })).unwrap().catch((submitError) => {
+      showAlert({
+        variant: 'error',
+        title: 'login failed',
+        items: apiErrorsToAlertItems(submitError),
+        message: apiErrorsToAlertItems(submitError).length === 0 ? 'invalid email or password' : undefined,
+      });
+    });
+  };
+
+  const onInvalid: SubmitErrorHandler<LoginFormInputs> = (formErrors) => {
+    showAlert({
+      variant: 'error',
+      title: 'fix login fields',
+      items: formErrorsToAlertItems(formErrors),
+    });
   };
 
   return (
@@ -58,7 +76,7 @@ const Login: React.FC = () => {
             AUTHORIZED PERSONNEL ONLY
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit, onInvalid)}>
           <div className="space-y-4">
             <div>
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email</label>
@@ -75,7 +93,6 @@ const Login: React.FC = () => {
                 className="appearance-none relative block w-full px-4 py-3 border-2 border-gray-100 placeholder-gray-300 text-gray-900 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all sm:text-sm font-bold"
                 placeholder="user@gmail.com"
               />
-              <p className="text-red-600 text-[10px] font-bold mt-1 uppercase ml-1">{errors.email?.message}</p>
             </div>
             <div>
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Password</label>
@@ -88,21 +105,14 @@ const Login: React.FC = () => {
                 className="appearance-none relative block w-full px-4 py-3 border-2 border-gray-100 placeholder-gray-300 text-gray-900 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all sm:text-sm font-bold"
                 placeholder="••••••••"
               />
-              <p className="text-red-600 text-[10px] font-bold mt-1 uppercase ml-1">{errors.password?.message}</p>
             </div>
           </div>
-          
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-600 p-4">
-                <p className="text-red-600 text-xs font-black uppercase tracking-widest text-center">{error}</p>
-            </div>
-          )}
 
           <div>
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-4 px-4 border border-transparent text-xs font-black tracking-[0.2em] rounded-xl text-white bg-black hover:bg-brand-red focus:outline-none transition-all disabled:opacity-50 shadow-xl active:scale-95"
+              className="group relative w-full flex justify-center py-4 px-4 border border-transparent text-xs font-black tracking-[0.2em] rounded-xl text-white bg-black hover:bg-brand-red focus:outline-none transition-all disabled:opacity-50 shadow-xl active:scale-95 cursor-pointer"
             >
               {loading ? 'Authenticating...' : 'Sign In'}
             </button>

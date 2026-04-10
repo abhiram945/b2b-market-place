@@ -1,7 +1,6 @@
 import nodemailer from 'nodemailer';
 import twilio from 'twilio';
 import NotificationSubscription from '../models/NotificationSubscription.js';
-import User from '../models/User.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -78,19 +77,19 @@ export const sendWhatsApp = async (to, message) => {
     }
 };
 
-export const checkAndSendNotifications = async (updatedProduct, oldPrice, oldStock) => {
+export const processProductNotifications = async (updatedProduct, oldPrice, oldStock) => {
     try {
         // Find all active subscriptions for this product
         const subscriptions = await NotificationSubscription.find({
             product: updatedProduct._id,
             status: 'active'
-        });
+        }).populate('user', 'email phoneNumber');
 
         if (subscriptions.length === 0) return;
 
-        for (const sub of subscriptions) {
-            const user = await User.findById(sub.user);
-            if (!user) continue;
+        await Promise.all(subscriptions.map(async (sub) => {
+            const user = sub.user;
+            if (!user) return;
 
             let shouldNotify = false;
             let message = '';
@@ -111,17 +110,14 @@ export const checkAndSendNotifications = async (updatedProduct, oldPrice, oldSto
             }
 
             if (shouldNotify) {
-                // 1. Send Email
                 await sendEmail(user.email, subject, message);
-                
-                // 2. Send WhatsApp (if phone number is available)
                 if (user.phoneNumber) {
                     await sendWhatsApp(user.phoneNumber, message);
                 } else {
                     console.log(`[Notification] Skipped WhatsApp for user ${user.email} (no phone number).`);
                 }
             }
-        }
+        }));
     } catch (error) {
         console.error('Error in notification service:', error);
     }

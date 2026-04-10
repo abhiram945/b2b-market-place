@@ -32,6 +32,9 @@ export const productCreationValidation = [
       if (value < req.body.minOrderQty) {
         throw new Error('Maximum order quantity cannot be less than minimum order quantity');
       }
+      if (req.body.stockQty !== undefined && Number(value) > Number(req.body.stockQty)) {
+        throw new Error('Maximum order quantity cannot exceed available stock');
+      }
       return true;
     }),
   body('stockQty').isInt({ min: 0 }).withMessage('Stock quantity must be a non-negative integer'),

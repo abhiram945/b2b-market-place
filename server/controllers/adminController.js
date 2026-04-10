@@ -1,11 +1,12 @@
 import asyncHandler from 'express-async-handler';
 import User from '../models/User.js';
-import { sendEmail, sendWhatsApp } from '../utils/notificationSender.js';
 import { USER_STATUS } from '../utils/constants.js';
-import { getConfig, updateConfig, addToConfig } from '../utils/jsonStore.js';
+import { getConfig, updateConfig, addToConfig } from '../utils/appConfigStore.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { enqueueJob, JOB_TYPES } from '../utils/jobQueue.js';
+import mongoose from 'mongoose';
 
 const normalizeString = (value) => typeof value === 'string' ? value.trim().toLowerCase() : value;
 
@@ -16,8 +17,14 @@ const __dirname = path.dirname(__filename);
 // @route   GET /api/admin/users
 // @access  Private/Admin
 const getUsers = asyncHandler(async (req, res) => {
-  const { status } = req.query;
+  const { status, searchId } = req.query;
   const filter = status ? { status } : {};
+  if (searchId) {
+    if (!mongoose.Types.ObjectId.isValid(String(searchId))) {
+      return res.json([]);
+    }
+    filter._id = String(searchId);
+  }
   const users = await User.find(filter).sort({ createdAt: -1 }); // Sort by creation date, newest first
   res.json(users);
 });
@@ -33,16 +40,11 @@ const updateUserStatus = asyncHandler(async (req, res) => {
     user.status = status;
     const updatedUser = await user.save();
 
-    // Send notification
     if (status === USER_STATUS.APPROVED || status === USER_STATUS.REJECTED) {
-      const subject = `Your Account has been ${status}`;
-      const message = `Hi ${user.fullName}, your registration on the Techtronics Ventures has been ${status}.`;
-      
-      await sendEmail(user.email, subject, message);
-
-      if (user.phoneNumber) {
-        await sendWhatsApp(user.phoneNumber, message);
-      }
+      await enqueueJob(JOB_TYPES.USER_STATUS_NOTIFICATION, {
+        userId: user._id,
+        status,
+      });
     }
 
     res.json(updatedUser);

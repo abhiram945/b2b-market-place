@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X } from '../icons';
-import { useForm, SubmitHandler, UseFormRegister, FieldErrors } from 'react-hook-form';
+import React, { useEffect } from 'react';
+import { useForm, SubmitHandler, SubmitErrorHandler, UseFormRegister } from 'react-hook-form';
 import { useSelector } from 'react-redux';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -9,6 +8,8 @@ import { Product } from '../../types';
 import api from '../../api';
 import { RootState } from '../../redux/store';
 import { toLowerTrim } from '../../utils/normalize';
+import { useAlert } from '../../contexts/AlertContext';
+import { apiErrorsToAlertItems, formErrorsToAlertItems } from '../../utils/alertHelpers';
 
 interface AddProductModalProps {
   isOpen: boolean;
@@ -39,10 +40,9 @@ interface InputFieldProps {
   step?: string;
   list?: string;
   register: UseFormRegister<AddProductFormData>;
-  errors: FieldErrors<AddProductFormData>;
 }
 
-const InputField: React.FC<InputFieldProps> = ({ label, name, type = "text", step, list, register, errors }) => (
+const InputField: React.FC<InputFieldProps> = ({ label, name, type = "text", step, list, register }) => (
   <div className="flex flex-col gap-1.5">
     <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest ml-1">{label}</label>
     <input
@@ -52,24 +52,23 @@ const InputField: React.FC<InputFieldProps> = ({ label, name, type = "text", ste
       {...register(name)}
       className="w-full h-11 bg-white border-2 border-gray-100 rounded-lg px-4 text-sm font-bold text-gray-900 outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all"
     />
-    {errors[name] && <p className="text-[9px] font-bold text-red-600 uppercase mt-0.5 ml-1">{errors[name]?.message as string}</p>}
   </div>
 );
 
 const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onProductAdded }) => {
   const { config } = useSelector((state: RootState) => state.products);
-  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<AddProductFormData>({
+  const { register, handleSubmit, formState: { isSubmitting }, reset, watch, setValue } = useForm<AddProductFormData>({
     resolver: yupResolver(schema) as any,
   });
-
-  const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+  const { showAlert } = useAlert();
+  const stockQty = watch('stockQty');
+  const maxOrderQty = watch('maxOrderQty');
 
   useEffect(() => {
-    if (message?.type === 'success') {
-      const t = setTimeout(() => setMessage(null), 2000);
-      return () => clearTimeout(t);
+    if (typeof stockQty === 'number' && typeof maxOrderQty === 'number' && maxOrderQty > stockQty) {
+      setValue('maxOrderQty', Number(stockQty) as never, { shouldValidate: true });
     }
-  }, [message]);
+  }, [stockQty, maxOrderQty, setValue]);
 
   const onSubmit: SubmitHandler<AddProductFormData> = async (data) => {
     try {
@@ -86,7 +85,8 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onPr
 
       // Ensure max >= min
       const finalMin = computedMin;
-      const finalMax = computedMax < finalMin ? finalMin : computedMax;
+      const stockCappedMax = computedMax > computedStock ? computedStock : computedMax;
+      const finalMax = stockCappedMax < finalMin ? finalMin : stockCappedMax;
 
       const payload = {
         ...data,
@@ -101,68 +101,75 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onPr
         stockQty: computedStock,
       };
       await api.post('/products', payload);
-      setMessage({ type: 'success', text: 'Inventory Entry Created' });
+      showAlert({
+        variant: 'success',
+        title: 'product added',
+        message: 'inventory entry created successfully.',
+      });
       reset();
       onProductAdded();
       onClose();
     } catch (err: any) {
-      setMessage({ type: 'error', text: 'Operation Failed' });
+      showAlert({
+        variant: 'error',
+        title: 'product add failed',
+        items: apiErrorsToAlertItems(err),
+        message: apiErrorsToAlertItems(err).length === 0 ? 'operation failed' : undefined,
+      });
     }
+  };
+
+  const onInvalid: SubmitErrorHandler<AddProductFormData> = (formErrors) => {
+    showAlert({
+      variant: 'error',
+      title: 'fix product fields',
+      items: formErrorsToAlertItems(formErrors),
+    });
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Add new product">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 py-2">
-        {message && (
-          <div className={`${message.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded-md flex justify-between items-start`} role="alert">
-            <div className="text-sm font-bold">{message.text}</div>
-            {message.type === 'error' ? (
-              <button type="button" onClick={() => setMessage(null)} className="ml-4 text-xs font-black uppercase tracking-widest">
-                <X className="w-4 h-4" />
-              </button>
-            ) : null}
-          </div>
-        )}
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-8 py-2">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
           <div className="md:col-span-2">
-            <InputField label="title" name="title" register={register} errors={errors} />
+            <InputField label="title" name="title" register={register} />
           </div>
-          <InputField label="vendor" name="user" register={register} errors={errors} />
+          <InputField label="vendor" name="user" register={register} />
           
           <div className="relative">
-            <InputField label="brand" name="brand" list="brand-list" register={register} errors={errors} />
+            <InputField label="brand" name="brand" list="brand-list" register={register} />
             <datalist id="brand-list">
               {config.brands.map(b => <option key={b} value={b} />)}
             </datalist>
           </div>
 
           <div className="relative">
-            <InputField label="category" name="category" list="category-list" register={register} errors={errors} />
+            <InputField label="category" name="category" list="category-list" register={register} />
             <datalist id="category-list">
               {config.categories.map(c => <option key={c} value={c} />)}
             </datalist>
           </div>
 
           <div className="relative">
-            <InputField label="location" name="location" list="location-list" register={register} errors={errors} />
+            <InputField label="location" name="location" list="location-list" register={register} />
             <datalist id="location-list">
               {config.locations.map(l => <option key={l} value={l} />)}
             </datalist>
           </div>
 
-          <InputField label="price" name="price" type="number" step="0.01" register={register} errors={errors} />
+          <InputField label="price" name="price" type="number" step="0.01" register={register} />
 
           <div className="relative">
-            <InputField label="condition" name="condition" list="condition-list" register={register} errors={errors} />
+            <InputField label="condition" name="condition" list="condition-list" register={register} />
             <datalist id="condition-list">
               {config.conditions.map(c => <option key={c} value={c} />)}
             </datalist>
           </div>
 
-          <InputField label="Min Order Qty" name="minOrderQty" type="number" register={register} errors={errors} />
-          <InputField label="max Order Qty" name="maxOrderQty" type="number" register={register} errors={errors} />
-          <InputField label="stock Qty" name="stockQty" type="number" register={register} errors={errors} />
-          <InputField label="eta" name="eta" type="number" register={register} errors={errors} />
+          <InputField label="Min Order Qty" name="minOrderQty" type="number" register={register} />
+          <InputField label="max Order Qty" name="maxOrderQty" type="number" register={register} />
+          <InputField label="stock Qty" name="stockQty" type="number" register={register} />
+          <InputField label="eta" name="eta" type="number" register={register} />
         </div>
 
         <div className="pt-8 border-t border-gray-100 flex justify-end items-center gap-6">

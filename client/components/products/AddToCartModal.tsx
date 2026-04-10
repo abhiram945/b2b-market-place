@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux';
 import { addToCart } from '../../redux/slices/cartSlice';
 import { Product } from '../../types';
 import Modal from '../common/Modal';
+import { useAlert } from '../../contexts/AlertContext';
 
 interface AddToCartModalProps {
   product: Product;
@@ -14,6 +15,7 @@ const AddToCartModal: React.FC<AddToCartModalProps> = ({ product, isOpen, onClos
   const dispatch = useDispatch();
   const [quantity, setQuantity] = useState(product.minOrderQty);
   const [error, setError] = useState('');
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     if (isOpen) {
@@ -46,8 +48,20 @@ const AddToCartModal: React.FC<AddToCartModalProps> = ({ product, isOpen, onClos
   const handleAddToCart = () => {
     if (!error && !isNaN(quantity)) {
       dispatch(addToCart({ product, quantity }));
+      showAlert({
+        variant: 'success',
+        title: 'added to cart',
+        items: [{ field: product.title, message: `${quantity} unit(s) added to your cart.` }],
+      });
       onClose();
+      return;
     }
+
+    showAlert({
+      variant: 'error',
+      title: 'cannot add to cart',
+      items: [{ field: 'Quantity', message: error || 'please enter a valid quantity' }],
+    });
   };
 
   if (!isOpen) return null;
@@ -75,7 +89,6 @@ const AddToCartModal: React.FC<AddToCartModalProps> = ({ product, isOpen, onClos
                 <p className="text-xs text-gray-500 mt-1">
                     Min: {product.minOrderQty}, Max: {product.maxOrderQty}
                 </p>
-                {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
             </div>
             <div className="flex justify-end pt-4 border-t border-gray-200 space-x-2">
                 <button onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300:bg-gray-500">

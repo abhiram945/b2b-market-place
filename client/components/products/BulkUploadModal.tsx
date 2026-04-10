@@ -87,14 +87,19 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
     }
   };
 
+  const getCurrentFile = () => fileInputRef.current?.files?.[0] || file;
+
   const parseCsv = () => {
-    if (!file) {
+    const selectedFile = getCurrentFile();
+
+    if (!selectedFile) {
       setMessage({ type: 'error', text: 'Please select a CSV file first.' });
       return;
     }
 
     setIsParsing(true);
-    Papa.parse(file, {
+    setFile(selectedFile);
+    Papa.parse(selectedFile, {
       header: true,
       skipEmptyLines: true,
       dynamicTyping: true, // Attempt to convert values to appropriate types
@@ -233,6 +238,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
           <div className="flex-1">
             <label htmlFor="csvFile" className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-1.5">Select CSV File</label>
             <input
+              ref={fileInputRef}
               type="file"
               id="csvFile"
               accept=".csv"

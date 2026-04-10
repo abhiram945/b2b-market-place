@@ -3,6 +3,8 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { User, ErrorResponse } from '../../types';
 import api from '../../api';
 import { jwtDecode } from 'jwt-decode';
+import { setAccessToken } from '../../utils/authToken';
+import { getAccessToken } from '../../utils/authToken';
 
 interface DecodedToken {
   _id: string;
@@ -27,7 +29,7 @@ interface UserState {
 const initialState: UserState = {
   isAuthenticated: false,
   user: null,
-  token: localStorage.getItem('token'),
+  token: null,
   loading: false,
   isRehydrating: true,
   error: null,
@@ -38,10 +40,10 @@ export const loginUser = createAsyncThunk(
   async (loginData: Pick<User, 'email' | 'password'>, { rejectWithValue }) => {
     try {
       const { data } = await api.post('/auth/login', loginData);
-      localStorage.setItem('token', data.token); // Store token immediately
+      setAccessToken(data.token);
       return data; // Return the user and token
     } catch (error: any) {
-      localStorage.removeItem('token'); // Clear token if login fails
+      setAccessToken(null);
       return rejectWithValue(error.response.data.message || 'Login failed');
     }
   }
@@ -67,7 +69,7 @@ export const fetchUserProfile = createAsyncThunk(
   'user/fetchUserProfile',
   async (_, { rejectWithValue }) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessToken();
       if (!token) {
         return rejectWithValue('No token found');
       }
@@ -82,50 +84,16 @@ export const fetchUserProfile = createAsyncThunk(
 export const rehydrateAuth = createAsyncThunk(
   'user/rehydrate',
   async (_, { rejectWithValue }) => {
-    const token = localStorage.getItem('token');
-    
-    // 1. Check if token exists and is valid
-    if (token) {
-      try {
-        const decoded = jwtDecode<DecodedToken>(token);
-        if (decoded.exp * 1000 > Date.now()) {
-          // Token still valid, return user info
-          return {
-            token,
-            user: {
-              _id: decoded._id,
-              fullName: decoded.fullName,
-              email: decoded.email,
-              companyName: decoded.companyName,
-              role: decoded.role,
-              password: ''
-            }
-          };
-        }
-      } catch (e) {
-        // Invalid token format
-      }
-    }
-
-    // 2. If token missing or expired, try background refresh using HTTP-only cookie
     try {
       const { data } = await api.post('/auth/refresh');
       const newToken = data.token;
-      localStorage.setItem('token', newToken);
-      const decoded = jwtDecode<DecodedToken>(newToken);
+      setAccessToken(newToken);
       return {
         token: newToken,
-        user: {
-          _id: decoded._id,
-          fullName: decoded.fullName,
-          email: decoded.email,
-          companyName: decoded.companyName,
-          role: decoded.role,
-          password: ''
-        }
+        user: data.user,
       };
     } catch (error: any) {
-      localStorage.removeItem('token');
+      setAccessToken(null);
       return rejectWithValue('Session expired');
     }
   }
@@ -137,8 +105,8 @@ const userSlice = createSlice({
   initialState,
   reducers: {
     logout(state) {
-      localStorage.removeItem('token');
       localStorage.removeItem('cart');
+      setAccessToken(null);
       state.isAuthenticated = false;
       state.user = null;
       state.token = null;
@@ -162,13 +130,11 @@ const userSlice = createSlice({
                     };
                     state.token = token;
                 } else {
-                    // Token expired
-                    localStorage.removeItem('token');
+                    setAccessToken(null);
                     state.token = null;
                 }
             } catch (error) {
-                // Invalid token
-                localStorage.removeItem('token');
+                setAccessToken(null);
                 state.token = null;
             }
         }
@@ -194,7 +160,7 @@ const userSlice = createSlice({
         state.user = null;
         state.loading = false;
         state.error = action.payload as string;
-        localStorage.removeItem('token');
+        setAccessToken(null);
       })
       .addCase(registerUser.pending, (state) => {
         state.loading = true;
@@ -222,7 +188,7 @@ const userSlice = createSlice({
         state.user = null;
         state.loading = false;
         state.error = action.payload as string;
-        localStorage.removeItem('token'); // Clear token if profile fetch fails
+        setAccessToken(null);
       })
       .addCase(rehydrateAuth.pending, (state) => {
         state.isRehydrating = true;
@@ -231,12 +197,14 @@ const userSlice = createSlice({
         state.isAuthenticated = true;
         state.user = action.payload.user;
         state.token = action.payload.token;
+        setAccessToken(action.payload.token);
         state.isRehydrating = false;
       })
       .addCase(rehydrateAuth.rejected, (state) => {
         state.isAuthenticated = false;
         state.user = null;
         state.token = null;
+        setAccessToken(null);
         state.isRehydrating = false;
       });
   },

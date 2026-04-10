@@ -1,10 +1,10 @@
 import asyncHandler from 'express-async-handler';
-import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import Product from '../models/Product.js';
 import User from '../models/User.js';
-import { checkAndSendNotifications } from '../utils/notificationSender.js';
 import { ROLES } from '../utils/constants.js';
-import { getConfig, updateConfig, addToConfig } from '../utils/jsonStore.js';
+import { getConfig, updateConfig, addToConfig } from '../utils/appConfigStore.js';
+import { enqueueJob, JOB_TYPES } from '../utils/jobQueue.js';
 
 const normalizeString = (value) => typeof value === 'string' ? value.trim().toLowerCase() : value;
 const normalizeInteger = (value) => {
@@ -14,6 +14,21 @@ const normalizeInteger = (value) => {
 };
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const exactCaseInsensitive = (value) => ({ $regex: `^${escapeRegex(value)}$`, $options: 'i' });
+const clampOrderQuantities = ({ minOrderQty, maxOrderQty, stockQty }) => {
+  const normalizedStock = stockQty !== undefined ? Number(stockQty) : undefined;
+  const normalizedMin = minOrderQty !== undefined ? Number(minOrderQty) : undefined;
+  let normalizedMax = maxOrderQty !== undefined ? Number(maxOrderQty) : undefined;
+
+  if (normalizedStock !== undefined && normalizedMax !== undefined && normalizedMax > normalizedStock) {
+    normalizedMax = normalizedStock;
+  }
+
+  return {
+    minOrderQty: normalizedMin,
+    maxOrderQty: normalizedMax,
+    stockQty: normalizedStock,
+  };
+};
 
 // @desc    Fetch all products
 // @route   GET /api/products
@@ -22,7 +37,7 @@ const getProducts = asyncHandler(async (req, res) => {
   const pageSize = Number(req.query.limit) || 10;
   const page = Number(req.query.page) || 1;
 
-  const { search, brand, category, location, minPrice, maxPrice, sort } = req.query;
+  const { search, searchId, brand, category, location, minPrice, maxPrice, sort } = req.query;
 
   // req.user is populated by optionalProtect middleware if token exists
   const user = req.user;
@@ -37,6 +52,12 @@ const getProducts = asyncHandler(async (req, res) => {
 
   if (search) {
     query.title = { $regex: search, $options: 'i' };
+  }
+  if (searchId) {
+    if (!mongoose.Types.ObjectId.isValid(String(searchId))) {
+      return res.json({ products: [], page, pages: 0, total: 0 });
+    }
+    query._id = new mongoose.Types.ObjectId(String(searchId));
   }
   if (brand) {
     query.brand = exactCaseInsensitive(normalizeString(brand));
@@ -58,6 +79,7 @@ const getProducts = asyncHandler(async (req, res) => {
   }
 
   let sortOption = {};
+  let projection = {};
   if (sort === 'price_desc') {
     sortOption = { price: -1 };
   } else if (sort === 'price_asc') {
@@ -67,15 +89,24 @@ const getProducts = asyncHandler(async (req, res) => {
     sortOption = { createdAt: -1 };
   }
 
+  if (search) {
+    query = {
+      ...query,
+      $text: { $search: search },
+    };
+    delete query.title;
+    sortOption = { score: { $meta: 'textScore' }, ...sortOption };
+    projection = { score: { $meta: 'textScore' } };
+  }
+
   const count = await Product.countDocuments(query);
   const products = await Product.find(query)
+    .select(projection)
     .sort(sortOption)
     .limit(pageSize)
     .skip(pageSize * (page - 1));
 
-  const config = await getConfig();
-
-  res.json({ products, page, pages: Math.ceil(count / pageSize), total: count, config });
+  res.json({ products, page, pages: Math.ceil(count / pageSize), total: count });
 });
 
 // @desc    Get filter options (independent of current filters)
@@ -110,6 +141,7 @@ const getFilterOptions = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const createProduct = asyncHandler(async (req, res) => {
   const { user, title, brand, category, location, price, minOrderQty, maxOrderQty, stockQty, condition, eta } = req.body;
+  const normalizedQuantities = clampOrderQuantities({ minOrderQty, maxOrderQty, stockQty });
 
   const product = new Product({
     user,
@@ -118,9 +150,9 @@ const createProduct = asyncHandler(async (req, res) => {
     category: normalizeString(category),
     location: normalizeString(location),
     price,
-    minOrderQty,
-    maxOrderQty,
-    stockQty,
+    minOrderQty: normalizedQuantities.minOrderQty,
+    maxOrderQty: normalizedQuantities.maxOrderQty,
+    stockQty: normalizedQuantities.stockQty,
     condition: normalizeString(condition),
     eta: normalizeInteger(eta),
   });
@@ -165,15 +197,16 @@ const updateProduct = asyncHandler(async (req, res) => {
     condition,
     eta,
   } = req.body;
+  const normalizedQuantities = clampOrderQuantities({ minOrderQty, maxOrderQty, stockQty });
 
   product.title = title !== undefined ? normalizeString(title) : product.title;
   product.brand = brand !== undefined ? normalizeString(brand) : product.brand;
   product.category = category !== undefined ? normalizeString(category) : product.category;
   product.location = location !== undefined ? normalizeString(location) : product.location;
   product.price = price !== undefined ? Number(price) : product.price;
-  product.stockQty = stockQty !== undefined ? Number(stockQty) : product.stockQty;
-  product.minOrderQty = minOrderQty !== undefined ? Number(minOrderQty) : product.minOrderQty;
-  product.maxOrderQty = maxOrderQty !== undefined ? Number(maxOrderQty) : product.maxOrderQty;
+  product.stockQty = normalizedQuantities.stockQty !== undefined ? normalizedQuantities.stockQty : product.stockQty;
+  product.minOrderQty = normalizedQuantities.minOrderQty !== undefined ? normalizedQuantities.minOrderQty : product.minOrderQty;
+  product.maxOrderQty = normalizedQuantities.maxOrderQty !== undefined ? normalizedQuantities.maxOrderQty : product.maxOrderQty;
   product.eta = eta !== undefined ? normalizeInteger(eta) : product.eta;
   product.condition = condition !== undefined ? normalizeString(condition) : product.condition;
 
@@ -190,7 +223,11 @@ const updateProduct = asyncHandler(async (req, res) => {
   if (condition) await addToConfig('conditions', condition);
 
   // Trigger notification check
-  checkAndSendNotifications(updatedProduct, oldPrice, oldStock);
+  await enqueueJob(JOB_TYPES.PRODUCT_NOTIFICATION, {
+    productId: updatedProduct._id,
+    oldPrice,
+    oldStock,
+  });
 
   res.json(updatedProduct);
 });
@@ -226,6 +263,9 @@ const updateProductByVendor = asyncHandler(async (req, res) => {
 
   product.price = price !== undefined ? Number(price) : product.price;
   product.stockQty = stockQty !== undefined ? Number(stockQty) : product.stockQty;
+  if (stockQty !== undefined && product.maxOrderQty > product.stockQty) {
+    product.maxOrderQty = product.stockQty;
+  }
   
   if (isStockEnabled !== undefined) {
     product.isStockEnabled = isStockEnabled;
@@ -234,7 +274,11 @@ const updateProductByVendor = asyncHandler(async (req, res) => {
   const updatedProduct = await product.save();
 
   // Trigger notification check
-  checkAndSendNotifications(updatedProduct, oldPrice, oldStock);
+  await enqueueJob(JOB_TYPES.PRODUCT_NOTIFICATION, {
+    productId: updatedProduct._id,
+    oldPrice,
+    oldStock,
+  });
 
   res.json(updatedProduct);
 });
@@ -266,6 +310,7 @@ const bulkCreateProducts = asyncHandler(async (req, res) => {
   }
   const createdProducts = [];
   const failedProducts = [];
+  const normalizedProducts = [];
   
   // Set to collect new config values to update once at the end
   const newConfigs = {
@@ -274,6 +319,13 @@ const bulkCreateProducts = asyncHandler(async (req, res) => {
     locations: new Set(),
     conditions: new Set()
   };
+
+  const vendorIds = [...new Set(productsToCreate.map(product => product?.user).filter(Boolean))];
+  const vendorRecords = await User.find({
+    _id: { $in: vendorIds },
+    role: ROLES.VENDOR,
+  }).select('_id');
+  const validVendorIds = new Set(vendorRecords.map(vendor => vendor._id.toString()));
 
   for (let i = 0; i < productsToCreate.length; i++) {
     const productData = productsToCreate[i];
@@ -286,41 +338,52 @@ const bulkCreateProducts = asyncHandler(async (req, res) => {
         continue;
       }
 
-      const vendorExists = await User.findById(productData.user);
-      if (!vendorExists || vendorExists.role !== ROLES.VENDOR) {
+      if (!validVendorIds.has(String(productData.user))) {
           console.warn(`${logPrefix} Validation failed: Invalid vendor ID ${productData.user}`);
           failedProducts.push({ product: productData, error: 'Invalid or non-vendor user ID provided' });
           continue;
       }
 
-      const product = new Product({
+      const normalizedProduct = {
         user: productData.user,
         title: normalizeString(productData.title),
         brand: normalizeString(productData.brand),
         category: normalizeString(productData.category),
         location: normalizeString(productData.location),
         price: productData.price,
-        minOrderQty: productData.minOrderQty,
-        maxOrderQty: productData.maxOrderQty,
-        stockQty: productData.stockQty,
+        ...clampOrderQuantities({
+          minOrderQty: productData.minOrderQty,
+          maxOrderQty: productData.maxOrderQty,
+          stockQty: productData.stockQty,
+        }),
         condition: normalizeString(productData.condition),
         eta: normalizeInteger(productData.eta),
         isStockEnabled: productData.isStockEnabled !== undefined ? productData.isStockEnabled : true,
-      });
+      };
 
-      const createdProduct = await product.save();
-      createdProducts.push(createdProduct);
+      const validationError = new Product(normalizedProduct).validateSync();
+      if (validationError) {
+        failedProducts.push({ product: productData, error: validationError.message });
+        continue;
+      }
+
+      normalizedProducts.push(normalizedProduct);
 
       // Collect config values
-      if (product.brand) newConfigs.brands.add(product.brand.trim());
-      if (product.category) newConfigs.categories.add(product.category.trim());
-      if (product.location) newConfigs.locations.add(product.location.trim());
-      if (product.condition) newConfigs.conditions.add(product.condition.trim());
+      if (normalizedProduct.brand) newConfigs.brands.add(normalizedProduct.brand.trim());
+      if (normalizedProduct.category) newConfigs.categories.add(normalizedProduct.category.trim());
+      if (normalizedProduct.location) newConfigs.locations.add(normalizedProduct.location.trim());
+      if (normalizedProduct.condition) newConfigs.conditions.add(normalizedProduct.condition.trim());
 
     } catch (error) {
       console.error(`${logPrefix} System error: ${error.message}`);
       failedProducts.push({ product: productData, error: error.message });
     }
+  }
+
+  if (normalizedProducts.length > 0) {
+    const insertedProducts = await Product.insertMany(normalizedProducts, { ordered: false });
+    createdProducts.push(...insertedProducts);
   }
 
   // Batch update config once

@@ -1,7 +1,9 @@
 import axios from 'axios';
+import { apiBasePath } from './utils/runtimeConfig';
+import { getAccessToken, setAccessToken } from './utils/authToken';
 
 const api = axios.create({
-  baseURL:import.meta.env.DEV ? 'http://localhost:5000/api' : 'http://13.53.123.178:5000/api',
+  baseURL: apiBasePath,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -10,7 +12,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = getAccessToken();
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
@@ -78,7 +80,7 @@ api.interceptors.response.use(
         const { data } = await axios.post(`${api.defaults.baseURL}/auth/refresh`, {}, { withCredentials: true });
         
         const newToken = data.token;
-        localStorage.setItem('token', newToken);
+        setAccessToken(newToken);
         hasHandledSessionExpiry = false;
         
         // Update the authorization header for ALL subsequent requests
@@ -96,8 +98,8 @@ api.interceptors.response.use(
         isRefreshing = false;
         
         // Refresh token failed or expired, logout user
-        localStorage.removeItem('token');
         localStorage.removeItem('cart');
+        setAccessToken(null);
         delete api.defaults.headers.common['Authorization'];
 
         // Avoid repeated console noise and redirect loops on expected session expiry
@@ -112,8 +114,8 @@ api.interceptors.response.use(
     }
     
     if (status === 401 && isRefreshRequest) {
-      localStorage.removeItem('token');
       localStorage.removeItem('cart');
+      setAccessToken(null);
       delete api.defaults.headers.common['Authorization'];
     }
 

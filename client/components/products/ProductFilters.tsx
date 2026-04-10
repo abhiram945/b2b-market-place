@@ -1,18 +1,32 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../redux/store';
-import { fetchFilterOptions } from '../../redux/slices/productSlice';
-import { ChevronDown, Search, X } from '../icons';
+import { fetchFilterOptions, restoreProductList } from '../../redux/slices/productSlice';
+import { ChevronDown } from '../icons';
 import { toLowerTrim } from '../../utils/normalize';
+import { toAssetUrl } from '../../utils/runtimeConfig';
+import SearchBar from '../common/SearchBar';
+import { Product } from '../../types';
 
 interface ProductFiltersProps {
   filters: any;
   setFilters: (filters: any) => void;
+  restoreFilters: (filters: any) => void;
 }
+
+type ProductSearchCache = {
+  filters: any;
+  products: Product[];
+  page: number;
+  pages: number;
+  total: number;
+};
+
+const PRODUCT_SEARCH_CACHE_KEY = 'products-page-search-cache';
 
 const BrandLogo: React.FC<{ brand: string }> = ({ brand }) => {
   const [hasLogo, setHasLogo] = useState(true);
-  const logoUrl = import.meta.env.DEV ? `http://localhost:5000/uploads/brands/${brand.toLowerCase()}.png` : `http://13.53.123.178:5000/uploads/brands/${brand.toLowerCase()}.png`;
+  const logoUrl = toAssetUrl(`/uploads/brands/${brand.toLowerCase()}.png`);
 
   if (!hasLogo) {
     return (
@@ -32,9 +46,9 @@ const BrandLogo: React.FC<{ brand: string }> = ({ brand }) => {
   );
 };
 
-const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters }) => {
+const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters, restoreFilters }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { products, config, filterOptions } = useSelector((state: RootState) => state.products);
+  const { products, filterOptions, page, pages, total } = useSelector((state: RootState) => state.products);
   const [localSearch, setLocalSearch] = useState(filters.search || '');
   const hasActiveFilters = Boolean(filters.search || filters.brand || filters.category || filters.location || filters.sort);
 
@@ -49,16 +63,69 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters }) 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFilters({ ...filters, [name]: name === 'sort' ? value : toLowerTrim(value) });
+    setFilters({ ...filters, [name]: name === 'sort' ? value : toLowerTrim(value), page: '' });
   };
 
   const handleBrandClick = (brand: string) => {
-    setFilters({ ...filters, brand: toLowerTrim(brand) });
+    setFilters({ ...filters, brand: toLowerTrim(brand), page: '' });
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setFilters({ ...filters, search: toLowerTrim(localSearch) });
+  const cacheCurrentResults = () => {
+    const payload: ProductSearchCache = {
+      filters,
+      products,
+      page,
+      pages,
+      total,
+    };
+    localStorage.setItem(PRODUCT_SEARCH_CACHE_KEY, JSON.stringify(payload));
+  };
+
+  const restoreCachedResults = () => {
+    const cachedValue = localStorage.getItem(PRODUCT_SEARCH_CACHE_KEY);
+    if (!cachedValue) {
+      return false;
+    }
+
+    try {
+      const cachedPayload = JSON.parse(cachedValue) as ProductSearchCache;
+      dispatch(restoreProductList({
+        products: cachedPayload.products,
+        page: cachedPayload.page,
+        pages: cachedPayload.pages,
+        total: cachedPayload.total,
+      }));
+      restoreFilters(cachedPayload.filters);
+      localStorage.removeItem(PRODUCT_SEARCH_CACHE_KEY);
+      return true;
+    } catch (_error) {
+      localStorage.removeItem(PRODUCT_SEARCH_CACHE_KEY);
+      return false;
+    }
+  };
+
+  const handleSearchSubmit = () => {
+    const normalizedSearch = toLowerTrim(localSearch);
+    if (!normalizedSearch || normalizedSearch === filters.search) {
+      return;
+    }
+
+    if (!filters.search) {
+      cacheCurrentResults();
+    }
+
+    setFilters({ ...filters, search: normalizedSearch, page: '' });
+  };
+
+  const handleClearSearch = () => {
+    setLocalSearch('');
+    if (filters.search) {
+      const restored = restoreCachedResults();
+      if (restored) {
+        return;
+      }
+    }
+    setFilters({ ...filters, search: '', page: '' });
   };
 
   const handleClearFilters = () => {
@@ -69,6 +136,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters }) 
       category: '',
       location: '',
       sort: '',
+      page: '',
     });
   };
 
@@ -77,33 +145,14 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters }) 
       <div className="w-full mx-auto flex flex-wrap items-center gap-6">
 
         {/* Search */}
-        <form onSubmit={handleSearchSubmit} className="relative flex-1 min-w-[250px]">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-            <Search className="h-4 w-4" />
-          </div>
-          <input
-            type="text"
-            value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
-            placeholder="Search inventory..."
-            className="block w-full h-10 pl-10 pr-24 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-900 outline-none focus:border-brand-red transition-all"
-          />
-          {localSearch && (
-            <button
-              type="button"
-              onClick={() => {
-                setLocalSearch('');
-                setFilters({ ...filters, search: '' });
-              }}
-              className="absolute inset-y-0 right-20 flex items-center pr-2 text-gray-400 hover:text-brand-red transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-          <button type="submit" className="absolute inset-y-1.5 right-1.5 px-3 bg-black hover:bg-brand-red text-white text-[9px] font-black uppercase tracking-widest rounded transition-all active:scale-95">
-            SEARCH
-          </button>
-        </form>
+        <SearchBar
+          value={localSearch}
+          onChange={setLocalSearch}
+          onSubmit={handleSearchSubmit}
+          onClear={handleClearSearch}
+          placeholder="Search inventory..."
+          showClear={Boolean(localSearch || filters.search)}
+        />
 
         {/* Brands */}
         <div className="flex items-center gap-3 overflow-x-auto no-scrollbar max-w-[400px]">
@@ -157,7 +206,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters }) 
           type="button"
           onClick={handleClearFilters}
           disabled={!hasActiveFilters}
-          className="h-10 px-4 border border-gray-200 rounded-lg bg-white text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-gray-900 hover:border-gray-300 disabled:opacity-40 disabled:cursor-default transition-all"
+          className="h-10 px-4 border border-gray-200 rounded-lg bg-white text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-gray-900 hover:border-gray-300 disabled:opacity-40 disabled:cursor-default transition-all cursor-pointer"
         >
           Clear Filters
         </button>

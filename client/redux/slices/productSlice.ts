@@ -24,6 +24,13 @@ interface ProductState {
   };
 }
 
+type ProductListPayload = {
+  products: Product[];
+  page: number;
+  pages: number;
+  total: number;
+};
+
 const initialState: ProductState = {
   products: [],
   loading: false,
@@ -47,7 +54,7 @@ const initialState: ProductState = {
 
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
-  async (filters: { page?: number; limit?: number; search?: string; brand?: string; location?: string; category?: string; minPrice?: number; maxPrice?: number } = {}, { rejectWithValue }) => {
+  async (filters: { page?: number; limit?: number; search?: string; searchId?: string; brand?: string; location?: string; category?: string; minPrice?: number; maxPrice?: number } = {}, { rejectWithValue }) => {
     try {
       const { data } = await api.get('/products', { params: filters });
       return data;
@@ -132,7 +139,16 @@ export const fetchFilterOptions = createAsyncThunk(
 const productSlice = createSlice({
   name: 'products',
   initialState,
-  reducers: {},
+  reducers: {
+    restoreProductList(state, action: PayloadAction<ProductListPayload>) {
+      state.products = action.payload.products;
+      state.page = action.payload.page;
+      state.pages = action.payload.pages;
+      state.total = action.payload.total;
+      state.loading = false;
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       // Fetch Products
@@ -140,14 +156,11 @@ const productSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchProducts.fulfilled, (state, action: PayloadAction<{ products: Product[]; page: number; pages: number; total: number; config: any }>) => {
+      .addCase(fetchProducts.fulfilled, (state, action: PayloadAction<{ products: Product[]; page: number; pages: number; total: number }>) => {
         state.products = action.payload.products;
         state.page = action.payload.page;
         state.pages = action.payload.pages;
         state.total = action.payload.total;
-        if (action.payload.config) {
-          state.config = action.payload.config;
-        }
         state.loading = false;
       })
       .addCase(fetchProducts.rejected, (state, action) => {
@@ -231,4 +244,5 @@ const productSlice = createSlice({
   },
 });
 
+export const { restoreProductList } = productSlice.actions;
 export default productSlice.reducer;

@@ -143,7 +143,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onProductClick, onEd
             {role === 'vendor' && (
               <button 
                 onClick={() => onEditClick(product)} 
-                className="h-9 px-6 bg-black hover:bg-brand-red text-white rounded-lg font-black text-[10px] uppercase tracking-widest transition-colors min-w-[100px]"
+                className="h-9 px-6 bg-black hover:bg-brand-red text-white rounded-lg font-black text-[10px] uppercase tracking-widest transition-colors min-w-[100px] cursor-pointer"
               >
                 EDIT STOCK
               </button>

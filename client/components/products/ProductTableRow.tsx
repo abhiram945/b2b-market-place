@@ -138,7 +138,7 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
                 {role === 'vendor' && (
                 <button 
                     onClick={() => onEditClick(product)} 
-                    className="h-9 px-6 bg-zinc-900 hover:bg-red-600 text-white rounded-none font-black text-[10px] uppercase tracking-widest transition-colors min-w-[100px]"
+                    className="h-9 px-6 bg-zinc-900 hover:bg-red-600 text-white rounded-none font-black text-[10px] uppercase tracking-widest transition-colors min-w-[100px] cursor-pointer"
                 >
                     EDIT STOCK
                 </button>

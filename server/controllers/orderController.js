@@ -1,14 +1,13 @@
 import asyncHandler from 'express-async-handler';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
-import User from '../models/User.js';
 import Cart from '../models/Cart.js';
-import { generateInvoice } from '../utils/invoiceGenerator.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { ROLES } from '../utils/constants.js';
 import mongoose from 'mongoose';
+import { enqueueJob, JOB_TYPES } from '../utils/jobQueue.js';
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -27,10 +26,12 @@ const createOrder = asyncHandler(async (req, res) => {
   try {
     const orderItems = [];
     let totalPrice = 0;
+    const productIds = items.map(item => item.productId);
+    const products = await Product.find({ _id: { $in: productIds } }).session(session);
+    const productMap = new Map(products.map(product => [product._id.toString(), product]));
 
-    // 1. Validation & Execution: Loop through items and update stock
     for (const item of items) {
-      const product = await Product.findById(item.productId).session(session);
+      const product = productMap.get(String(item.productId));
       if (!product) {
         throw new Error(`Product not found: ${item.productId}`);
       }
@@ -47,6 +48,9 @@ const createOrder = asyncHandler(async (req, res) => {
 
       // Update stock
       product.stockQty -= item.quantity;
+      if (product.maxOrderQty > product.stockQty) {
+        product.maxOrderQty = product.stockQty;
+      }
       await product.save({ session });
 
       const itemTotalPrice = product.price * item.quantity;
@@ -77,17 +81,12 @@ const createOrder = asyncHandler(async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
-    // Generate Invoice (outside transaction logic)
-    try {
-      const buyer = await User.findById(req.user._id);
-      const invoiceUrlPath = await generateInvoice(createdOrder, buyer);
-      createdOrder.invoiceUrl = invoiceUrlPath;
-      await createdOrder.save();
-    } catch (error) {
-      console.error('CRITICAL: Invoice generation failed for order:', createdOrder._id, error.message);
-    }
+    await enqueueJob(JOB_TYPES.INVOICE, {
+      orderId: createdOrder._id,
+      userId: req.user._id,
+    });
 
-    return res.status(201).json(createdOrder);
+    return res.status(201).json(createdOrder.toObject());
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
@@ -106,13 +105,23 @@ const getMyOrders = asyncHandler(async (req, res) => {
   }
 
   let orders;
+  const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
   if (req.user.role === ROLES.BUYER) {
     orders = await Order.find({ user: req.user._id }).populate('items.vendor', 'fullName companyName');
   } else if (req.user.role === ROLES.VENDOR) {
     // For vendors, find orders that contain at least one of their products
     orders = await Order.find({ 'items.vendor': req.user._id }).populate('user', 'fullName email companyName');
   } else if (req.user.role === ROLES.ADMIN) {
-    orders = await Order.find({}).populate('user', 'fullName email companyName').populate('items.vendor', 'fullName companyName');
+    let adminQuery = {};
+
+    if (search) {
+      if (!mongoose.Types.ObjectId.isValid(search)) {
+        return res.json([]);
+      }
+      adminQuery = { _id: search };
+    }
+
+    orders = await Order.find(adminQuery).populate('user', 'fullName email companyName').populate('items.vendor', 'fullName companyName');
   }
   res.json(orders);
 });

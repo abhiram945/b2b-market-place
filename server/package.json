@@ -9,9 +9,8 @@
   },
   "nodemonConfig": {
     "ignore": [
-      "**/data/config.json",
       "**/uploads/**",
-      "**/utils/jsonStore.js"
+      "**/utils/appConfigStore.js"
     ]
   },
   "dependencies": {

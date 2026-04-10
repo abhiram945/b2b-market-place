@@ -6,6 +6,8 @@ import { AppDispatch, RootState } from '../../redux/store';
 import { fetchUserSubscriptions } from '../../redux/slices/notificationSlice';
 import { useAuth } from '../../hooks/useAuth';
 import { fetchCart, syncCart } from '../../redux/slices/cartSlice';
+import { apiBasePath } from '../../utils/runtimeConfig';
+import { getAccessToken } from '../../utils/authToken';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -15,30 +17,95 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
   const { isAuthenticated, user } = useAuth();
-  const cartItems = useSelector((state: RootState) => state.cart.items);
-  const isInitialMount = useRef(true);
+  const { items: cartItems, isDirty } = useSelector((state: RootState) => state.cart);
+  const cartSnapshotRef = useRef(cartItems);
+  const didHydrateCartRef = useRef(false);
+
+  useEffect(() => {
+    cartSnapshotRef.current = cartItems;
+  }, [cartItems]);
 
   useEffect(() => {
     if (isAuthenticated) {
       dispatch(fetchUserSubscriptions());
-      // Only fetch cart if the user is not an admin
-      if (user?.role !== 'admin') {
-        dispatch(fetchCart());
-      }
     }
-  }, [dispatch, isAuthenticated, user?.role]);
+  }, [dispatch, isAuthenticated]);
 
   useEffect(() => {
-    if (isAuthenticated && !isInitialMount.current) {
-      const timer = setTimeout(() => {
-        dispatch(syncCart(cartItems));
-      }, 1000); // Debounce sync
-      return () => clearTimeout(timer);
+    if (!isAuthenticated || user?.role === 'admin') {
+      didHydrateCartRef.current = false;
+      return;
     }
-    if (isAuthenticated && isInitialMount.current) {
-      isInitialMount.current = false;
+
+    if (didHydrateCartRef.current) {
+      return;
     }
-  }, [dispatch, isAuthenticated, cartItems]);
+
+    didHydrateCartRef.current = true;
+
+    if (isDirty && cartItems.length > 0) {
+      dispatch(syncCart(cartItems))
+        .unwrap()
+        .then(() => {
+          dispatch(fetchCart());
+        })
+        .catch(() => {
+          didHydrateCartRef.current = false;
+        });
+      return;
+    }
+
+    dispatch(fetchCart()).unwrap().catch(() => {
+      didHydrateCartRef.current = false;
+    });
+  }, [dispatch, isAuthenticated, user?.role, isDirty, cartItems]);
+
+  useEffect(() => {
+    if (!isAuthenticated || user?.role === 'admin') {
+      return;
+    }
+
+    const flushCart = () => {
+      if (!isDirty) return;
+
+      const token = getAccessToken();
+      if (!token) return;
+
+      const payload = {
+        items: cartSnapshotRef.current.map(item => ({
+          product: item._id,
+          quantity: item.quantity,
+        })),
+      };
+
+      fetch(`${apiBasePath}/cart`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+        keepalive: true,
+      }).catch(() => undefined);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        flushCart();
+      }
+    };
+
+    window.addEventListener('beforeunload', flushCart);
+    window.addEventListener('blur', flushCart);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', flushCart);
+      window.removeEventListener('blur', flushCart);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isAuthenticated, isDirty, user?.role]);
 
   return (
     <div className="flex min-h-screen bg-gray-50 text-gray-900">

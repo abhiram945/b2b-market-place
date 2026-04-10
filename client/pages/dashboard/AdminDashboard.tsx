@@ -1,10 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { X } from '../../components/icons';
 import api from '../../api';
-import { fetchUserSubscriptions } from '../../redux/slices/notificationSlice'; // Assuming this is an async thunk
-import { useDispatch } from 'react-redux'; // Import useDispatch
-import { AppDispatch } from '../../redux/store';
 import { toLowerTrim } from '../../utils/normalize';
+import { useAlert } from '../../contexts/AlertContext';
+import SearchBar from '../../components/common/SearchBar';
 
 interface User {
   _id: string;
@@ -19,13 +17,19 @@ interface User {
   vatRegistration?: string;
 }
 
+const ADMIN_USER_SEARCH_CACHE_KEY = 'admin-user-search-cache';
+
+type UserSearchCache = {
+  users: User[];
+};
+
 const AdminDashboard: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>(); // Initialize useDispatch
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [updateType, setUpdateType] = useState<'approving' | 'rejecting' | null>(null);
   const [userIdSearch, setUserIdSearch] = useState('');
+  const [activeUserIdSearch, setActiveUserIdSearch] = useState('');
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [isMaintenanceLoading, setIsMaintenanceLoading] = useState(false);
   const effectRan = useRef(false);
@@ -42,7 +46,7 @@ const AdminDashboard: React.FC = () => {
   const [heroSubheading, setHeroSubheading] = useState('');
   const [isBrandLogoUploading, setIsBrandLogoUploading] = useState(false); // Specific state for brand logo upload
   const [isBannerUploading, setIsBannerUploading] = useState(false); // Specific state for banner upload
-  const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+  const { showAlert } = useAlert();
 
   const resetBrandUploadForm = () => {
     setBrandName('');
@@ -60,21 +64,16 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    if (message?.type === 'success') {
-      const t = setTimeout(() => setMessage(null), 2000);
-      return () => clearTimeout(t);
-    }
-  }, [message]);
-
   // --- Functions to fetch data ---
-  const fetchUsers = async () => {
+  const fetchUsers = async (searchId?: string) => {
     try {
       setLoading(true);
-      const { data } = await api.get('/admin/users');
+      const { data } = await api.get('/admin/users', {
+        params: searchId ? { searchId } : undefined,
+      });
       setUsers(data);
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to fetch users' });
+      showAlert({ variant: 'error', title: 'user fetch failed', message: err.response?.data?.message || 'failed to fetch users' });
     } finally {
       setLoading(false);
     }
@@ -86,7 +85,7 @@ const AdminDashboard: React.FC = () => {
       setMaintenanceMode(data.maintenanceMode);
     } catch (err) {
       console.error('Failed to fetch maintenance status:', err);
-      setMessage({ type: 'error', text: 'Failed to load maintenance status.' });
+      showAlert({ variant: 'error', title: 'maintenance fetch failed', message: 'failed to load maintenance status.' });
     }
   };
 
@@ -99,20 +98,19 @@ const AdminDashboard: React.FC = () => {
       setHeroSubheading(data.heroSubheading || '');
     } catch (err) {
       console.error('Failed to fetch configuration:', err);
-      setMessage({ type: 'error', text: 'Failed to load banner configuration.' });
+      showAlert({ variant: 'error', title: 'config fetch failed', message: 'failed to load banner configuration.' });
     }
   };
 
   // --- Effect hook to fetch initial data ---
   useEffect(() => {
     if (!effectRan.current) {
-      dispatch(fetchUserSubscriptions() as any); // Dispatch the Redux action
       fetchMaintenanceStatus();
       fetchConfig(); // Fetch config to get current banner URL
       fetchUsers(); // Fetch users on initial load
       effectRan.current = true;
     }
-  }, [dispatch]); // Add dispatch to dependency array
+  }, []);
 
   // --- Handlers for maintenance mode ---
   const handleMaintenanceToggle = async () => {
@@ -121,8 +119,9 @@ const AdminDashboard: React.FC = () => {
       const newStatus = !maintenanceMode;
       await api.post('/admin/maintenance', { maintenanceMode: newStatus });
       setMaintenanceMode(newStatus);
+      showAlert({ variant: 'success', title: 'maintenance updated', message: `maintenance mode ${newStatus ? 'enabled' : 'disabled'}.` });
     } catch (err) {
-      setMessage({ type: 'error', text: 'FAILED TO TOGGLE MAINTENANCE MODE' });
+      showAlert({ variant: 'error', title: 'maintenance update failed', message: 'failed to toggle maintenance mode' });
     } finally {
       setIsMaintenanceLoading(false);
     }
@@ -139,9 +138,9 @@ const AdminDashboard: React.FC = () => {
           user._id === userId ? { ...user, status } : user
         )
       );
-      setMessage({ type: 'success', text: `User ${status} successfully!` });
+      showAlert({ variant: 'success', title: 'user updated', message: `user ${status} successfully.` });
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.response?.data?.message || `Failed to ${status} user` });
+      showAlert({ variant: 'error', title: 'user update failed', message: err.response?.data?.message || `failed to ${status} user` });
     } finally {
       setUpdatingUserId(null);
       setUpdateType(null);
@@ -154,7 +153,7 @@ const AdminDashboard: React.FC = () => {
     try {
       const filename = docPath.split('/').pop(); // Extract filename from path
       if (!filename) {
-        setMessage({ type: 'error', text: 'Invalid document path.' });
+        showAlert({ variant: 'error', title: 'document error', message: 'invalid document path.' });
         return;
       }
       const response = await api.get(`/admin/documents/${filename}`, {
@@ -165,24 +164,25 @@ const AdminDashboard: React.FC = () => {
       window.open(fileURL, '_blank');
     } catch (err) {
       console.error('Failed to view document:', err);
-      setMessage({ type: 'error', text: 'FAILED TO VIEW DOCUMENT' });
+      showAlert({ variant: 'error', title: 'document error', message: 'failed to view document' });
     }
   };
 
   // --- Handlers for brand logo upload ---
   const handleBrandLogoUpload = async (e: React.FormEvent) => {
     e.preventDefault();
+    const currentBrandLogo = brandLogoInputRef.current?.files?.[0] || brandLogo;
 
-    if (!brandLogo) {
-      setMessage({ type: 'error', text: 'Please select a logo image.' });
+    if (!currentBrandLogo) {
+      showAlert({ variant: 'error', title: 'brand upload blocked', items: [{ field: 'Logo Image', message: 'please select a logo image.' }] });
       return;
     }
     if (!brandName) {
-      setMessage({ type: 'error', text: 'Please enter a brand name.' });
+      showAlert({ variant: 'error', title: 'brand upload blocked', items: [{ field: 'Brand Name', message: 'please enter a brand name.' }] });
       return;
     }
-    if (brandLogo.type !== 'image/png') {
-      setMessage({ type: 'error', text: 'Only PNG files are allowed. Please select a PNG image.' });
+    if (currentBrandLogo.type !== 'image/png') {
+      showAlert({ variant: 'error', title: 'brand upload blocked', items: [{ field: 'Logo Image', message: 'only png files are allowed.' }] });
       resetBrandUploadForm();
       return;
     }
@@ -190,7 +190,7 @@ const AdminDashboard: React.FC = () => {
     setIsBrandLogoUploading(true);
     const formData = new FormData();
     formData.append('name', toLowerTrim(brandName)); // Send brand name
-    formData.append('image', brandLogo);
+    formData.append('image', currentBrandLogo);
 
     try {
       const { data } = await api.post('/admin/upload/brand-logo', formData, {
@@ -198,13 +198,13 @@ const AdminDashboard: React.FC = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
-      setMessage({ type: 'success', text: data.message || 'Brand logo uploaded successfully!' });
+      showAlert({ variant: 'success', title: 'brand uploaded', message: data.message || 'brand logo uploaded successfully.' });
       // Optionally update currentBannerUrl if the backend returns it, or refetch config
       fetchConfig(); // Refetch config to update current banner URL if needed
       resetBrandUploadForm();
     } catch (err: any) {
       console.error('Brand logo upload failed:', err);
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Brand logo upload failed.' });
+      showAlert({ variant: 'error', title: 'brand upload failed', message: err.response?.data?.message || 'brand logo upload failed.' });
       resetBrandUploadForm();
     } finally {
       setIsBrandLogoUploading(false);
@@ -214,14 +214,15 @@ const AdminDashboard: React.FC = () => {
   // --- Handlers for banner upload ---
   const handleBannerUpload = async (e: React.FormEvent) => {
     e.preventDefault();
+    const currentBanner = bannerInputRef.current?.files?.[0] || banner;
 
-    if (banner && banner.type !== 'image/png') {
-      setMessage({ type: 'error', text: 'Only PNG files are allowed. Please select a PNG image.' });
+    if (currentBanner && currentBanner.type !== 'image/png') {
+      showAlert({ variant: 'error', title: 'banner update blocked', items: [{ field: 'Banner Image', message: 'only png files are allowed.' }] });
       resetBannerUploadForm();
       return;
     }
-    if (!banner && !heroHeading.trim() && !heroSubheading.trim()) {
-      setMessage({ type: 'error', text: 'Please provide a banner image, main heading, or sub heading.' });
+    if (!currentBanner && !heroHeading.trim() && !heroSubheading.trim()) {
+      showAlert({ variant: 'error', title: 'banner update blocked', message: 'please provide a banner image, main heading, or sub heading.' });
       return;
     }
 
@@ -229,8 +230,8 @@ const AdminDashboard: React.FC = () => {
     const formData = new FormData();
     formData.append('heroHeading', heroHeading.trim());
     formData.append('heroSubheading', heroSubheading.trim());
-    if (banner) {
-      formData.append('banner', banner); // Use 'banner' as the field name expected by backend
+    if (currentBanner) {
+      formData.append('banner', currentBanner); // Use 'banner' as the field name expected by backend
     }
     try {
       const { data } = await api.post('/admin/upload/banner', formData, {
@@ -238,23 +239,69 @@ const AdminDashboard: React.FC = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
-      setMessage({ type: 'success', text: data.message || 'Banner settings updated successfully!' });
+      showAlert({ variant: 'success', title: 'banner updated', message: data.message || 'banner settings updated successfully.' });
       setCurrentBannerUrl(data.bannerPath); // Update the current banner URL from response
       setHeroHeading(data.heroHeading || '');
       setHeroSubheading(data.heroSubheading || '');
       resetBannerUploadForm();
     } catch (err: any) {
       console.error('Banner upload failed:', err);
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Banner settings update failed.' });
+      showAlert({ variant: 'error', title: 'banner update failed', message: err.response?.data?.message || 'banner settings update failed.' });
       resetBannerUploadForm();
     } finally {
       setIsBannerUploading(false);
     }
   };
 
-  const filteredUsers = users.filter((user) =>
-    user._id.toLowerCase().includes(userIdSearch.trim().toLowerCase())
-  );
+  const cacheCurrentUsers = () => {
+    const payload: UserSearchCache = { users };
+    localStorage.setItem(ADMIN_USER_SEARCH_CACHE_KEY, JSON.stringify(payload));
+  };
+
+  const restoreCachedUsers = () => {
+    const cachedValue = localStorage.getItem(ADMIN_USER_SEARCH_CACHE_KEY);
+    if (!cachedValue) {
+      return false;
+    }
+
+    try {
+      const cachedPayload = JSON.parse(cachedValue) as UserSearchCache;
+      setUsers(cachedPayload.users);
+      localStorage.removeItem(ADMIN_USER_SEARCH_CACHE_KEY);
+      return true;
+    } catch (_error) {
+      localStorage.removeItem(ADMIN_USER_SEARCH_CACHE_KEY);
+      return false;
+    }
+  };
+
+  const handleUserSearchSubmit = async () => {
+    const normalizedSearch = userIdSearch.trim();
+    if (!normalizedSearch || normalizedSearch === activeUserIdSearch) {
+      return;
+    }
+
+    if (!activeUserIdSearch) {
+      cacheCurrentUsers();
+    }
+
+    setActiveUserIdSearch(normalizedSearch);
+    await fetchUsers(normalizedSearch);
+  };
+
+  const handleUserSearchClear = async () => {
+    setUserIdSearch('');
+
+    if (!activeUserIdSearch) {
+      return;
+    }
+
+    const restored = restoreCachedUsers();
+    setActiveUserIdSearch('');
+    if (!restored) {
+      await fetchUsers();
+    }
+  };
 
   // --- Effect for handling file inputs and previews ---
   useEffect(() => {
@@ -314,17 +361,6 @@ const AdminDashboard: React.FC = () => {
           </button>
         </div>
       </div>
-      {message && (
-        <div className={`${message.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded-md mb-4 flex justify-between items-center`} role="alert">
-          <div className="text-sm font-bold">{message.text}</div>
-          {message.type === 'error' ? (
-            <button type="button" onClick={() => setMessage(null)} className="ml-4 text-xs font-black uppercase tracking-widest cursor-pointer">
-              <X className="w-4 h-4" />
-            </button>
-          ) : null}
-        </div>
-      )}
-
       <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Brand Logo Upload */}
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
@@ -427,12 +463,14 @@ const AdminDashboard: React.FC = () => {
 
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
         <div className="border-b border-gray-200 px-6 py-4">
-          <input
-            type="text"
+          <SearchBar
             value={userIdSearch}
-            onChange={(e) => setUserIdSearch(e.target.value)}
-            placeholder="Search users by ID"
-            className="w-full max-w-md px-3 py-2 border border-zinc-200 rounded text-sm font-bold focus:outline-none focus:border-brand-red"
+            onChange={setUserIdSearch}
+            onSubmit={handleUserSearchSubmit}
+            onClear={handleUserSearchClear}
+            placeholder="search user id"
+            className="max-w-md"
+            showClear={Boolean(userIdSearch || activeUserIdSearch)}
           />
         </div>
         <div className="overflow-x-auto">
@@ -448,7 +486,7 @@ const AdminDashboard: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredUsers.map((user) => (
+              {users.map((user) => (
                 <tr key={user._id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-bold text-gray-900 capitalize">{user.fullName}</div>
@@ -525,10 +563,10 @@ const AdminDashboard: React.FC = () => {
                   </td>
                 </tr>
               ))}
-              {filteredUsers.length === 0 && (
+              {users.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-6 py-10 text-center text-sm font-bold text-zinc-400 uppercase tracking-widest">
-                    No users found
+                    {activeUserIdSearch ? 'No users match that exact _id.' : 'No users found'}
                   </td>
                 </tr>
               )}

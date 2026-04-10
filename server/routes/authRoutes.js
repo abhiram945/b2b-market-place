@@ -13,6 +13,12 @@ import { protect } from '../middleware/authMiddleware.js';
 import { registerValidation, loginValidation, validate } from '../middleware/validationMiddleware.js'; // Import validation middleware
 import multer from 'multer';
 import path from 'path';
+import mongoose from 'mongoose';
+
+const assignRegistrationUserId = (req, _res, next) => {
+  req.registrationUserId = new mongoose.Types.ObjectId().toString();
+  next();
+};
 
 // Multer storage for registration documents
 const storage = multer.diskStorage({
@@ -22,7 +28,7 @@ const storage = multer.diskStorage({
   filename(req, file, cb) {
     cb(
       null,
-      `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`
+      `${req.registrationUserId}-${file.fieldname}${path.extname(file.originalname)}`
     );
   },
 });
@@ -43,6 +49,7 @@ const upload = multer({
 });
 
 router.post('/register', 
+  assignRegistrationUserId,
   upload.fields([
     { name: 'tradeLicense', maxCount: 1 },
     { name: 'idDocument', maxCount: 1 },

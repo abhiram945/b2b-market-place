@@ -19,6 +19,8 @@ import orderRoutes from './routes/orderRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import cartRoutes from './routes/cartRoutes.js';
+import dashboardRoutes from './routes/dashboardRoutes.js';
+import { startJobWorker } from './utils/jobWorker.js';
 
 
 import path from 'path';
@@ -26,8 +28,6 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-connectDB();
 
 const app = express();
 
@@ -73,6 +73,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Error Handling Middleware
 app.use(notFound);
@@ -80,4 +81,10 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const startServer = async () => {
+  await connectDB();
+  startJobWorker();
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+};
+
+startServer();

@@ -26,6 +26,10 @@ const productSchema = mongoose.Schema(
   }
 );
 
+productSchema.index({ user: 1, createdAt: -1 });
+productSchema.index({ brand: 1, category: 1, location: 1 });
+productSchema.index({ title: 'text' });
+
 const Product = mongoose.model('Product', productSchema);
 
 export default Product;

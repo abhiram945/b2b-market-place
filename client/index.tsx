@@ -6,6 +6,7 @@ import { Provider } from 'react-redux';
 import { store } from './redux/store';
 import './index.css';
 import { ThemeContextProvider } from './contexts/ThemeContext';
+import { AlertProvider } from './contexts/AlertContext';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -16,7 +17,9 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
     <Provider store={store}>
       <ThemeContextProvider>
-        <App />
+        <AlertProvider>
+          <App />
+        </AlertProvider>
       </ThemeContextProvider>
     </Provider>
 );

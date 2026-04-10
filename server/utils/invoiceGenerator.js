@@ -90,10 +90,14 @@ export const generateInvoice = async (order, buyer) => {
     drawBoxedHeader(310, 'SHIP TO');
 
     y += 25;
-    const customerName = toTitleCase(buyer.companyName || buyer.fullName);
-    doc.fillColor('#000').fontSize(14).font('Helvetica-Bold').text(customerName, 30, y);
-    doc.text(customerName, 310, y);
+    const buyerName = toTitleCase(buyer.fullName);
+    const buyerCompany = toTitleCase(buyer.companyName);
+    doc.fillColor('#000').fontSize(14).font('Helvetica-Bold').text(buyerName, 30, y);
+    doc.text(buyerName, 310, y);
     y += 16;
+    doc.fontSize(10).font('Helvetica-Bold').text(buyerCompany, 30, y);
+    doc.text(buyerCompany, 310, y);
+    y += 12;
     doc.fontSize(10).font('Helvetica').text(buyer.email, 30, y);
     doc.text(buyer.email, 310, y);
     y += 12;

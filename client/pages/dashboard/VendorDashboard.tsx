@@ -1,21 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { X } from '../../components/icons';
-import { Link } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from '../../hooks/useAuth';
 import DashboardCard from '../../components/dashboard/DashboardCard';
-import { Package, Tag, ShoppingCart, AlertCircle, PlusCircle, Copy, CheckCircle } from '../../components/icons';
-import { fetchProducts } from '../../redux/slices/productSlice';
-import { fetchOrders } from '../../redux/slices/orderSlice';
-import { AppDispatch, RootState } from '../../redux/store';
+import { Package, Tag, ShoppingCart, AlertCircle, Copy, CheckCircle } from '../../components/icons';
+import api from '../../api';
+
+interface VendorSummaryOrder {
+    _id: string;
+    orderDate: string;
+    status: string;
+    items: Array<{
+        productTitle: string;
+        quantity: number;
+    }>;
+}
 
 const VendorDashboard: React.FC = () => {
-    const dispatch = useDispatch<AppDispatch>();
     const { user } = useAuth();
-    const { products } = useSelector((state: RootState) => state.products);
-    const { orders } = useSelector((state: RootState) => state.orders);
     const [copied, setCopied] = useState(false);
     const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+    const [summary, setSummary] = useState({
+        activeListings: 0,
+        totalSales: 0,
+        newOrders: 0,
+        lowStockItems: 0,
+        recentOrders: [] as VendorSummaryOrder[],
+    });
 
     useEffect(() => {
         if (message?.type === 'success') {
@@ -25,15 +35,34 @@ const VendorDashboard: React.FC = () => {
     }, [message]);
 
     useEffect(() => {
-        dispatch(fetchProducts({}));
-        dispatch(fetchOrders());
-    }, [dispatch]);
+        const fetchSummary = async () => {
+            try {
+                const { data } = await api.get('/dashboard/summary');
+                setSummary({
+                    activeListings: data.activeListings || 0,
+                    totalSales: data.totalSales || 0,
+                    newOrders: data.newOrders || 0,
+                    lowStockItems: data.lowStockItems || 0,
+                    recentOrders: data.recentOrders || [],
+                });
+            } catch (error) {
+                setSummary({
+                    activeListings: 0,
+                    totalSales: 0,
+                    newOrders: 0,
+                    lowStockItems: 0,
+                    recentOrders: [],
+                });
+            }
+        };
+
+        fetchSummary();
+    }, []);
 
     const handleCopyId = () => {
         if (user?._id) {
             navigator.clipboard.writeText(user._id);
             setCopied(true);
-            setMessage({ type: 'success', text: 'ID COPIED TO CLIPBOARD' });
             setTimeout(() => setCopied(false), 2000);
         }
     };
@@ -49,21 +78,6 @@ const VendorDashboard: React.FC = () => {
             default: return 'bg-gray-100 text-gray-800';
         }
     };
-
-    const lowStockItems = products.filter(p => p.stockQty < 100).length;
-    
-    // Revenue should be the sum of items belonging to this vendor across all non-cancelled orders
-    const totalSales = orders
-        .filter(o => o.status.toLowerCase() !== 'cancelled')
-        .reduce((sum, order) => {
-            const vendorItemsTotal = order.items
-                .filter(item => {
-                    const vendorId = typeof item.vendor === 'object' ? item.vendor._id : item.vendor;
-                    return vendorId === user?._id;
-                })
-                .reduce((itemSum, item) => itemSum + (item.price * item.quantity), 0);
-            return sum + vendorItemsTotal;
-        }, 0);
 
     return (
         <div className="max-w-[90%] mx-auto py-8">
@@ -102,10 +116,10 @@ const VendorDashboard: React.FC = () => {
                 </div>
             )}
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-10">
-                <DashboardCard title="Active Listings" value={products.length} icon={<Package className="h-6 w-6 text-white" />} colorClass="bg-black" />
-                <DashboardCard title="Total Revenue" value={`$${totalSales.toFixed(2)}`} icon={<Tag className="h-6 w-6 text-white" />} colorClass="bg-brand-red" />
-                <DashboardCard title="New Orders" value={orders.filter(o => o.status.toLowerCase() === 'pending').length} icon={<ShoppingCart className="h-6 w-6 text-white" />} colorClass="bg-brand-red" />
-                <DashboardCard title="Low Stock Items" value={lowStockItems} icon={<AlertCircle className="h-6 w-6 text-white" />} colorClass="bg-black" />
+                <DashboardCard title="Active Listings" value={summary.activeListings} icon={<Package className="h-6 w-6 text-white" />} colorClass="bg-black" />
+                <DashboardCard title="Total Revenue" value={`$${summary.totalSales.toFixed(2)}`} icon={<Tag className="h-6 w-6 text-white" />} colorClass="bg-brand-red" />
+                <DashboardCard title="New Orders" value={summary.newOrders} icon={<ShoppingCart className="h-6 w-6 text-white" />} colorClass="bg-brand-red" />
+                <DashboardCard title="Low Stock Items" value={summary.lowStockItems} icon={<AlertCircle className="h-6 w-6 text-white" />} colorClass="bg-black" />
             </div>
 
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
@@ -125,7 +139,7 @@ const VendorDashboard: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 bg-white">
-                            {orders.slice(0, 10).map(order => (
+                            {summary.recentOrders.map(order => (
                                 <tr key={order._id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 font-mono">{order._id}</td>
                                     <td className="px-6 py-4 text-sm text-gray-600 font-medium">
@@ -143,6 +157,13 @@ const VendorDashboard: React.FC = () => {
                                     </td>
                                 </tr>
                             ))}
+                            {summary.recentOrders.length === 0 && (
+                                <tr>
+                                    <td colSpan={4} className="px-6 py-10 text-center text-sm font-bold text-zinc-400 uppercase tracking-widest">
+                                        no recent orders found
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>

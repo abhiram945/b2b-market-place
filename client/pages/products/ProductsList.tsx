@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
 import { RootState, AppDispatch } from '../../redux/store';
@@ -21,6 +21,7 @@ const ProductsList: React.FC = () => {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProductForEdit, setSelectedProductForEdit] = useState<Product | null>(null);
+  const skipNextFetchRef = useRef(false);
 
   const filters = useMemo(() => ({
     search: searchParams.get('search') || '',
@@ -28,6 +29,7 @@ const ProductsList: React.FC = () => {
     category: searchParams.get('category') || '',
     location: searchParams.get('location') || '',
     sort: searchParams.get('sort') || '',
+    page: searchParams.get('page') || '',
   }), [searchParams]);
 
   const handleSetFilters = (newFilters: any) => {
@@ -37,13 +39,23 @@ const ProductsList: React.FC = () => {
     if (newFilters.category) params.category = newFilters.category;
     if (newFilters.location) params.location = newFilters.location;
     if (newFilters.sort) params.sort = newFilters.sort;
+    if (newFilters.page) params.page = newFilters.page;
     setSearchParams(params);
   };
 
   useEffect(() => {
+    if (skipNextFetchRef.current) {
+      skipNextFetchRef.current = false;
+      return;
+    }
     const queryParams = Object.fromEntries(searchParams.entries());
     dispatch(fetchProducts(queryParams));
   }, [dispatch, searchParams]);
+
+  const handleRestoreFilters = (newFilters: any) => {
+    skipNextFetchRef.current = true;
+    handleSetFilters(newFilters);
+  };
 
   const handleProductClick = (product: Product) => {
     setSelectedProduct(product);
@@ -71,38 +83,13 @@ const ProductsList: React.FC = () => {
   );
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden bg-zinc-50">
+    <div className="bg-zinc-50 min-h-[calc(100vh-64px)]">
       {/* Sticky Filter Section */}
-      <div className="shrink-0 bg-white border-b border-zinc-200 z-20">
-        <div className="w-full px-6 py-1.5 flex items-center justify-between">
-            {pages > 1 && (
-                <div className="flex gap-1 items-center ml-auto">
-                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mr-2 italic underline decoration-red-600/50">Protocol Page:</span>
-                    {[...Array(pages).keys()].map((p) => (
-                        <button
-                            key={p + 1}
-                            onClick={() => {
-                                const newParams = new URLSearchParams(searchParams);
-                                newParams.set('page', (p + 1).toString());
-                                setSearchParams(newParams);
-                            }}
-                            className={`w-5 h-5 flex items-center justify-center rounded-none font-black text-[9px] transition-all ${
-                                currentPage === p + 1 
-                                ? 'bg-red-600 text-white shadow-lg' 
-                                : 'text-zinc-400 hover:text-zinc-900'
-                            }`}
-                        >
-                            {p + 1}
-                        </button>
-                    ))}
-                </div>
-            )}
-        </div>
-        <ProductFilters filters={filters} setFilters={handleSetFilters} />
+      <div className="bg-white border-b border-zinc-200 z-20">
+        <ProductFilters filters={filters} setFilters={handleSetFilters} restoreFilters={handleRestoreFilters} />
       </div>
 
-      {/* Independently Scrollable Inventory List with Table */}
-      <div className="flex-1 overflow-auto custom-scrollbar w-full">
+      <div className="w-full">
         <div className="min-w-full inline-block align-middle">
           <table className="w-full border-collapse min-w-[1200px]">
           <thead className="sticky top-0 z-10 bg-zinc-900 shadow-xl">
@@ -166,6 +153,26 @@ const ProductsList: React.FC = () => {
         </div>
       </div>
 
+      {pages > 1 && (
+        <div className="flex justify-center py-6 bg-white border-t border-zinc-200">
+          <div className="flex justify-center space-x-2">
+            {[...Array(pages)].map((_, index) => (
+              <button
+                key={index + 1}
+                onClick={() => {
+                  const newParams = new URLSearchParams(searchParams);
+                  newParams.set('page', (index + 1).toString());
+                  setSearchParams(newParams);
+                }}
+                className={`w-10 h-10 rounded font-bold text-sm transition-all ${currentPage === index + 1 ? 'bg-zinc-900 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:border-brand-red'}`}
+              >
+                {index + 1}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <ProductDetailsModal isOpen={isDetailsModalOpen} onClose={() => setIsDetailsModalOpen(false)} product={selectedProduct} />
       {isEditModalOpen && selectedProductForEdit && (
         <EditProductModal
@@ -181,4 +188,3 @@ const ProductsList: React.FC = () => {
 };
 
 export default ProductsList;
-

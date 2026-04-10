@@ -5,20 +5,22 @@ import api from '../../api';
 interface OrderState {
     orders: Order[];
     loading: boolean;
+    updatingOrderId: string | null;
     error: string | null;
 }
 
 const initialState: OrderState = {
     orders: [],
     loading: false,
+    updatingOrderId: null,
     error: null,
 };
 
 export const fetchOrders = createAsyncThunk(
     'orders/fetchOrders',
-    async (_, { rejectWithValue }) => {
+    async (params: { search?: string } = {}, { rejectWithValue }) => {
         try {
-            const { data } = await api.get('/orders');
+            const { data } = await api.get('/orders', { params });
             return data;
         } catch (error: any) {
             return rejectWithValue(error.response.data.message || 'Failed to fetch orders');
@@ -47,13 +49,22 @@ export const updateOrderStatus = createAsyncThunk(
         } catch (error: any) {
             return rejectWithValue(error.response.data.message || 'Failed to update order status');
         }
+    },
+    {
+        getPendingMeta: ({ arg }) => ({ orderId: arg.orderId }),
     }
 );
 
 const orderSlice = createSlice({
     name: 'orders',
     initialState,
-    reducers: {},
+    reducers: {
+        restoreOrderList(state, action: PayloadAction<Order[]>) {
+            state.orders = action.payload;
+            state.loading = false;
+            state.error = null;
+        },
+    },
     extraReducers: (builder) => {
         builder
             .addCase(fetchOrders.pending, (state) => {
@@ -63,6 +74,7 @@ const orderSlice = createSlice({
             .addCase(fetchOrders.fulfilled, (state, action: PayloadAction<Order[]>) => {
                 state.orders = action.payload;
                 state.loading = false;
+                state.error = null;
             })
             .addCase(fetchOrders.rejected, (state, action) => {
                 state.loading = false;
@@ -80,8 +92,8 @@ const orderSlice = createSlice({
                 state.loading = false;
                 state.error = action.payload as string;
             })
-            .addCase(updateOrderStatus.pending, (state) => {
-                state.loading = true;
+            .addCase(updateOrderStatus.pending, (state, action) => {
+                state.updatingOrderId = action.meta.arg.orderId;
                 state.error = null;
             })
             .addCase(updateOrderStatus.fulfilled, (state, action: PayloadAction<Order>) => {
@@ -89,14 +101,15 @@ const orderSlice = createSlice({
                 if (index !== -1) {
                     state.orders[index] = action.payload;
                 }
-                state.loading = false;
+                state.updatingOrderId = null;
                 state.error = null;
             })
             .addCase(updateOrderStatus.rejected, (state, action) => {
-                state.loading = false;
+                state.updatingOrderId = null;
                 state.error = action.payload as string;
             });
     },
 });
 
+export const { restoreOrderList } = orderSlice.actions;
 export default orderSlice.reducer;

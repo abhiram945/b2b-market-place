@@ -3,7 +3,7 @@ import User from '../models/User.js';
 import { generateToken, generateRefreshToken } from '../utils/generateToken.js';
 import jwt from 'jsonwebtoken';
 import { ROLES, USER_STATUS } from '../utils/constants.js';
-import { addToConfig, getConfig } from '../utils/jsonStore.js';
+import { addToConfig, getConfig } from '../utils/appConfigStore.js';
 
 const normalizeString = (value) => typeof value === 'string' ? value.trim().toLowerCase() : value;
 
@@ -34,6 +34,7 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const user = await User.create({
+    _id: req.registrationUserId,
     fullName: normalizeString(fullName),
     email: normalizedEmail,
     password,
@@ -158,16 +159,20 @@ const refreshToken = asyncHandler(async (req, res) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
-    const user = await User.findById(decoded._id).select('-password');
+    const refreshUser = {
+      _id: decoded._id,
+      fullName: decoded.fullName,
+      email: decoded.email,
+      phoneNumber: decoded.phoneNumber,
+      companyName: decoded.companyName,
+      address: decoded.address,
+      role: decoded.role,
+      status: decoded.status,
+      website: decoded.website,
+    };
 
-    if (!user) {
-      console.error(`[AUTH] Refresh failed: User not found for ID ${decoded._id}`);
-      res.status(401);
-      throw new Error('User not found');
-    }
-
-    const accessToken = generateToken(user);
-    res.json({ token: accessToken });
+    const accessToken = generateToken(refreshUser);
+    res.json({ token: accessToken, user: refreshUser });
   } catch (error) {
     console.error(`[AUTH] Refresh failed: Invalid or expired refresh token: ${error.message}`);
     res.status(401);

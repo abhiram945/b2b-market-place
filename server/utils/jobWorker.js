@@ -1,0 +1,139 @@
+import AsyncJob from '../models/AsyncJob.js';
+import Order from '../models/Order.js';
+import Product from '../models/Product.js';
+import User from '../models/User.js';
+import { JOB_TYPES } from './jobQueue.js';
+import { generateInvoice } from './invoiceGenerator.js';
+import { processProductNotifications, sendEmail, sendWhatsApp } from './notificationSender.js';
+
+const POLL_INTERVAL_MS = 4000;
+const RETRY_DELAY_MS = 15000;
+
+let workerHandle = null;
+let isTickRunning = false;
+
+const markFailed = async (job, error) => {
+  const attempts = job.attempts + 1;
+  const shouldRetry = attempts < job.maxAttempts;
+
+  await AsyncJob.findByIdAndUpdate(job._id, {
+    status: shouldRetry ? 'queued' : 'failed',
+    attempts,
+    lockedAt: null,
+    lastError: error.message || 'job failed',
+    runAt: shouldRetry ? new Date(Date.now() + RETRY_DELAY_MS) : job.runAt,
+  });
+};
+
+const markCompleted = async (job) => {
+  await AsyncJob.findByIdAndUpdate(job._id, {
+    status: 'completed',
+    attempts: job.attempts + 1,
+    lockedAt: null,
+    lastError: '',
+  });
+};
+
+const processInvoiceJob = async (job) => {
+  const { orderId, userId } = job.payload;
+  const [order, buyer] = await Promise.all([
+    Order.findById(orderId),
+    User.findById(userId),
+  ]);
+
+  if (!order || !buyer) {
+    throw new Error('order or buyer not found for invoice job');
+  }
+
+  const invoiceUrl = await generateInvoice(order, buyer);
+  await Order.findByIdAndUpdate(order._id, { invoiceUrl });
+};
+
+const processProductNotificationJob = async (job) => {
+  const { productId, oldPrice, oldStock } = job.payload;
+  const product = await Product.findById(productId);
+
+  if (!product) {
+    throw new Error('product not found for notification job');
+  }
+
+  await processProductNotifications(product, oldPrice, oldStock);
+};
+
+const processUserStatusNotificationJob = async (job) => {
+  const { userId, status } = job.payload;
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new Error('user not found for status notification job');
+  }
+
+  const subject = `Your Account has been ${status}`;
+  const message = `Hi ${user.fullName}, your registration on the Techtronics Ventures has been ${status}.`;
+
+  await sendEmail(user.email, subject, message);
+  if (user.phoneNumber) {
+    await sendWhatsApp(user.phoneNumber, message);
+  }
+};
+
+const processJob = async (job) => {
+  switch (job.type) {
+    case JOB_TYPES.INVOICE:
+      return processInvoiceJob(job);
+    case JOB_TYPES.PRODUCT_NOTIFICATION:
+      return processProductNotificationJob(job);
+    case JOB_TYPES.USER_STATUS_NOTIFICATION:
+      return processUserStatusNotificationJob(job);
+    default:
+      throw new Error(`unsupported job type: ${job.type}`);
+  }
+};
+
+const claimNextJob = async () => {
+  return AsyncJob.findOneAndUpdate(
+    {
+      status: 'queued',
+      runAt: { $lte: new Date() },
+    },
+    {
+      status: 'processing',
+      lockedAt: new Date(),
+    },
+    {
+      sort: { createdAt: 1 },
+      new: true,
+    }
+  );
+};
+
+const tick = async () => {
+  if (isTickRunning) return;
+  isTickRunning = true;
+
+  try {
+    let job = await claimNextJob();
+
+    while (job) {
+      try {
+        await processJob(job);
+        await markCompleted(job);
+      } catch (error) {
+        console.error(`[job-worker] job ${job._id} failed:`, error.message);
+        await markFailed(job, error);
+      }
+
+      job = await claimNextJob();
+    }
+  } finally {
+    isTickRunning = false;
+  }
+};
+
+export const startJobWorker = () => {
+  if (workerHandle) return;
+  workerHandle = setInterval(() => {
+    void tick();
+  }, POLL_INTERVAL_MS);
+  void tick();
+};

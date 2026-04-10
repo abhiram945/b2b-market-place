@@ -1,27 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
-import { X } from '../components/icons';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { RootState, AppDispatch } from '../redux/store';
-import { removeFromCart, updateQuantity, clearCart } from '../redux/slices/cartSlice';
+import { removeFromCart, updateQuantity, clearCart, syncCart } from '../redux/slices/cartSlice';
 import { Trash2 as TrashIcon, ShoppingCart } from '../components/icons';
 import { CartItem } from '../types';
 import { createOrder } from '../redux/slices/orderSlice';
+import { useAlert } from '../contexts/AlertContext';
 
 const Cart: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { items: cartItems } = useSelector((state: RootState) => state.cart);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
-
-  useEffect(() => {
-    if (message?.type === 'success') {
-      const t = setTimeout(() => setMessage(null), 2000);
-      return () => clearTimeout(t);
-    }
-  }, [message]);
+  const { showAlert } = useAlert();
 
   const handleRemove = (id: string) => {
     dispatch(removeFromCart(id));
@@ -30,12 +23,17 @@ const Cart: React.FC = () => {
   const handleCheckout = async () => {
     const itemsToOrder = cartItems.filter(item => item.quantity > 0);
     if (itemsToOrder.length === 0) {
-      setMessage({ type: 'error', text: 'Your cart is empty or all items have a quantity of zero.' });
+      showAlert({
+        variant: 'error',
+        title: 'cart check failed',
+        message: 'your cart is empty or all items have a quantity of zero.',
+      });
       return;
     }
 
     setIsPlacingOrder(true);
     try {
+      await dispatch(syncCart(itemsToOrder)).unwrap();
       await dispatch(createOrder({
         items: itemsToOrder.map(item => ({
           productId: item._id,
@@ -43,11 +41,19 @@ const Cart: React.FC = () => {
         })),
       })).unwrap();
 
-      setMessage({ type: 'success', text: 'Order placed successfully!' });
+      showAlert({
+        variant: 'success',
+        title: 'order placed',
+        message: 'your order was placed successfully.',
+      });
       dispatch(clearCart());
       navigate('/orders');
     } catch (err: any) {
-      setMessage({ type: 'error', text: err || 'Failed to place order' });
+      showAlert({
+        variant: 'error',
+        title: 'order failed',
+        message: err || 'failed to place order',
+      });
     } finally {
       setIsPlacingOrder(false);
     }
@@ -118,17 +124,6 @@ const Cart: React.FC = () => {
           My <span className="text-brand-red">Cart</span>
         </h1>
       </div>
-
-      {message && (
-        <div className={`${message.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded-md mb-4 flex justify-between items-start`} role="alert">
-          <div className="text-sm font-bold">{message.text}</div>
-          {message.type === 'error' ? (
-            <button type="button" onClick={() => setMessage(null)} className="ml-4 text-xs font-black uppercase tracking-widest">
-              <X className="w-4 h-4" />
-            </button>
-          ) : null}
-        </div>
-      )}
 
       <div className="lg:grid lg:grid-cols-12 lg:items-start lg:gap-x-12">
         <section className={cartItems.length>0 ? "col-span-8":"col-span-12"}>

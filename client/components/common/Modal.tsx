@@ -23,7 +23,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, closeBu
           </h2>
           <button
             onClick={onClose}
-            className={`p-2 transition-all transform hover:rotate-90 ${closeButtonClassName}`}
+            className={`p-2 transition-all cursor-pointer transform hover:rotate-90 ${closeButtonClassName}`}
           >
             <XIcon className="w-6 h-6" />
           </button>

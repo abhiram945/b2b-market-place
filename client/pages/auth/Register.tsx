@@ -1,13 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
-import { useForm, SubmitHandler } from 'react-hook-form';
+import { useForm, SubmitHandler, SubmitErrorHandler } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { registerUser } from '../../redux/slices/userSlice';
-import { Building, X } from '../../components/icons';
+import { Building } from '../../components/icons';
 import { AppDispatch, RootState } from '../../redux/store';
 import api from '../../api';
 import { toLowerTrim, toLowerTrimOptional } from '../../utils/normalize';
+import { useAlert } from '../../contexts/AlertContext';
+import { apiErrorsToAlertItems, formErrorsToAlertItems } from '../../utils/alertHelpers';
 
 type RegisterFormInputs = {
   fullName: string;
@@ -24,22 +26,20 @@ type RegisterFormInputs = {
   vatRegistration: FileList;
 };
 
-const InputWrapper = ({ label, children, error }: any) => (
+const InputWrapper = ({ label, children }: any) => (
   <div className="flex flex-col gap-1.5 min-h-[85px]">
     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{label}</label>
     {children}
-    {error && <p className="text-red-600 text-[9px] font-bold uppercase ml-1 animate-in fade-in slide-in-from-top-1">{error.message}</p>}
   </div>
 );
 
 const Register: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const navigate = useNavigate();
-  const { loading, error } = useSelector((state: RootState) => state.user);
+  const { loading } = useSelector((state: RootState) => state.user);
   const [companyNames, setCompanyNames] = useState<string[]>([]);
-  const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+  const { showAlert } = useAlert();
 
-  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<RegisterFormInputs>({
+  const { register, handleSubmit, watch, reset } = useForm<RegisterFormInputs>({
     defaultValues: {
       role: ''
     }
@@ -81,7 +81,11 @@ const Register: React.FC = () => {
 
     dispatch(registerUser(formData)).then(action => {
       if (registerUser.fulfilled.match(action)) {
-        setMessage({ type: 'success', text: 'Registration successful! Your account is pending approval.' });
+        showAlert({
+          variant: 'success',
+          title: 'registration successful',
+          message: 'your account is pending approval.',
+        });
         reset({
           fullName: '',
           email: '',
@@ -93,7 +97,22 @@ const Register: React.FC = () => {
           password: '',
           confirmPassword: '',
         });
+      } else if (registerUser.rejected.match(action)) {
+        showAlert({
+          variant: 'error',
+          title: 'registration failed',
+          items: apiErrorsToAlertItems(action.payload),
+          message: typeof action.payload === 'string' ? action.payload : undefined,
+        });
       }
+    });
+  };
+
+  const onInvalid: SubmitErrorHandler<RegisterFormInputs> = (formErrors) => {
+    showAlert({
+      variant: 'error',
+      title: 'fix registration fields',
+      items: formErrorsToAlertItems(formErrors),
     });
   };
 
@@ -110,9 +129,9 @@ const Register: React.FC = () => {
           </h2>
         </div>
 
-        <form className="mt-8" onSubmit={handleSubmit(onSubmit)}>
+        <form className="mt-8" onSubmit={handleSubmit(onSubmit, onInvalid)}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
-            <InputWrapper label="Full Name" error={errors.fullName}>
+            <InputWrapper label="Full Name">
               <input
                 {...register('fullName', { required: 'Full name is required' })}
                 placeholder="Full Name"
@@ -120,7 +139,7 @@ const Register: React.FC = () => {
               />
             </InputWrapper>
 
-            <InputWrapper label="Email Address" error={errors.email}>
+            <InputWrapper label="Email Address">
               <input
                 {...register('email', {
                   required: 'Email is required',
@@ -135,7 +154,7 @@ const Register: React.FC = () => {
               />
             </InputWrapper>
 
-            <InputWrapper label="Phone Number" error={errors.phoneNumber}>
+            <InputWrapper label="Phone Number">
               <input
                 {...register('phoneNumber', { required: 'Phone number is required' })}
                 placeholder="Phone Number (e.g. +1234567890)"
@@ -144,7 +163,7 @@ const Register: React.FC = () => {
               />
             </InputWrapper>
 
-            <InputWrapper label="Company Name" error={errors.companyName}>
+            <InputWrapper label="Company Name">
               <input
                 {...register('companyName', { required: 'Company name is required' })}
                 placeholder="Select or enter company"
@@ -158,7 +177,7 @@ const Register: React.FC = () => {
               </datalist>
             </InputWrapper>
 
-            <InputWrapper label="Website Link" error={errors.website}>
+            <InputWrapper label="Website Link">
               <input
                 {...register('website')}
                 placeholder="e.g. https://www.company.com"
@@ -166,7 +185,7 @@ const Register: React.FC = () => {
               />
             </InputWrapper>
 
-            <InputWrapper label="Role" error={errors.role}>
+            <InputWrapper label="Role">
               <select
                 {...register('role', { required: 'Role is required' })}
                 className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm bg-white"
@@ -178,7 +197,7 @@ const Register: React.FC = () => {
             </InputWrapper>
 
             <div className="md:col-span-2">
-              <InputWrapper label="Address" error={errors.address}>
+              <InputWrapper label="Address">
                 <textarea
                   {...register('address', { required: 'Address is required' })}
                   placeholder="Full Address"
@@ -188,7 +207,7 @@ const Register: React.FC = () => {
               </InputWrapper>
             </div>
 
-            <InputWrapper label="Trade License (PDF)" error={errors.tradeLicense}>
+            <InputWrapper label="Trade License (PDF)">
               <input
                 {...register('tradeLicense', { required: 'Trade License is required' })}
                 type="file"
@@ -196,7 +215,7 @@ const Register: React.FC = () => {
                 className="w-full px-4 py-2 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red transition-all font-bold text-sm"
               />
             </InputWrapper>
-            <InputWrapper label="Owner ID Document (PDF)" error={errors.idDocument}>
+            <InputWrapper label="Owner ID Document (PDF)">
               <input
                 {...register('idDocument', { required: 'ID Document is required' })}
                 type="file"
@@ -204,7 +223,7 @@ const Register: React.FC = () => {
                 className="w-full px-4 py-2 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red transition-all font-bold text-sm"
               />
             </InputWrapper>
-            <InputWrapper label="VAT Registration (PDF)" error={errors.vatRegistration}>
+            <InputWrapper label="VAT Registration (PDF)">
               <input
                 {...register('vatRegistration', { required: 'VAT Registration is required' })}
                 type="file"
@@ -214,7 +233,7 @@ const Register: React.FC = () => {
             </InputWrapper>
             <div></div>
 
-            <InputWrapper label="Password" error={errors.password}>
+            <InputWrapper label="Password">
               <input
                 {...register('password', {
                   required: 'Password is required',
@@ -226,7 +245,7 @@ const Register: React.FC = () => {
               />
             </InputWrapper>
 
-            <InputWrapper label="Confirm Password" error={errors.confirmPassword}>
+            <InputWrapper label="Confirm Password">
               <input
                 {...register('confirmPassword', {
                   required: 'Confirm password required',
@@ -238,18 +257,6 @@ const Register: React.FC = () => {
               />
             </InputWrapper>
           </div>
-
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-600 p-4 mb-6">
-              <p className="text-red-600 text-xs font-black uppercase tracking-widest text-center">{error}</p>
-            </div>
-          )}
-          {message && (
-            <div className={`${message.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded-md mb-4 flex justify-between items-center`} role="alert">
-              <div className="text-sm font-bold">{message.text}</div>
-              <button type="button" onClick={() => setMessage(null)} className="ml-4 text-xs font-black uppercase tracking-widest cursor-pointer"><X className='text-green-400 w-5 h-5'/></button>
-            </div>
-          )}
 
           <div className="mt-4">
             <button
