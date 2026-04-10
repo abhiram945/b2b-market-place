@@ -37,16 +37,23 @@ const getProducts = asyncHandler(async (req, res) => {
   const pageSize = Number(req.query.limit) || 10;
   const page = Number(req.query.page) || 1;
 
-  const { search, searchId, brand, category, location, minPrice, maxPrice, sort } = req.query;
+  const { search, searchId, brand, category, location, minPrice, maxPrice, sort, vendorId } = req.query;
 
   // req.user is populated by optionalProtect middleware if token exists
   const user = req.user;
 
   let query = {};
 
-  // Apply role-based filtering if user is authenticated and is a vendor
+  // Role-based or explicit vendor filtering:
+  // - If the requester is a logged-in vendor, restrict to their products.
+  // - Else if an explicit `vendorId` query is provided (admin or public), use it (validated).
   if (user && user.role === ROLES.VENDOR) {
     query.user = user._id;
+  } else if (vendorId) {
+    if (!mongoose.Types.ObjectId.isValid(String(vendorId))) {
+      return res.json({ products: [], page, pages: 0, total: 0 });
+    }
+    query.user = new mongoose.Types.ObjectId(String(vendorId));
   }
   // For 'buyer', 'admin', and guests, no user-specific filter is applied here.
 

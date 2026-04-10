@@ -31,7 +31,8 @@ const AdminProductList: React.FC = () => {
   const [selectedProductForEdit, setSelectedProductForEdit] = useState<Product | null>(null);
   const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(page);
-  const [productsPerPage] = useState(10);
+  const productsPerPage = 10;
+  const currentProducts = products.slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage) || [];
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
   const [searchInput, setSearchInput] = useState('');
   const [activeSearchId, setActiveSearchId] = useState('');
@@ -49,12 +50,18 @@ const AdminProductList: React.FC = () => {
       skipNextFetchRef.current = false;
       return;
     }
+
+    // If we already have enough products accumulated for this page, skip fetching
+    if (!activeSearchId && products.length >= currentPage * productsPerPage) {
+      return;
+    }
+
     dispatch(fetchProducts({ page: currentPage, limit: productsPerPage, searchId: activeSearchId || undefined }));
-  }, [activeSearchId, currentPage, dispatch, productsPerPage]);
+  }, [activeSearchId, currentPage, dispatch, productsPerPage, products]);
 
   const cacheCurrentResults = () => {
     const payload: ProductSearchCache = {
-      products,
+      products: currentProducts,
       page,
       pages,
       total,
@@ -182,11 +189,11 @@ const AdminProductList: React.FC = () => {
         </div>
       )}
 
-      {loading && products.length === 0 ? (
+      {loading && currentProducts.length === 0 ? (
         <div className="flex justify-center items-center py-32">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-red"></div>
         </div>
-      ) : products.length === 0 ? (
+      ) : currentProducts.length === 0 ? (
         <div className="bg-white p-8 rounded-lg border border-gray-200 text-center shadow-sm">
           <p className="text-gray-500 font-bold uppercase tracking-widest">{activeSearchId ? 'No products match that exact _id.' : 'No products found in the inventory.'}</p>
         </div>
@@ -209,7 +216,7 @@ const AdminProductList: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {products.map((product) => (
+              {currentProducts.map((product) => (
                 <tr key={product._id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="text-sm font-bold text-gray-900 capitalize">{product.title.length > 50 ? `${product.title.slice(0, 50)}...` : product.title}</div>
@@ -241,7 +248,7 @@ const AdminProductList: React.FC = () => {
             <button
               key={index + 1}
               onClick={() => setCurrentPage(index + 1)}
-              className={`w-10 h-10 rounded font-bold text-sm transition-all ${currentPage === index + 1 ? 'bg-zinc-900 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:border-brand-red'}`}
+              className={`w-10 h-10 rounded font-bold text-sm transition-all cursor-pointer ${currentPage === index + 1 ? 'bg-zinc-900 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:border-brand-red'}`}
             >
               {index + 1}
             </button>

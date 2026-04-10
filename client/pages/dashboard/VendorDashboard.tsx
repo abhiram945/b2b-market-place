@@ -19,6 +19,7 @@ const VendorDashboard: React.FC = () => {
     const { user } = useAuth();
     const [copied, setCopied] = useState(false);
     const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+    const [recentLoading, setRecentLoading] = useState(true);
     const [summary, setSummary] = useState({
         activeListings: 0,
         totalSales: 0,
@@ -36,6 +37,7 @@ const VendorDashboard: React.FC = () => {
 
     useEffect(() => {
         const fetchSummary = async () => {
+            setRecentLoading(true);
             try {
                 const { data } = await api.get('/dashboard/summary');
                 setSummary({
@@ -53,6 +55,8 @@ const VendorDashboard: React.FC = () => {
                     lowStockItems: 0,
                     recentOrders: [],
                 });
+            } finally {
+                setRecentLoading(false);
             }
         };
 
@@ -139,30 +143,43 @@ const VendorDashboard: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 bg-white">
-                            {summary.recentOrders.map(order => (
-                                <tr key={order._id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 font-mono">{order._id}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-600 font-medium">
-                                        <ul className="space-y-1">
-                                            {order.items.map((item, idx) => (
-                                                <li key={idx} className="uppercase tracking-tight text-gray-900 font-bold">{item.productTitle} <span className="text-gray-400 text-xs">(x{item.quantity})</span></li>
-                                            ))}
-                                        </ul>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-bold uppercase">{new Date(order.orderDate).toLocaleDateString()}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-center">
-                                        <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${getStatusColor(order.status)} shadow-sm`}>
-                                            {order.status}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                            {summary.recentOrders.length === 0 && (
+                            {recentLoading ? (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-10 text-center text-sm font-bold text-zinc-400 uppercase tracking-widest">
-                                        no recent orders found
+                                    <td colSpan={4} className="py-10">
+                                        <div className="flex flex-col items-center justify-center gap-3">
+                                            <div className="w-10 h-10 border-4 border-zinc-100 border-t-red-600 rounded-full animate-spin"></div>
+                                            <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Loading recent orders...</div>
+                                        </div>
                                     </td>
                                 </tr>
+                            ) : (
+                                <>
+                                    {summary.recentOrders.map(order => (
+                                        <tr key={order._id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 font-mono">{order._id}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-600 font-medium">
+                                                <ul className="space-y-1">
+                                                    {order.items.map((item, idx) => (
+                                                        <li key={idx} className="uppercase tracking-tight text-gray-900 font-bold">{item.productTitle} <span className="text-gray-400 text-xs">(x{item.quantity})</span></li>
+                                                    ))}
+                                                </ul>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-bold uppercase">{new Date(order.orderDate).toLocaleDateString()}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${getStatusColor(order.status)} shadow-sm`}>
+                                                    {order.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {summary.recentOrders.length === 0 && (
+                                        <tr>
+                                            <td colSpan={4} className="px-6 py-10 text-center text-sm font-bold text-zinc-400 uppercase tracking-widest">
+                                                no recent orders found
+                                            </td>
+                                        </tr>
+                                    )}
+                                </>
                             )}
                         </tbody>
                     </table>

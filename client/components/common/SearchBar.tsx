@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search } from '../icons';
+import { Search, X } from '../icons';
 
 interface SearchBarProps {
   value: string;
@@ -44,9 +44,10 @@ const SearchBar: React.FC<SearchBarProps> = ({
           type="button"
           onClick={onClear}
           disabled={disabled}
-          className="absolute inset-y-1.5 right-[82px] px-3 border border-gray-200 bg-white text-[9px] font-black uppercase tracking-widest rounded text-gray-600 hover:text-gray-900 hover:border-gray-300 transition-all disabled:opacity-50 disabled:cursor-default cursor-pointer"
+          aria-label="clear search"
+          className="absolute inset-y-1.5 right-[82px] px-2 border border-gray-200 bg-white rounded text-gray-600 hover:text-gray-900 hover:border-gray-300 transition-all disabled:opacity-50 disabled:cursor-default cursor-pointer flex items-center justify-center"
         >
-          clear
+          <X className="w-3 h-3" />
         </button>
       )}
       <button

@@ -49,6 +49,7 @@ const BrandLogo: React.FC<{ brand: string }> = ({ brand }) => {
 const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters, restoreFilters }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { products, filterOptions, page, pages, total } = useSelector((state: RootState) => state.products);
+  const currentProducts = products.slice((page - 1) * 10, page * 10) || [];
   const [localSearch, setLocalSearch] = useState(filters.search || '');
   const hasActiveFilters = Boolean(filters.search || filters.brand || filters.category || filters.location || filters.sort);
 
@@ -73,7 +74,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters, re
   const cacheCurrentResults = () => {
     const payload: ProductSearchCache = {
       filters,
-      products,
+      products: currentProducts,
       page,
       pages,
       total,

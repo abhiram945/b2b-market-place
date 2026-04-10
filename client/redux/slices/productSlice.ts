@@ -54,7 +54,7 @@ const initialState: ProductState = {
 
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
-  async (filters: { page?: number; limit?: number; search?: string; searchId?: string; brand?: string; location?: string; category?: string; minPrice?: number; maxPrice?: number } = {}, { rejectWithValue }) => {
+  async (filters: { page?: number; limit?: number; search?: string; searchId?: string; vendorId?: string; brand?: string; location?: string; category?: string; minPrice?: number; maxPrice?: number } = {}, { rejectWithValue }) => {
     try {
       const { data } = await api.get('/products', { params: filters });
       return data;
@@ -141,12 +141,16 @@ const productSlice = createSlice({
   initialState,
   reducers: {
     restoreProductList(state, action: PayloadAction<ProductListPayload>) {
-      state.products = action.payload.products;
+      // Restore the provided product list (used for cached search restore)
+      state.products = action.payload.products || [];
       state.page = action.payload.page;
       state.pages = action.payload.pages;
       state.total = action.payload.total;
       state.loading = false;
       state.error = null;
+    },
+    clearProductsCache(state) {
+      state.products = [];
     },
   },
   extraReducers: (builder) => {
@@ -156,9 +160,23 @@ const productSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchProducts.fulfilled, (state, action: PayloadAction<{ products: Product[]; page: number; pages: number; total: number }>) => {
-        state.products = action.payload.products;
-        state.page = action.payload.page;
+      .addCase(fetchProducts.fulfilled, (state, action) => {
+        const incoming = action.payload.products || [];
+        // Determine requested page from thunk arg (fallback to payload.page)
+        const requestedPage = Number((action.meta && action.meta.arg && (action.meta.arg as any).page) || action.payload.page || 1);
+
+        // If this is page 1, replace the products array. Otherwise append new items
+        if (requestedPage === 1) {
+          state.products = incoming.slice();
+        } else {
+          for (const p of incoming) {
+            if (!state.products.find(existing => existing._id === p._id)) {
+              state.products.push(p);
+            }
+          }
+        }
+
+        state.page = requestedPage;
         state.pages = action.payload.pages;
         state.total = action.payload.total;
         state.loading = false;
@@ -169,7 +187,9 @@ const productSlice = createSlice({
       })
       // Add Product
       .addCase(addProduct.fulfilled, (state, action: PayloadAction<Product>) => {
+        // Prepend to products array
         state.products.unshift(action.payload);
+        state.total = state.total + 1;
       })
       // Update Product (covers both admin and vendor updates)
       .addCase(updateProduct.pending, (state) => {
@@ -177,15 +197,13 @@ const productSlice = createSlice({
         state.error = null;
       })
       .addCase(updateProduct.fulfilled, (state, action: PayloadAction<Product>) => {
-        const index = state.products.findIndex(p => p._id === action.payload._id);
-        if (index !== -1) {
-            state.products[index] = action.payload;
-        }
-        if (state.selectedProduct?._id === action.payload._id) {
-            state.selectedProduct = action.payload;
-        }
-        state.loading = false; // Reset loading on fulfillment
-        state.error = null; // Clear any previous errors
+        // Replace product in any cached page
+        // Replace product in products array if present
+        const idxAll = state.products.findIndex(p => p._id === action.payload._id);
+        if (idxAll !== -1) state.products[idxAll] = action.payload;
+        if (state.selectedProduct?._id === action.payload._id) state.selectedProduct = action.payload;
+        state.loading = false;
+        state.error = null;
       })
       .addCase(updateProduct.rejected, (state, action) => {
         state.loading = false;
@@ -196,15 +214,11 @@ const productSlice = createSlice({
         state.error = null;
       })
       .addCase(updateProductByVendor.fulfilled, (state, action: PayloadAction<Product>) => {
-        const index = state.products.findIndex(p => p._id === action.payload._id);
-        if (index !== -1) {
-            state.products[index] = action.payload;
-        }
-        if (state.selectedProduct?._id === action.payload._id) {
-            state.selectedProduct = action.payload;
-        }
-        state.loading = false; // Reset loading on fulfillment
-        state.error = null; // Clear any previous errors
+        const idxAllV = state.products.findIndex(p => p._id === action.payload._id);
+        if (idxAllV !== -1) state.products[idxAllV] = action.payload;
+        if (state.selectedProduct?._id === action.payload._id) state.selectedProduct = action.payload;
+        state.loading = false;
+        state.error = null;
       })
       .addCase(updateProductByVendor.rejected, (state, action) => {
         state.loading = false;
@@ -216,10 +230,10 @@ const productSlice = createSlice({
         state.error = null;
       })
       .addCase(deleteProduct.fulfilled, (state, action: PayloadAction<string>) => {
-        state.products = state.products.filter(product => product._id !== action.payload);
-        if (state.selectedProduct?._id === action.payload) {
-          state.selectedProduct = null;
-        }
+        const id = action.payload;
+        state.products = state.products.filter(p => p._id !== id);
+        if (state.selectedProduct?._id === action.payload) state.selectedProduct = null;
+        state.total = Math.max(0, state.total - 1);
         state.loading = false;
         state.error = null;
       })
@@ -244,5 +258,5 @@ const productSlice = createSlice({
   },
 });
 
-export const { restoreProductList } = productSlice.actions;
+export const { restoreProductList, clearProductsCache } = productSlice.actions;
 export default productSlice.reducer;

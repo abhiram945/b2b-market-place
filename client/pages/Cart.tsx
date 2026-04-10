@@ -44,7 +44,7 @@ const Cart: React.FC = () => {
       showAlert({
         variant: 'success',
         title: 'order placed',
-        message: 'your order was placed successfully.',
+        message: 'your order was placed successfully. An invoice will be emailed to you and will appear in your Orders section.',
       });
       dispatch(clearCart());
       navigate('/orders');

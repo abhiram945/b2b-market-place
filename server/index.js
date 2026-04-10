@@ -51,7 +51,6 @@ app.use(cookieParser());
 
 // Serve static files (but not sensitive ones like invoices)
 // Protected route will handle invoices
-app.use('/uploads/logos', express.static(path.join(__dirname, '/uploads/logos')));
 app.use('/uploads/brands', express.static(path.join(__dirname, '/uploads/brands')));
 app.use('/uploads/banners', express.static(path.join(__dirname, '/uploads/banners')));
 

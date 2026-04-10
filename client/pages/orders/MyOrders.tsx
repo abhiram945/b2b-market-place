@@ -40,8 +40,20 @@ const MyOrders: React.FC = () => {
   }, [activeSearchId, dispatch, isAdmin]);
 
   const cacheCurrentOrders = () => {
+    // Ensure vendor display fields are preserved in the cached payload so
+    // clearing search restores companyName/fullName instead of falling back.
+    const normalizedOrders = orders.map(o => ({
+      ...o,
+      items: o.items.map((item: any) => ({
+        ...item,
+        vendor: typeof item.vendor === 'object' && item.vendor !== null
+          ? { _id: item.vendor._id, companyName: item.vendor.companyName || item.vendor.fullName || item.vendor._id }
+          : item.vendor,
+      })),
+    }));
+
     const payload: OrderSearchCache = {
-      orders,
+      orders: normalizedOrders,
       currentPage,
     };
     localStorage.setItem(ADMIN_ORDER_SEARCH_CACHE_KEY, JSON.stringify(payload));
@@ -148,8 +160,15 @@ const MyOrders: React.FC = () => {
     }
   };
 
-  const getVendorId = (vendor: any) => typeof vendor === 'object' ? vendor?._id : vendor;
-  const getVendorName = (vendor: any) => (vendor as UserType)?.companyName || 'Verified Vendor';
+  const getVendorId = (vendor: any) => (typeof vendor === 'object' && vendor !== null) ? vendor?._id : vendor;
+  const getVendorName = (vendor: any) => {
+    if (!vendor) return 'Verified Vendor';
+    if (typeof vendor === 'object') {
+      return vendor.companyName || vendor.fullName || vendor._id || 'Verified Vendor';
+    }
+    // vendor is a string id
+    return vendor;
+  };
   const getCustomerId = (user: any) => typeof user === 'object' ? user?._id : user;
 
   if (loading) {
@@ -162,23 +181,25 @@ const MyOrders: React.FC = () => {
 
   return (
     <div className="max-w-[90%] mx-auto py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tight">ORDER <span className="text-brand-red">MANAGEMENT</span></h1>
-        <p className="text-gray-500 font-bold uppercase tracking-widest text-xs mt-1">Transaction History & Fulfilment</p>
-      </div>
-
-      {isAdmin && (
-        <div className="mb-8 max-w-md">
-          <SearchBar
-            value={searchInput}
-            onChange={setSearchInput}
-            onSubmit={handleSearchSubmit}
-            onClear={handleClearSearch}
-            placeholder="search order id"
-            showClear={Boolean(searchInput || activeSearchId)}
-          />
+      <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tight">ORDER <span className="text-brand-red">MANAGEMENT</span></h1>
+          <p className="text-gray-500 font-bold uppercase tracking-widest text-xs mt-1">Transaction History & Fulfilment</p>
         </div>
-      )}
+
+        {isAdmin && (
+          <div className="w-full md:w-auto max-w-md">
+            <SearchBar
+              value={searchInput}
+              onChange={setSearchInput}
+              onSubmit={handleSearchSubmit}
+              onClear={handleClearSearch}
+              placeholder="search order id"
+              showClear={Boolean(searchInput || activeSearchId)}
+            />
+          </div>
+        )}
+      </div>
 
       {orders.length === 0 ? (
         <div className="bg-white p-12 rounded-lg border border-gray-200 text-center shadow-sm">
@@ -285,7 +306,7 @@ const MyOrders: React.FC = () => {
             <button
               key={index + 1}
               onClick={() => setCurrentPage(index + 1)}
-              className={`w-10 h-10 rounded font-bold text-sm transition-all ${currentPage === index + 1 ? 'bg-zinc-900 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:border-brand-red'}`}
+              className={`w-10 h-10 rounded font-bold text-sm transition-all cursor-pointer ${currentPage === index + 1 ? 'bg-zinc-900 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:border-brand-red'}`}
             >
               {index + 1}
             </button>
