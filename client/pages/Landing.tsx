@@ -3,7 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import Footer from '../components/common/Footer';
 import { CheckCircle, LogIn, UserPlus } from '../components/icons';
-import logo from "../assets/pdf-logo.png"
+import logo from "../assets/navbar-logo.png"
 
 const Landing: React.FC = () => {
     
@@ -21,8 +21,7 @@ const Landing: React.FC = () => {
                 <nav className="flex items-center justify-between p-4 lg:px-8 max-w-7xl mx-auto" aria-label="Global">
                     <div className="flex lg:flex-1">
                         <Link to="/" className="flex items-center text-2xl font-black text-gray-900 dark:text-white tracking-tighter italic uppercase">
-                            <img src={logo} alt='techtronics ventures' className='w-12 h-12 mr-2'/>
-                             <span className="text-red-600 mr-1">Techtronics</span> Ventures
+                            <img src={logo} alt='Market Mea' className='w-64 mr-2'/>
                         </Link>
                     </div>
                     <div className="flex flex-1 justify-end space-x-6">

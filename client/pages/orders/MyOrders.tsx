@@ -136,7 +136,10 @@ const MyOrders: React.FC = () => {
   };
 
   const totalPages = Math.max(1, Math.ceil(orders.length / ordersPerPage));
-  const paginatedOrders = orders.slice((currentPage - 1) * ordersPerPage, currentPage * ordersPerPage);
+  const sortedOrders = [...orders].sort(
+    (a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
+  );
+  const paginatedOrders = sortedOrders.slice((currentPage - 1) * ordersPerPage, currentPage * ordersPerPage);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -252,7 +255,7 @@ const MyOrders: React.FC = () => {
                       <button
                         onClick={() => handleViewInvoice(order._id)}
                         disabled={viewingInvoiceId === order._id}
-                        className="bg-brand-red hover:bg-brand-red-hover p-2.5 rounded-lg text-white shadow-md disabled:opacity-50 transition-colors"
+                        className="bg-brand-red hover:bg-brand-red-hover p-2.5 rounded-lg text-white shadow-md disabled:opacity-50 transition-colors cursor-pointer"
                         title="View Official Invoice"
                       >
                         <FileText className={`w-5 h-5 ${viewingInvoiceId === order._id ? 'animate-pulse' : ''}`} />

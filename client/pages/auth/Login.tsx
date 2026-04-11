@@ -4,10 +4,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { loginUser } from '../../redux/slices/userSlice';
 import { RootState, AppDispatch } from '../../redux/store';
-import { Building } from '../../components/icons';
 import { toLowerTrim } from '../../utils/normalize';
 import { useAlert } from '../../contexts/AlertContext';
 import { apiErrorsToAlertItems, formErrorsToAlertItems } from '../../utils/alertHelpers';
+import logo from "../../assets/transparent-logo.png";
 
 type LoginFormInputs = {
   email: string;
@@ -66,8 +66,8 @@ const Login: React.FC = () => {
       <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-xl border border-gray-100">
         <div>
           <Link to="/" className="mx-auto h-12 w-auto flex items-center justify-center text-3xl font-black text-gray-900 tracking-tighter italic">
-            <Building className="w-10 h-10 text-brand-red mr-2" />
-            <span>Techtronics<span className="text-brand-red"> Ventures</span></span>
+            <img src={logo} alt='' className='w-20'/>
+            <span className="text-brand-red">Market<span className="text-black"> Mea</span></span>
           </Link>
           <h2 className="mt-8 text-center text-3xl font-black text-gray-900 uppercase tracking-tight">
             SIGN IN

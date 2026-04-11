@@ -22,7 +22,7 @@ const Maintenance: React.FC = () => {
         <div className="h-1 w-24 bg-red-600 mx-auto mb-8 rounded-full animate-in zoom-in duration-1000 delay-300"></div>
 
         <p className="text-zinc-400 text-lg md:text-xl font-bold uppercase tracking-widest max-w-lg mx-auto leading-relaxed mb-12 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
-            TECHTRONICS VENTURES CORE IS CURRENTLY UNDERGOING <span className="text-white">CRITICAL INFRASTRUCTURE OPTIMIZATION</span>.
+            MARKET MEA CORE IS CURRENTLY UNDERGOING <span className="text-white">CRITICAL INFRASTRUCTURE OPTIMIZATION</span>.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-500">
@@ -48,7 +48,7 @@ const Maintenance: React.FC = () => {
             
             <button 
                 onClick={() => window.location.href="/"}
-                className="px-10 py-4 bg-white hover:bg-red-600 text-zinc-900 hover:text-white font-black text-xs uppercase tracking-[0.2em] rounded-none transition-all duration-300 shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_40px_rgba(220,38,38,0.4)]"
+                className="px-10 py-4 bg-white hover:bg-red-600 text-zinc-900 hover:text-white font-black text-xs uppercase tracking-[0.2em] rounded-none transition-all duration-300 shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_40px_rgba(220,38,38,0.4)] cursor-pointer"
             >
                 Refresh page
             </button>

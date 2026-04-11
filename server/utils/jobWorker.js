@@ -69,7 +69,7 @@ const processUserStatusNotificationJob = async (job) => {
   }
 
   const subject = `Your Account has been ${status}`;
-  const message = `Hi ${user.fullName}, your registration on the Techtronics Ventures has been ${status}.`;
+  const message = `Hi ${user.fullName}, your registration on the  Market Mea has been ${status}.`;
 
   await sendEmail(user.email, subject, message);
   if (user.phoneNumber) {

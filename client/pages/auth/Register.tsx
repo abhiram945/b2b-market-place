@@ -4,12 +4,12 @@ import { useForm, SubmitHandler, SubmitErrorHandler } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { registerUser } from '../../redux/slices/userSlice';
-import { Building } from '../../components/icons';
 import { AppDispatch, RootState } from '../../redux/store';
 import api from '../../api';
 import { toLowerTrim, toLowerTrimOptional } from '../../utils/normalize';
 import { useAlert } from '../../contexts/AlertContext';
 import { apiErrorsToAlertItems, formErrorsToAlertItems } from '../../utils/alertHelpers';
+import logo from "../../assets/transparent-logo.png";
 
 type RegisterFormInputs = {
   fullName: string;
@@ -121,8 +121,8 @@ const Register: React.FC = () => {
       <div className="max-w-2xl w-full space-y-8 bg-white px-10 py-6 rounded-2xl shadow-xl border border-gray-100">
         <div className="text-center">
           <Link to="/" className="inline-flex items-center text-3xl font-black text-gray-900 tracking-tighter italic">
-            <Building className="w-10 h-10 text-brand-red mr-2" />
-            <span>Techtronics<span className="text-brand-red"> Ventures</span></span>
+            <img src={logo} alt='' className='w-20'/>
+            <span className="text-brand-red">Market<span className="text-black"> Mea</span></span>
           </Link>
           <h2 className="mt-3 text-2xl font-black text-gray-900 uppercase tracking-tight">
             Create account
