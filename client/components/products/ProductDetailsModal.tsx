@@ -42,7 +42,7 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({ isOpen, onClo
             <div className="flex flex-col md:flex-row gap-8">
                 <div className="flex-1 space-y-6">
                     <div>
-                        <p className="text-[10px] font-black text-red-600 uppercase tracking-[0.3em] mb-1 italic">Title Identification</p>
+                        <p className="text-[10px] font-black text-red-600 uppercase tracking-[0.3em] mb-1 italic">Product title</p>
                         <h2 className="text-3xl font-black text-zinc-900 uppercase italic leading-none tracking-tighter">
                             {product.title}
                         </h2>

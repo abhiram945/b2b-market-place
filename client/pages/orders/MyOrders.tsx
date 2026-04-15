@@ -216,7 +216,7 @@ const MyOrders: React.FC = () => {
             <div key={order._id} className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden transition-all hover:shadow-md">
               <div className="p-6 bg-gray-50/50 border-b border-gray-200 flex flex-wrap justify-between items-center gap-6">
                 <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Order Reference</p>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Order ID</p>
                   <p className="text-lg font-black text-gray-900 font-mono">{order._id.toUpperCase()}</p>
                   <p className="text-xs font-bold text-gray-500 uppercase italic mt-1">{new Date(order.orderDate).toLocaleDateString()}</p>
                 </div>

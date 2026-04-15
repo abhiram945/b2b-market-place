@@ -38,8 +38,10 @@ app.use(helmet({
 
 // Enable CORS
 app.use(cors({
-  origin: process.env.NODE_ENV==="development" ? process.env.DEV_CLIENT_URL : [process.env.PROD_CLIENT_URL_WWW, process.env.PROD_CLIENT_URL_ROOT],
-  credentials: true,
+  origin: process.env.NODE_ENV==="development" ? process.env.DEV_CLIENT_URL : process.env.PROD_CLIENT_URL_WWW,
+  allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true
 }));
 
 if (process.env.NODE_ENV === 'development') {

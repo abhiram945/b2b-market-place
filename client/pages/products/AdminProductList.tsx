@@ -57,7 +57,7 @@ const AdminProductList: React.FC = () => {
     }
 
     dispatch(fetchProducts({ page: currentPage, limit: productsPerPage, searchId: activeSearchId || undefined }));
-  }, [activeSearchId, currentPage, dispatch, productsPerPage, products]);
+  }, [activeSearchId, currentPage]);
 
   const cacheCurrentResults = () => {
     const payload: ProductSearchCache = {
