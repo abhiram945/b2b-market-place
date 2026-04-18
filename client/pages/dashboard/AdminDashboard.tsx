@@ -12,9 +12,6 @@ interface User {
   website?: string;
   role: string;
   status: 'pending' | 'approved' | 'rejected';
-  tradeLicense?: string;
-  idDocument?: string;
-  vatRegistration?: string;
 }
 
 const ADMIN_USER_SEARCH_CACHE_KEY = 'admin-user-search-cache';
@@ -148,15 +145,9 @@ const AdminDashboard: React.FC = () => {
   };
 
   // --- Handlers for viewing documents ---
-  const handleViewDocument = async (docPath: string | undefined) => {
-    if (!docPath) return;
+  const handleViewDocument = async (userId: string, docType: string) => {
     try {
-      const filename = docPath.split('/').pop(); // Extract filename from path
-      if (!filename) {
-        showAlert({ variant: 'error', title: 'document error', message: 'invalid document path.' });
-        return;
-      }
-      const response = await api.get(`/admin/documents/${filename}`, {
+      const response = await api.get(`/admin/users/${userId}/documents/${docType}`, {
         responseType: 'blob',
       });
       const file = new Blob([response.data], { type: 'application/pdf' });
@@ -164,7 +155,7 @@ const AdminDashboard: React.FC = () => {
       window.open(fileURL, '_blank');
     } catch (err) {
       console.error('Failed to view document:', err);
-      showAlert({ variant: 'error', title: 'document error', message: 'failed to view document' });
+      showAlert({ variant: 'error', title: 'view failed', message: 'could not retrieve document.' });
     }
   };
 
@@ -508,26 +499,15 @@ const AdminDashboard: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 font-medium">
                     <div className="flex flex-col items-start gap-2">
-                      {user.tradeLicense && (
-                        <button onClick={() => handleViewDocument(user.tradeLicense)} className="text-[9px] bg-zinc-100 px-2 py-1 rounded border border-zinc-200 hover:bg-zinc-200 transition-colors font-black uppercase tracking-widest text-zinc-600 cursor-pointer w-[80%] text-center">
-                          Trade License
-                        </button>
-                      )}
-                      {user.idDocument && (
-                        <button onClick={() => handleViewDocument(user.idDocument)} className="text-[9px] bg-zinc-100 px-2 py-1 rounded border border-zinc-200 hover:bg-zinc-200 transition-colors font-black uppercase tracking-widest text-zinc-600 cursor-pointer w-[80%] text-center">
-                          ID Document
-                        </button>
-                      )}
-                      {user.vatRegistration && (
-                        <button onClick={() => handleViewDocument(user.vatRegistration)} className="text-[9px] bg-zinc-100 px-2 py-1 rounded border border-zinc-200 hover:bg-zinc-200 transition-colors font-black uppercase tracking-widest text-zinc-600 cursor-pointer w-[80%] text-center">
-                          VAT/Tax
-                        </button>
-                      )}
-                      {!user.tradeLicense && !user.idDocument && !user.vatRegistration && (
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
-                          No Documents
-                        </span>
-                      )}
+                      <button onClick={() => handleViewDocument(user._id, 'tradeLicense')} className="text-[9px] bg-zinc-100 px-2 py-1 rounded border border-zinc-200 hover:bg-zinc-200 transition-colors font-black uppercase tracking-widest text-zinc-600 cursor-pointer w-[80%] text-center">
+                        Trade License
+                      </button>
+                      <button onClick={() => handleViewDocument(user._id, 'idDocument')} className="text-[9px] bg-zinc-100 px-2 py-1 rounded border border-zinc-200 hover:bg-zinc-200 transition-colors font-black uppercase tracking-widest text-zinc-600 cursor-pointer w-[80%] text-center">
+                        ID Document
+                      </button>
+                      <button onClick={() => handleViewDocument(user._id, 'vatRegistration')} className="text-[9px] bg-zinc-100 px-2 py-1 rounded border border-zinc-200 hover:bg-zinc-200 transition-colors font-black uppercase tracking-widest text-zinc-600 cursor-pointer w-[80%] text-center">
+                        VAT/Tax
+                      </button>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-black text-brand-red italic">{user.role}</td>

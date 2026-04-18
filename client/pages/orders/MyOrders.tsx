@@ -251,7 +251,7 @@ const MyOrders: React.FC = () => {
                       </span>
                     )}
 
-                    {(isAdmin || isBuyer) && order.invoiceUrl && (
+                    {(isAdmin || isBuyer) && (
                       <button
                         onClick={() => handleViewInvoice(order._id)}
                         disabled={viewingInvoiceId === order._id}

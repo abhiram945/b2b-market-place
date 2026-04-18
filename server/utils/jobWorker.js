@@ -45,8 +45,7 @@ const processInvoiceJob = async (job) => {
     throw new Error('order or buyer not found for invoice job');
   }
 
-  const invoiceUrl = await generateInvoice(order, buyer);
-  await Order.findByIdAndUpdate(order._id, { invoiceUrl });
+  await generateInvoice(order, buyer);
 };
 
 const processProductNotificationJob = async (job) => {

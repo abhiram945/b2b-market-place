@@ -252,8 +252,15 @@ const productSlice = createSlice({
         state.error = action.payload as string;
       })
       // Fetch Filter Options
-      .addCase(fetchFilterOptions.fulfilled, (state, action: PayloadAction<{ categories: string[]; locations: string[]; brands: string[] }>) => {
+      .addCase(fetchFilterOptions.fulfilled, (state, action: PayloadAction<{ categories: string[]; locations: string[]; brands: string[]; conditions: string[] }>) => {
         state.filterOptions = action.payload;
+        state.config = {
+          ...state.config,
+          categories: action.payload.categories,
+          locations: action.payload.locations,
+          brands: action.payload.brands,
+          conditions: action.payload.conditions || [],
+        };
       });
   },
 });

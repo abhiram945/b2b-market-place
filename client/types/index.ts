@@ -40,7 +40,6 @@ export interface Order {
   totalPrice: number;
   orderDate: string;
   status: 'Pending' | 'Shipped' | 'Ready' | 'Delivered' | 'Completed' | 'Cancelled';
-  invoiceUrl?: string;
 }
 
 export interface NotificationSubscription {

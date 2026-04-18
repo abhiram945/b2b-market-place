@@ -52,18 +52,6 @@ const userSchema = mongoose.Schema(
       required: false,
       set: lowerTrim,
     },
-    tradeLicense: {
-      type: String,
-      required: false, // Required for vendors/buyers, handled in controller
-    },
-    idDocument: {
-      type: String,
-      required: false, // Required for vendors/buyers, handled in controller
-    },
-    vatRegistration: {
-      type: String,
-      required: false, // Required for vendors/buyers, handled in controller
-    },
   },
   {
     timestamps: true,

@@ -35,7 +35,6 @@ const orderSchema = mongoose.Schema(
       enum: Object.values(ORDER_STATUS),
       default: ORDER_STATUS.PENDING,
     },
-    invoiceUrl: { type: String },
   },
   {
     timestamps: true,

@@ -115,7 +115,7 @@ export const generateInvoice = async (order, buyer) => {
         doc.font('Helvetica-Bold').text(val, x, y + 12);
     };
 
-    drawInfoCol('INVOICE NO.', order._id.toString().slice(-8).toUpperCase(), 30);
+    drawInfoCol('INVOICE NO.', order._id.toString().toUpperCase(), 30);
     drawInfoCol('DATE', new Date(order.orderDate).toLocaleDateString(), 180);
     drawInfoCol('DUE DATE', new Date(order.orderDate).toLocaleDateString(), 330);
     drawInfoCol('SALES EMPLOYEE', 'ADMIN', 480);
@@ -171,15 +171,15 @@ export const generateInvoice = async (order, buyer) => {
     doc.text('TAX', totalsX, y);
     doc.text('0', totalsValX, y);
     y += 18;
-    doc.fillColor(RED).text('TOTAL', totalsX, y);
+    doc.text('TOTAL', totalsX, y);
     doc.text(`$${order.totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, totalsValX, y);
     
     y += 22;
-    doc.moveTo(25, y).lineTo(570, y).lineWidth(1).stroke(RED);
+    doc.moveTo(25, y).lineTo(570, y).lineWidth(1).stroke('#ed1c24');
     y += 12;
 
     // --- Payment Details ---
-    doc.fillColor(RED).fontSize(16).font('Helvetica-Bold').text('Payment Details', 30, y);
+    doc.fillColor('#ed1c24').fontSize(16).font('Helvetica-Bold').text('Payment Details', 30, y);
     y += 20;
 
     const drawBankRow = (label, val) => {
@@ -241,7 +241,7 @@ export const generateInvoice = async (order, buyer) => {
             try {
                 await sendEmail(
                     buyer.email,
-                    `Invoice for Order ${order._id.toString().slice(-8).toUpperCase()}`,
+                    `Invoice for Order ${order._id.toString().toUpperCase()}`,
                     `Dear ${toTitleCase(buyer.fullName)},\n\nPlease find attached the commercial invoice for your order.\n\nBest regards,\nTechtronics Technologies`,
                     [{ filename: invoiceName, path: filePath }]
                 );

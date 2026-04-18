@@ -23,12 +23,12 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const selectedRole = normalizeString(role) || ROLES.BUYER;
 
-  // Handle file uploads
-  const tradeLicense = req.files?.tradeLicense ? `/uploads/documents/${req.files.tradeLicense[0].filename}` : null;
-  const idDocument = req.files?.idDocument ? `/uploads/documents/${req.files.idDocument[0].filename}` : null;
-  const vatRegistration = req.files?.vatRegistration ? `/uploads/documents/${req.files.vatRegistration[0].filename}` : null;
+  // Strict check for file uploads during registration
+  const tradeLicenseUploaded = !!req.files?.tradeLicense;
+  const idDocumentUploaded = !!req.files?.idDocument;
+  const vatRegistrationUploaded = !!req.files?.vatRegistration;
 
-  if ((selectedRole === ROLES.VENDOR || selectedRole === ROLES.BUYER) && (!tradeLicense || !idDocument || !vatRegistration)) {
+  if ((selectedRole === ROLES.VENDOR || selectedRole === ROLES.BUYER) && (!tradeLicenseUploaded || !idDocumentUploaded || !vatRegistrationUploaded)) {
     res.status(400);
     throw new Error('Trade License, ID Document, and VAT Registration certificates are required');
   }
@@ -43,9 +43,6 @@ const registerUser = asyncHandler(async (req, res) => {
     role: selectedRole,
     phoneNumber: normalizeString(phoneNumber),
     website: normalizeString(website),
-    tradeLicense,
-    idDocument,
-    vatRegistration,
   });
 
   if (user) {

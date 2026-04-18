@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { X } from '../../components/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../redux/store';
-import { deleteProduct, fetchProducts, restoreProductList } from '../../redux/slices/productSlice';
+import { deleteProduct, fetchFilterOptions, fetchProducts, restoreProductList } from '../../redux/slices/productSlice';
 import { FileText, PlusCircle } from '../../components/icons';
 import AddProductModal from '../../components/products/AddProductModal';
 import EditProductModal from '../../components/products/EditProductModal';
@@ -10,6 +9,7 @@ import BulkUploadModal from '../../components/products/BulkUploadModal';
 import { Product } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import SearchBar from '../../components/common/SearchBar';
+import { useAlert } from '../../contexts/AlertContext';
 
 const ADMIN_PRODUCT_SEARCH_CACHE_KEY = 'admin-product-search-cache';
 
@@ -25,6 +25,7 @@ const AdminProductList: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { products, loading, page, pages, total } = useSelector((state: RootState) => state.products);
   const { role } = useAuth();
+  const { showAlert } = useAlert();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -33,17 +34,13 @@ const AdminProductList: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(page);
   const productsPerPage = 10;
   const currentProducts = products.slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage) || [];
-  const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
   const [searchInput, setSearchInput] = useState('');
   const [activeSearchId, setActiveSearchId] = useState('');
   const skipNextFetchRef = useRef(false);
 
   useEffect(() => {
-    if (message?.type === 'success') {
-      const timeoutId = setTimeout(() => setMessage(null), 2002);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [message]);
+    dispatch(fetchFilterOptions());
+  }, [dispatch]);
 
   useEffect(() => {
     if (skipNextFetchRef.current) {
@@ -133,10 +130,18 @@ const AdminProductList: React.FC = () => {
 
     try {
       await dispatch(deleteProduct(productId)).unwrap();
-      setMessage({ type: 'success', text: 'Product deleted successfully!' });
+      showAlert({
+        variant: 'success',
+        title: 'product deleted',
+        message: 'Product deleted successfully!',
+      });
       dispatch(fetchProducts({ page: currentPage, limit: productsPerPage, searchId: activeSearchId || undefined }));
     } catch (err: any) {
-      setMessage({ type: 'error', text: err || 'Failed to delete product.' });
+      showAlert({
+        variant: 'error',
+        title: 'delete failed',
+        message: err || 'Failed to delete product.',
+      });
     }
   };
 
@@ -177,17 +182,6 @@ const AdminProductList: React.FC = () => {
           />
         </div>
       </div>
-
-      {message && (
-        <div className={`${message.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded-md mb-4 flex justify-between items-start`} role="alert">
-          <div className="text-sm font-bold">{message.text}</div>
-          {message.type === 'error' ? (
-            <button type="button" onClick={() => setMessage(null)} className="ml-4 text-xs font-black uppercase tracking-widest">
-              <X className="w-4 h-4" />
-            </button>
-          ) : null}
-        </div>
-      )}
 
       {loading && currentProducts.length === 0 ? (
         <div className="flex justify-center items-center py-32">

@@ -133,13 +133,14 @@ const getFilterOptions = asyncHandler(async (req, res) => {
   const categories = await Product.distinct('category', query);
   const locations = await Product.distinct('location', query);
 
-  // Get config for brands
+  // Get config for brands and conditions
   const config = await getConfig();
 
   res.json({
     categories: categories.filter(Boolean).sort(),
     locations: locations.filter(Boolean).sort(),
-    brands: config.brands || []
+    brands: config.brands || [],
+    conditions: config.conditions || []
   });
 });
 

@@ -128,10 +128,12 @@ const uploadBanner = asyncHandler(async (req, res) => {
 });
 
 // @desc    Get user document
-// @route   GET /api/admin/documents/:filename
+// @route   GET /api/admin/users/:userId/documents/:docType
 // @access  Private/Admin
 const getDocument = asyncHandler(async (req, res) => {
-  const filePath = path.resolve(__dirname, '..', 'uploads', 'documents', req.params.filename);
+  const { userId, docType } = req.params;
+  const filename = `${userId}-${docType}.pdf`;
+  const filePath = path.resolve(__dirname, '..', 'uploads', 'documents', filename);
 
   if (fs.existsSync(filePath)) {
     res.sendFile(filePath);

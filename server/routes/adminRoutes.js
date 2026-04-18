@@ -67,7 +67,7 @@ router.post('/upload/brand-logo', protect, admin, uploadImage.single('image'), u
 router.post('/upload/banner', protect, admin, uploadImage.single('banner'), uploadBanner);
 
 // Document retrieval route
-router.get('/documents/:filename', protect, admin, getDocument);
+router.get('/users/:userId/documents/:docType', protect, admin, getDocument);
 
 // New route to get configuration
 router.route('/config').get(protect, admin, getConfigController);

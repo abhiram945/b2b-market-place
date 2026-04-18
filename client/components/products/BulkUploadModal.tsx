@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { X } from '../icons';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '../../redux/store';
 import Modal from '../common/Modal'; 
@@ -9,6 +8,7 @@ import { bulkUploadProducts } from '../../redux/slices/productSlice';
 import * as yup from 'yup';
 import { toLowerTrim } from '../../utils/normalize';
 import { CheckCircle } from '../icons';
+import { useAlert } from '../../contexts/AlertContext';
 
 interface BulkUploadModalProps {
   isOpen: boolean;
@@ -53,15 +53,8 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
   const [isUploading, setIsUploading] = useState(false);
   const [uploadComplete, setUploadComplete] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
-  const [message, setMessage] = useState<{ type: 'error' | 'success' | 'info'; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    if (message?.type === 'success') {
-      const t = setTimeout(() => setMessage(null), 2000);
-      return () => clearTimeout(t);
-    }
-  }, [message]);
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     if (!isOpen) {
@@ -93,7 +86,11 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
     const selectedFile = getCurrentFile();
 
     if (!selectedFile) {
-      setMessage({ type: 'error', text: 'Please select a CSV file first.' });
+      showAlert({
+        variant: 'error',
+        title: 'missing file',
+        message: 'Please select a CSV file first.',
+      });
       return;
     }
 
@@ -153,9 +150,17 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
         setValidationErrors(errors);
         setIsParsing(false);
         if (errors.length > 0) {
-            setMessage({ type: 'error', text: `Found ${errors.length} validation errors in the CSV.` });
+            showAlert({
+              variant: 'error',
+              title: 'validation failed',
+              message: `Found ${errors.length} validation errors in the CSV.`,
+            });
         } else if (products.length > 0) {
-            setMessage({ type: 'success', text: `Successfully parsed and validated ${products.length} products.` });
+            showAlert({
+              variant: 'success',
+              title: 'parsed csv',
+              message: `Successfully parsed and validated ${products.length} products.`,
+            });
         }
       },
       error: (err: any) => {
@@ -164,14 +169,22 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
         setValidationErrors([]);
         setFile(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
-        setMessage({ type: 'error', text: `Error parsing CSV: ${err?.message || String(err)}` });
+        showAlert({
+          variant: 'error',
+          title: 'parse error',
+          message: `Error parsing CSV: ${err?.message || String(err)}`,
+        });
       }
     });
   };
 
   const handleBulkUpload = () => {
     if (parsedData.length === 0 || validationErrors.length > 0) {
-      setMessage({ type: 'error', text: 'Cannot upload: no valid products or validation errors present.' });
+      showAlert({
+        variant: 'error',
+        title: 'upload blocked',
+        message: 'Cannot upload: no valid products or validation errors present.',
+      });
       return;
     }
     
@@ -181,7 +194,11 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
     dispatch(bulkUploadProducts(parsedData as any))
         .unwrap()
         .then((response) => {
-          setMessage({ type: 'success', text: response.message || 'Products uploaded successfully!' });
+          showAlert({
+            variant: 'success',
+            title: 'upload complete',
+            message: response.message || 'Products uploaded successfully!',
+          });
           setIsUploading(false);
           setUploadComplete(true);
           onUploadSuccess();
@@ -190,7 +207,11 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
             console.error('[BULK UPLOAD] Server error:', err);
             setIsUploading(false);
             const errorMessage = typeof err === 'string' ? err : (err.message || 'Failed to bulk upload products');
-          setMessage({ type: 'error', text: errorMessage });
+            showAlert({
+              variant: 'error',
+              title: 'upload failed',
+              message: errorMessage,
+            });
         });
   };
 
@@ -199,39 +220,13 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
       isOpen={isOpen}
       onClose={handleModalClose}
       title="Bulk Product Upload"
-      closeButtonClassName={uploadComplete ? 'text-green-600 hover:text-green-700 bg-green-50 rounded-full' : 'text-gray-400 hover:text-brand-red'}
+      closeButtonClassName="text-gray-400 hover:text-brand-red"
     >
       <div className="p-2 relative">
         {isUploading && (
           <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-[2px] flex flex-col items-center justify-center rounded-xl">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-red mb-4"></div>
             <p className="text-[10px] font-black text-gray-900 uppercase tracking-widest animate-pulse">Syncing Products to Global Inventory...</p>
-          </div>
-        )}
-        {message && (
-          <div className={`${message.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded-md mb-4 flex justify-between items-start`} role="alert">
-            <div className="text-sm font-bold">{message.text}</div>
-            {message.type === 'error' ? (
-              <button type="button" onClick={() => setMessage(null)} className="ml-4 text-xs font-black uppercase tracking-widest">
-                <X className="w-4 h-4" />
-              </button>
-            ) : null}
-          </div>
-        )}
-        {uploadComplete && (
-          <div className="mb-6 rounded-2xl border border-green-200 bg-linear-to-br from-green-50 to-emerald-50 px-6 py-7 shadow-sm">
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-600 text-white shadow-md">
-                <CheckCircle className="h-6 w-6" />
-              </div>
-              <div className="flex-1">
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-green-600">Upload Complete</p>
-                <h3 className="mt-1 text-2xl font-black uppercase tracking-tight text-zinc-900">Done</h3>
-                <p className="mt-2 text-sm font-bold text-zinc-600">
-                  Bulk upload finished successfully. You can close this pop-up now.
-                </p>
-              </div>
-            </div>
           </div>
         )}
         <div className="flex items-end gap-3 mb-4">
@@ -323,14 +318,14 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
           <button
             type="button"
             className={`flex-1 text-white font-black text-xs uppercase tracking-[0.2em] py-4 rounded-xl shadow-xl transition-all ${uploadComplete ? 'bg-green-600 hover:bg-green-700' : 'bg-brand-red'} disabled:opacity-50 cursor-pointer`}
-            onClick={uploadComplete ? handleModalClose : handleBulkUpload}
-            disabled={isUploading || (!uploadComplete && (parsedData.length === 0 || validationErrors.length > 0))}
+            onClick={uploadComplete ? undefined : handleBulkUpload}
+            disabled={isUploading || uploadComplete || (!uploadComplete && (parsedData.length === 0 || validationErrors.length > 0))}
           >
             {isUploading ? 'Processing Upload...' : uploadComplete ? 'Done Bulk Uploading' : 'Finalize Bulk Upload'}
           </button>
           <button
             type="button"
-            className={`px-8 border-2 font-black text-xs uppercase tracking-[0.2em] py-4 rounded-xl transition-all cursor-pointer ${uploadComplete ? 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100' : 'border-gray-100 text-gray-400 hover:bg-gray-50'}`}
+            className="px-8 border-2 border-gray-100 text-gray-400 font-black text-xs uppercase tracking-[0.2em] py-4 rounded-xl transition-all hover:bg-gray-50 cursor-pointer"
             onClick={handleModalClose}
             disabled={isUploading}
           >
