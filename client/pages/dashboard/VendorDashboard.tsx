@@ -7,7 +7,7 @@ import api from '../../api';
 
 interface VendorSummaryOrder {
     _id: string;
-    orderDate: string;
+    createdAt: string;
     status: string;
     items: Array<{
         productTitle: string;
@@ -164,7 +164,7 @@ const VendorDashboard: React.FC = () => {
                                                     ))}
                                                 </ul>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-bold uppercase">{new Date(order.orderDate).toLocaleDateString()}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-bold uppercase">{new Date(order.createdAt).toLocaleDateString()}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-center">
                                                 <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${getStatusColor(order.status)} shadow-sm`}>
                                                     {order.status}

@@ -1,135 +1,31 @@
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { useSearchParams } from 'react-router-dom';
-import { RootState, AppDispatch } from '../../redux/store';
-import { fetchProducts, clearProductsCache } from '../../redux/slices/productSlice';
+import React, { useState } from 'react';
+import { useProducts } from '../../hooks/useProducts';
 import ProductTableRow from '../../components/products/ProductTableRow';
 import ProductFilters from '../../components/products/ProductFilters';
 import ProductDetailsModal from '../../components/products/ProductDetailsModal';
 import EditProductModal from '../../components/products/EditProductModal';
+import ProductSkeleton from '../../components/products/ProductSkeleton';
 import { Product } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 
 const ProductsList: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { role, user } = useAuth();
+  const { role } = useAuth();
+  const { 
+    products, 
+    loading, 
+    error, 
+    pageNum, 
+    pages, 
+    setPage, 
+    updateFilters, 
+    refresh 
+  } = useProducts();
 
-  const { productsByPage, loading, error, pages } = useSelector((state: RootState) => state.products);
-  const pageNum = Number(searchParams.get('page') || '1');
-  const pageSize = 10; // fixed UI page size
-  const displayedProducts = productsByPage[pageNum] || [];
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProductForEdit, setSelectedProductForEdit] = useState<Product | null>(null);
-  const skipNextFetchRef = useRef(false);
-  const lastFiltersKeyRef = useRef('');
-
-  const filters = useMemo(() => ({
-    search: searchParams.get('search') || '',
-    brand: searchParams.get('brand') || '',
-    category: searchParams.get('category') || '',
-    location: searchParams.get('location') || '',
-    sort: searchParams.get('sort') || '',
-    page: searchParams.get('page') || '',
-  }), [searchParams]);
-
-  const handleSetFilters = (newFilters: any) => {
-    const params: Record<string, string> = {};
-    if (newFilters.search) params.search = newFilters.search;
-    if (newFilters.brand) params.brand = newFilters.brand;
-    if (newFilters.category) params.category = newFilters.category;
-    if (newFilters.location) params.location = newFilters.location;
-    if (newFilters.sort) params.sort = newFilters.sort;
-    if (newFilters.page) params.page = newFilters.page;
-    setSearchParams(params);
-  };
-
-  type ProductFetchFilters = {
-    page?: number;
-    limit?: number;
-    search?: string;
-    searchId?: string;
-    vendorId?: string;
-    brand?: string;
-    location?: string;
-    category?: string;
-    minPrice?: number;
-    maxPrice?: number;
-    sort?: string;
-  };
-
-  const buildFiltersFromEntries = (entries: Iterable<[string, string]>): ProductFetchFilters => {
-    const out: ProductFetchFilters = {};
-    for (const [k, v] of entries) {
-      if (!v) continue;
-      if (k === 'page') out.page = Number(v) || undefined;
-      else if (k === 'limit') out.limit = Number(v) || undefined;
-      else if (k === 'minPrice') out.minPrice = Number(v) || undefined;
-      else if (k === 'maxPrice') out.maxPrice = Number(v) || undefined;
-      else if (k === 'vendorId') out.vendorId = v;
-      else if (k === 'searchId') out.searchId = v;
-      else if (k === 'search') out.search = v;
-      else if (k === 'brand') out.brand = v;
-      else if (k === 'location') out.location = v;
-      else if (k === 'category') out.category = v;
-      else if (k === 'sort') out.sort = v;
-    }
-    return out;
-  };
-
-  useEffect(() => {
-    if (skipNextFetchRef.current) {
-      skipNextFetchRef.current = false;
-      // return;
-    }
-
-    const allParams = Object.fromEntries(searchParams.entries());
-    const pageRequested = Number(allParams.page || '1');
-
-    // Build a filter key excluding the `page` param so we can detect filter changes
-    const paramsWithoutPage = { ...allParams };
-    delete paramsWithoutPage.page;
-    // Ensure vendorId is included for vendor users
-    if (role === 'vendor' && user && user._id) {
-      paramsWithoutPage.vendorId = user._id;
-      allParams.vendorId = user._id; // also include for request
-    }
-
-    const filtersKey = JSON.stringify(paramsWithoutPage);
-
-    // If filters changed, clear cache and fetch page
-    if (filtersKey !== lastFiltersKeyRef.current) {
-      lastFiltersKeyRef.current = filtersKey;
-      dispatch(clearProductsCache());
-      // build typed filters and fetch
-      const paramsForRequest = new URLSearchParams(Object.entries(allParams));
-      paramsForRequest.set('page', String(pageRequested));
-      paramsForRequest.set('limit', String(pageSize));
-      const typed = buildFiltersFromEntries(paramsForRequest.entries());
-      dispatch(fetchProducts(typed));
-      return;
-    }
-
-    // Smart Caching: If we already have this specific page in Redux, skip the fetch
-    if (productsByPage[pageRequested]) {
-      return;
-    }
-
-    // Otherwise fetch the requested page
-    const paramsForRequest = new URLSearchParams(Object.entries(allParams));
-    paramsForRequest.set('page', String(pageRequested));
-    paramsForRequest.set('limit', String(pageSize));
-    const typed = buildFiltersFromEntries(paramsForRequest.entries());
-    dispatch(fetchProducts(typed));
-  }, [searchParams, pageSize, productsByPage, role, user, dispatch]);
-
-  const handleRestoreFilters = (newFilters: any) => {
-    skipNextFetchRef.current = true;
-    handleSetFilters(newFilters);
-  };
 
   const handleProductClick = (product: Product) => {
     setSelectedProduct(product);
@@ -146,11 +42,6 @@ const ProductsList: React.FC = () => {
     setSelectedProductForEdit(null);
   };
 
-  const handleEditSuccess = () => {
-    const typed = buildFiltersFromEntries(searchParams.entries());
-    dispatch(fetchProducts(typed));
-  };
-
   const Th = ({ label, className = "" }: { label: string, className?: string }) => (
     <th className={`px-2 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-400 italic text-center ${className}`}>
         {label}
@@ -161,7 +52,11 @@ const ProductsList: React.FC = () => {
     <div className="bg-zinc-50 min-h-[calc(100vh-64px)]">
       {/* Sticky Filter Section */}
       <div className="bg-white border-b border-zinc-200 z-20">
-        <ProductFilters filters={filters} setFilters={handleSetFilters} restoreFilters={handleRestoreFilters} />
+        <ProductFilters 
+          filters={{ page: pageNum }} 
+          setFilters={updateFilters} 
+          restoreFilters={updateFilters} 
+        />
       </div>
 
       <div className="w-full">
@@ -188,14 +83,7 @@ const ProductsList: React.FC = () => {
           </thead>
           <tbody className="bg-white divide-y divide-zinc-100">
             {loading ? (
-                <tr>
-                    <td colSpan={11} className="py-40">
-                        <div className="flex flex-col items-center justify-center gap-4">
-                            <div className="w-10 h-10 border-4 border-zinc-100 border-t-red-600 rounded-full animate-spin"></div>
-                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest animate-pulse italic">Connecting Inventory Vector...</span>
-                        </div>
-                    </td>
-                </tr>
+                [...Array(10)].map((_, i) => <ProductSkeleton key={i} />)
             ) : error ? (
                 <tr>
                     <td colSpan={11} className="py-20 px-6">
@@ -204,8 +92,8 @@ const ProductsList: React.FC = () => {
                         </div>
                     </td>
                 </tr>
-            ) : displayedProducts.length > 0 ? (
-              displayedProducts.map((product) => (
+            ) : products.length > 0 ? (
+              products.map((product) => (
               <ProductTableRow 
                 key={product._id} 
                 product={product} 
@@ -234,11 +122,7 @@ const ProductsList: React.FC = () => {
             {[...Array(pages)].map((_, index) => (
               <button
                 key={index + 1}
-                onClick={() => {
-                  const newParams = new URLSearchParams(searchParams);
-                  newParams.set('page', (index + 1).toString());
-                  setSearchParams(newParams);
-                }}
+                onClick={() => setPage(index + 1)}
                 className={`w-10 h-10 rounded font-bold text-sm transition-all cursor-pointer ${pageNum === index + 1 ? 'bg-zinc-900 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:border-brand-red'}`}
               >
                 {index + 1}
@@ -255,7 +139,7 @@ const ProductsList: React.FC = () => {
           onClose={handleCloseEditModal}
           product={selectedProductForEdit}
           role={role}
-          onProductUpdated={handleEditSuccess}
+          onProductUpdated={refresh}
         />
       )}
     </div>

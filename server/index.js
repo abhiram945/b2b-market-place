@@ -57,13 +57,26 @@ app.use('/uploads/brands', express.static(path.join(__dirname, '/uploads/brands'
 app.use('/uploads/banners', express.static(path.join(__dirname, '/uploads/banners')));
 
 // Rate limiting
-const limiter = rateLimit({
+const apiLimiter = rateLimit({
 	windowMs: 15 * 60 * 1000, // 15 minutes
 	max: 100, // Limit each IP to 100 requests per windowMs
 	standardHeaders: true,
 	legacyHeaders: false,
+    message: 'Too many requests from this IP, please try again after 15 minutes'
 });
-// app.use('/api', limiter);
+
+const authLimiter = rateLimit({
+	windowMs: 60 * 60 * 1000, // 1 hour
+	max: 20, // Limit each IP to 20 login/register attempts per hour
+	standardHeaders: true,
+	legacyHeaders: false,
+    message: 'Too many authentication attempts, please try again after an hour'
+});
+
+// Apply rate limiting
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api', apiLimiter);
 
 
 // API Routes

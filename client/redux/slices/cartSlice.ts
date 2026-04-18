@@ -54,8 +54,13 @@ export const syncCart = createAsyncThunk(
           quantity: item.quantity,
         })),
       };
-      await api.put('/cart', payload);
-      return items;
+      const { data } = await api.put('/cart', payload);
+      // Map back to CartItem structure with fresh product data from backend
+      const syncedItems = data.items.map((item: any) => ({
+        ...item.product,
+        quantity: item.quantity,
+      }));
+      return syncedItems;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to sync cart');
     }
@@ -113,9 +118,11 @@ const cartSlice = createSlice({
       .addCase(syncCart.pending, (state) => {
         state.syncing = true;
       })
-      .addCase(syncCart.fulfilled, (state) => {
+      .addCase(syncCart.fulfilled, (state, action) => {
+        state.items = action.payload;
         state.syncing = false;
         state.isDirty = false;
+        localStorage.setItem('cart', JSON.stringify(state.items));
       })
       .addCase(syncCart.rejected, (state, action) => {
         state.syncing = false;

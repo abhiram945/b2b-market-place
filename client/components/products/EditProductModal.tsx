@@ -180,7 +180,16 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
             ) : (
               <>
                 <div className="flex flex-col">
-                  <InputField label="price" name="price" type="number" step="0.01" register={register} />
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest ml-1">price</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      max={product.price}
+                      {...register('price')}
+                      className="w-full h-11 bg-white border-2 border-gray-100 rounded-lg px-4 text-sm font-bold text-gray-900 outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all"
+                    />
+                  </div>
                   {watchedPrice && product && watchedPrice > product.price && (
                     <p className="text-[9px] font-black text-red-600 uppercase mt-1.5 ml-1 animate-pulse">
                       Vendors aren't allowed to increase price

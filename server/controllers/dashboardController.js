@@ -27,7 +27,7 @@ const getDashboardSummary = asyncHandler(async (req, res) => {
       Order.find({ 'items.vendor': req.user._id })
         .sort({ createdAt: -1 })
         .limit(10)
-        .select('_id orderDate status items'),
+        .select('_id createdAt status items'),
       Order.aggregate([
         { $match: { status: { $ne: ORDER_STATUS.CANCELLED }, 'items.vendor': req.user._id } },
         { $unwind: '$items' },
@@ -45,7 +45,7 @@ const getDashboardSummary = asyncHandler(async (req, res) => {
 
     const filteredRecentOrders = recentOrders.map((order) => ({
       _id: order._id,
-      orderDate: order.orderDate,
+      createdAt: order.createdAt,
       status: order.status,
       items: order.items.filter((item) => item.vendor.toString() === req.user._id.toString()).map((item) => ({
         productTitle: item.productTitle,

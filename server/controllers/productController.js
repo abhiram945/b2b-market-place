@@ -45,8 +45,6 @@ const getProducts = asyncHandler(async (req, res) => {
   let query = {};
 
   // Role-based or explicit vendor filtering:
-  // - If the requester is a logged-in vendor, restrict to their products.
-  // - Else if an explicit `vendorId` query is provided (admin or public), use it (validated).
   if (user && user.role === ROLES.VENDOR) {
     query.user = user._id;
   } else if (vendorId) {
@@ -55,60 +53,56 @@ const getProducts = asyncHandler(async (req, res) => {
     }
     query.user = new mongoose.Types.ObjectId(String(vendorId));
   }
-  // For 'buyer', 'admin', and guests, no user-specific filter is applied here.
 
-  if (search) {
-    query.title = { $regex: search, $options: 'i' };
+  // --- Search Prioritization ---
+  // If searchId is provided, or search looks like an ID, prioritize it
+  const potentialId = searchId || search;
+  if (potentialId && mongoose.Types.ObjectId.isValid(String(potentialId))) {
+      const idQuery = { ...query, _id: new mongoose.Types.ObjectId(String(potentialId)) };
+      const productById = await Product.findOne(idQuery);
+      if (productById) {
+          return res.json({ products: [productById], page: 1, pages: 1, total: 1 });
+      }
+      // If we looked for an ID but didn't find it, and searchId was explicit, return empty
+      if (searchId) return res.json({ products: [], page, pages: 0, total: 0 });
   }
-  if (searchId) {
-    if (!mongoose.Types.ObjectId.isValid(String(searchId))) {
-      return res.json({ products: [], page, pages: 0, total: 0 });
-    }
-    query._id = new mongoose.Types.ObjectId(String(searchId));
-  }
-  if (brand) {
-    query.brand = exactCaseInsensitive(normalizeString(brand));
-  }
-  if (category) {
-    query.category = exactCaseInsensitive(normalizeString(category));
-  }
-  if (location) {
-    query.location = exactCaseInsensitive(normalizeString(location));
-  }
+
+  // --- Traditional Filtering ---
+  if (brand) query.brand = exactCaseInsensitive(normalizeString(brand));
+  if (category) query.category = exactCaseInsensitive(normalizeString(category));
+  if (location) query.location = exactCaseInsensitive(normalizeString(location));
   if (minPrice || maxPrice) {
     query.price = {};
-    if (minPrice) {
-      query.price.$gte = Number(minPrice);
-    }
-    if (maxPrice) {
-      query.price.$lte = Number(maxPrice);
-    }
+    if (minPrice) query.price.$gte = Number(minPrice);
+    if (maxPrice) query.price.$lte = Number(maxPrice);
   }
 
   let sortOption = {};
   let projection = {};
-  if (sort === 'price_desc') {
-    sortOption = { price: -1 };
-  } else if (sort === 'price_asc') {
-    sortOption = { price: 1 };
-  } else {
-    // Default sort by createdAt for admin list
-    sortOption = { createdAt: -1 };
-  }
+  if (sort === 'price_desc') sortOption = { price: -1 };
+  else if (sort === 'price_asc') sortOption = { price: 1 };
+  else sortOption = { createdAt: -1 };
 
+  // --- Text Search Logic ---
   if (search) {
-    query = {
-      ...query,
-      $text: { $search: search },
-    };
-    delete query.title;
-    sortOption = { score: { $meta: 'textScore' }, ...sortOption };
-    projection = { score: { $meta: 'textScore' } };
+    const textQuery = { ...query, $text: { $search: search } };
+    let count = await Product.countDocuments(textQuery);
+
+    if (count > 0) {
+      const products = await Product.find(textQuery)
+        .select({ score: { $meta: 'textScore' } })
+        .sort({ score: { $meta: 'textScore' }, ...sortOption })
+        .limit(pageSize)
+        .skip(pageSize * (page - 1));
+      return res.json({ products, page, pages: Math.ceil(count / pageSize), total: count });
+    }
+
+    // --- Regex Fallback ---
+    query.title = { $regex: search, $options: 'i' };
   }
 
   const count = await Product.countDocuments(query);
   const products = await Product.find(query)
-    .select(projection)
     .sort(sortOption)
     .limit(pageSize)
     .skip(pageSize * (page - 1));
