@@ -16,10 +16,10 @@ const ProductsList: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { role, user } = useAuth();
 
-  const { products, loading, error, pages } = useSelector((state: RootState) => state.products);
+  const { productsByPage, loading, error, pages } = useSelector((state: RootState) => state.products);
   const pageNum = Number(searchParams.get('page') || '1');
-  const pageSize = 10; // fixed UI page size: display 10 items per page
-  const displayedProducts = products.slice((pageNum - 1) * pageSize, pageNum * pageSize) || [];
+  const pageSize = 10; // fixed UI page size
+  const displayedProducts = productsByPage[pageNum] || [];
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -103,8 +103,6 @@ const ProductsList: React.FC = () => {
     // If filters changed, clear cache and fetch page
     if (filtersKey !== lastFiltersKeyRef.current) {
       lastFiltersKeyRef.current = filtersKey;
-      // Prevent the cache-clear update from triggering an immediate duplicate fetch
-      skipNextFetchRef.current = true;
       dispatch(clearProductsCache());
       // build typed filters and fetch
       const paramsForRequest = new URLSearchParams(Object.entries(allParams));
@@ -115,8 +113,8 @@ const ProductsList: React.FC = () => {
       return;
     }
 
-    // If there are no pages (no results) or we already have enough products for this page, skip fetch
-    if (pages === 0 || products.length >= pageRequested * pageSize) {
+    // Smart Caching: If we already have this specific page in Redux, skip the fetch
+    if (productsByPage[pageRequested]) {
       return;
     }
 
@@ -126,7 +124,7 @@ const ProductsList: React.FC = () => {
     paramsForRequest.set('limit', String(pageSize));
     const typed = buildFiltersFromEntries(paramsForRequest.entries());
     dispatch(fetchProducts(typed));
-  }, [searchParams, pageSize]);
+  }, [searchParams, pageSize, productsByPage, role, user, dispatch]);
 
   const handleRestoreFilters = (newFilters: any) => {
     skipNextFetchRef.current = true;

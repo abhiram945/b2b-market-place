@@ -28,7 +28,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className={`relative flex-1 min-w-[250px] ${className}`}>
+    <form onSubmit={handleSubmit} className={`relative flex-1 min-w-62.5 max-w-[30vw] ${className}`}>
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
         <Search className="h-4 w-4" />
       </div>
@@ -45,7 +45,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
           onClick={onClear}
           disabled={disabled}
           aria-label="clear search"
-          className="absolute inset-y-1.5 right-[82px] px-2 border border-gray-200 bg-white rounded text-gray-600 hover:text-gray-900 hover:border-gray-300 transition-all disabled:opacity-50 disabled:cursor-default cursor-pointer flex items-center justify-center"
+          className="absolute inset-y-1.5 right-20.5 px-2 border border-gray-200 bg-white rounded text-gray-600 hover:text-gray-900 hover:border-gray-300 transition-all disabled:opacity-50 disabled:cursor-default cursor-pointer flex items-center justify-center"
         >
           <X className="w-3 h-3" />
         </button>

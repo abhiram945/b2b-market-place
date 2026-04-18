@@ -41,15 +41,15 @@ const BrandLogo: React.FC<{ brand: string }> = ({ brand }) => {
       src={logoUrl}
       alt={brand}
       onError={() => setHasLogo(false)}
-      className="h-4 w-auto object-contain grayscale opacity-60 hover:opacity-100 transition-all max-w-[60px]"
+      className="h-4 w-auto object-contain grayscale opacity-60 hover:opacity-100 transition-all max-w-15"
     />
   );
 };
 
 const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters, restoreFilters }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { products, filterOptions, page, pages, total } = useSelector((state: RootState) => state.products);
-  const currentProducts = products.slice((page - 1) * 10, page * 10) || [];
+  const { productsByPage, filterOptions, page, pages, total } = useSelector((state: RootState) => state.products);
+  const currentProducts = productsByPage[page] || [];
   const [localSearch, setLocalSearch] = useState(filters.search || '');
   const hasActiveFilters = Boolean(filters.search || filters.brand || filters.category || filters.location || filters.sort);
 
@@ -142,7 +142,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters, re
   };
 
   return (
-    <div className="bg-white border-b border-gray-200 px-4 py-3 sticky top-[64px] z-30">
+    <div className="bg-white border-b border-gray-200 px-4 py-3 sticky top-16 z-30">
       <div className="w-full mx-auto flex flex-wrap items-center gap-6">
 
         {/* Search */}
@@ -156,7 +156,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters, re
         />
 
         {/* Brands */}
-        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar max-w-[400px]">
+        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar max-w-[50vw]">
           <button onClick={() => handleBrandClick('')} className={`text-[9px] font-black uppercase tracking-widest px-2 transition-colors ${filters.brand === '' ? 'text-brand-red underline' : 'text-gray-400 hover:text-gray-900'}`}>
             ALL
           </button>
@@ -165,7 +165,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters, re
               <button
                 key={b}
                 onClick={() => handleBrandClick(b)}
-                className={`p-1.5 rounded-lg border transition-all bg-white flex items-center justify-center min-w-[40px] h-8 ${filters.brand === b.toLowerCase() ? 'border-brand-red shadow-sm bg-red-50/10' : 'border-gray-100 hover:border-gray-200'}`}
+                className={`p-1.5 rounded-lg border transition-all bg-white flex items-center justify-center min-w-10 h-8 ${filters.brand === b.toLowerCase() ? 'border-brand-red shadow-sm bg-red-50/10' : 'border-gray-100 hover:border-gray-200'}`}
                 title={b}
               >
                 <BrandLogo brand={b} />
@@ -176,7 +176,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters, re
 
         {/* Category */}
         <div className="relative">
-          <select name="category" value={filters.category} onChange={handleInputChange} className="h-10 pl-3 pr-9 bg-gray-50 border border-gray-200 rounded-lg text-[10px] font-black tracking-widest text-gray-700 outline-none focus:border-brand-red cursor-pointer appearance-none min-w-[140px] capitalize">
+          <select name="category" value={filters.category} onChange={handleInputChange} className="h-10 pl-3 pr-9 bg-gray-50 border border-gray-200 rounded-lg text-[10px] font-black tracking-widest text-gray-700 outline-none focus:border-brand-red cursor-pointer appearance-none min-w-35 capitalize">
             <option value="">All Categories</option>
             {filterOptions.categories.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
           </select>
@@ -185,7 +185,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters, re
 
         {/* Location */}
         <div className="relative">
-          <select name="location" value={filters.location} onChange={handleInputChange} className="h-10 pl-3 pr-9 bg-gray-50 border border-gray-200 rounded-lg text-[10px] font-black tracking-widest text-gray-700 outline-none focus:border-brand-red cursor-pointer appearance-none min-w-[140px] capitalize">
+          <select name="location" value={filters.location} onChange={handleInputChange} className="h-10 pl-3 pr-9 bg-gray-50 border border-gray-200 rounded-lg text-[10px] font-black tracking-widest text-gray-700 outline-none focus:border-brand-red cursor-pointer appearance-none min-w-35 capitalize">
             <option value="">All Locations</option>
             {filterOptions.locations.map(l => <option key={l} value={l} className="capitalize">{l}</option>)}
           </select>
@@ -194,7 +194,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters, re
 
         {/* Sort */}
         <div className="relative">
-          <select name="sort" value={filters.sort} onChange={handleInputChange} className="h-10 pl-3 pr-9 bg-gray-50 border border-gray-200 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-700 outline-none focus:border-brand-red cursor-pointer appearance-none min-w-[140px]">
+          <select name="sort" value={filters.sort} onChange={handleInputChange} className="h-10 pl-3 pr-9 bg-gray-50 border border-gray-200 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-700 outline-none focus:border-brand-red cursor-pointer appearance-none min-w-35">
             <option value="">Sort By</option>
             <option value="price_asc">Price: Low to High</option>
             <option value="price_desc">Price: High to Low</option>

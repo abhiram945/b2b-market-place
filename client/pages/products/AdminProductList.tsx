@@ -23,7 +23,7 @@ type ProductSearchCache = {
 
 const AdminProductList: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { products, loading, page, pages, total } = useSelector((state: RootState) => state.products);
+  const { productsByPage, loading, page, pages, total } = useSelector((state: RootState) => state.products);
   const { role } = useAuth();
   const { showAlert } = useAlert();
 
@@ -33,7 +33,7 @@ const AdminProductList: React.FC = () => {
   const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(page);
   const productsPerPage = 10;
-  const currentProducts = products.slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage) || [];
+  const currentProducts = productsByPage[currentPage] || [];
   const [searchInput, setSearchInput] = useState('');
   const [activeSearchId, setActiveSearchId] = useState('');
   const skipNextFetchRef = useRef(false);
@@ -48,13 +48,13 @@ const AdminProductList: React.FC = () => {
       return;
     }
 
-    // If we already have enough products accumulated for this page, skip fetching
-    if (!activeSearchId && products.length >= currentPage * productsPerPage) {
+    // Smart Caching: If we already have this specific page in Redux, skip the fetch
+    if (!activeSearchId && productsByPage[currentPage]) {
       return;
     }
 
     dispatch(fetchProducts({ page: currentPage, limit: productsPerPage, searchId: activeSearchId || undefined }));
-  }, [activeSearchId, currentPage]);
+  }, [activeSearchId, currentPage, productsByPage, dispatch]);
 
   const cacheCurrentResults = () => {
     const payload: ProductSearchCache = {

@@ -25,10 +25,10 @@ const orderSchema = mongoose.Schema(
           required: true,
           ref: 'User',
         },
+        vendorName: { type: String },
       }
     ],
     totalPrice: { type: Number, required: true },
-    orderDate: { type: Date, default: Date.now },
     status: {
       type: String,
       required: true,

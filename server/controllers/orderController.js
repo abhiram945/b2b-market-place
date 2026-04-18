@@ -27,7 +27,9 @@ const createOrder = asyncHandler(async (req, res) => {
     const orderItems = [];
     let totalPrice = 0;
     const productIds = items.map(item => item.productId);
-    const products = await Product.find({ _id: { $in: productIds } }).session(session);
+    const products = await Product.find({ _id: { $in: productIds } })
+      .populate('user', 'companyName fullName')
+      .session(session);
     const productMap = new Map(products.map(product => [product._id.toString(), product]));
 
     for (const item of items) {
@@ -63,7 +65,8 @@ const createOrder = asyncHandler(async (req, res) => {
         quantity: item.quantity,
         price: product.price,
         location: product.location,
-        vendor: product.user,
+        vendor: product.user._id,
+        vendorName: product.user.companyName || product.user.fullName,
       });
     }
 
@@ -144,7 +147,12 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
   }
 
   order.status = status;
-  const updatedOrder = await order.save();
+  await order.save();
+
+  const updatedOrder = await Order.findById(order._id)
+    .populate('user', 'fullName email companyName')
+    .populate('items.vendor', 'fullName companyName');
+
   res.json(updatedOrder);
 });
 

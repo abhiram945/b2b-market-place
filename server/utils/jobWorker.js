@@ -25,13 +25,8 @@ const markFailed = async (job, error) => {
   });
 };
 
-const markCompleted = async (job) => {
-  await AsyncJob.findByIdAndUpdate(job._id, {
-    status: 'completed',
-    attempts: job.attempts + 1,
-    lockedAt: null,
-    lastError: '',
-  });
+const deleteCompletedJob = async (job) => {
+  await AsyncJob.findByIdAndDelete(job._id);
 };
 
 const processInvoiceJob = async (job) => {
@@ -116,7 +111,7 @@ const tick = async () => {
     while (job) {
       try {
         await processJob(job);
-        await markCompleted(job);
+        await deleteCompletedJob(job);
       } catch (error) {
         console.error(`[job-worker] job ${job._id} failed:`, error.message);
         await markFailed(job, error);

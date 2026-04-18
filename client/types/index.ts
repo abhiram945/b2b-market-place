@@ -31,6 +31,7 @@ export interface OrderItem {
   quantity: number;
   price: number;
   vendor: string | User;
+  vendorName?: string;
 }
 
 export interface Order {
@@ -38,8 +39,9 @@ export interface Order {
   user: string | User;
   items: OrderItem[];
   totalPrice: number;
-  orderDate: string;
-  status: 'Pending' | 'Shipped' | 'Ready' | 'Delivered' | 'Completed' | 'Cancelled';
+  status: 'pending' | 'shipped' | 'ready' | 'delivered' | 'completed' | 'cancelled';
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface NotificationSubscription {

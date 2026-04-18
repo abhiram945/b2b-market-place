@@ -137,7 +137,7 @@ const MyOrders: React.FC = () => {
 
   const totalPages = Math.max(1, Math.ceil(orders.length / ordersPerPage));
   const sortedOrders = [...orders].sort(
-    (a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
   const paginatedOrders = sortedOrders.slice((currentPage - 1) * ordersPerPage, currentPage * ordersPerPage);
 
@@ -164,7 +164,9 @@ const MyOrders: React.FC = () => {
   };
 
   const getVendorId = (vendor: any) => (typeof vendor === 'object' && vendor !== null) ? vendor?._id : vendor;
-  const getVendorName = (vendor: any) => {
+  const getVendorName = (item: any) => {
+    if (item.vendorName) return item.vendorName;
+    const vendor = item.vendor;
     if (!vendor) return 'Verified Vendor';
     if (typeof vendor === 'object') {
       return vendor.companyName || vendor.fullName || vendor._id || 'Verified Vendor';
@@ -218,7 +220,7 @@ const MyOrders: React.FC = () => {
                 <div>
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Order ID</p>
                   <p className="text-lg font-black text-gray-900 font-mono">{order._id.toUpperCase()}</p>
-                  <p className="text-xs font-bold text-gray-500 uppercase italic mt-1">{new Date(order.orderDate).toLocaleDateString()}</p>
+                  <p className="text-xs font-bold text-gray-500 uppercase italic mt-1">{new Date(order.createdAt).toLocaleDateString()}</p>
                 </div>
                 {isAdmin && (
                   <div>
@@ -286,7 +288,7 @@ const MyOrders: React.FC = () => {
                       <tr key={index} className="hover:bg-gray-50/50">
                         <td className="px-8 py-5 text-sm font-bold text-gray-900 tracking-tight capitalize">{item.productTitle}</td>
                         {showProviderColumn && (
-                          <td className="px-8 py-5 text-xs font-bold text-gray-500 capitalize">{getVendorName(item.vendor)}</td>
+                          <td className="px-8 py-5 text-xs font-bold text-gray-500 capitalize">{getVendorName(item)}</td>
                         )}
                         {isAdmin && (
                           <td className="px-8 py-5 text-[11px] font-bold text-gray-500 font-mono">{getVendorId(item.vendor)}</td>
