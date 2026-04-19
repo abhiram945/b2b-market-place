@@ -23,7 +23,7 @@ export const useProducts = (options: { pageSize?: number; syncWithUrl?: boolean;
     const { pageSize = 10, syncWithUrl = true, autoVendorFilter = true } = options;
     const dispatch = useDispatch<AppDispatch>();
     const [searchParams, setSearchParams] = useSearchParams();
-    const { role, user } = useAuth();
+    const { activeRole, user } = useAuth();
 
     const { productsByPage, loading, error, pages, total, filterOptions, config } = useSelector((state: RootState) => state.products);
 
@@ -55,7 +55,7 @@ export const useProducts = (options: { pageSize?: number; syncWithUrl?: boolean;
     const fetchItems = (requestedPage: number, forceRefresh = false) => {
         const params: ProductFetchFilters = { ...currentFilters, page: requestedPage, limit: pageSize };
         
-        if (autoVendorFilter && role === 'vendor' && user?._id) {
+        if (autoVendorFilter && activeRole === 'vendor' && user?._id) {
             params.vendorId = user._id;
         }
 
@@ -81,7 +81,7 @@ export const useProducts = (options: { pageSize?: number; syncWithUrl?: boolean;
 
     useEffect(() => {
         fetchItems(pageNum);
-    }, [pageNum, currentFilters, role, user?._id]);
+    }, [pageNum, currentFilters, activeRole, user?._id]);
 
     const setPage = (page: number) => {
         if (syncWithUrl) {
@@ -110,6 +110,7 @@ export const useProducts = (options: { pageSize?: number; syncWithUrl?: boolean;
         pageNum,
         pages,
         total,
+        currentFilters,
         filterOptions,
         config,
         setPage,

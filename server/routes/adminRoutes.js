@@ -8,7 +8,9 @@ import {
   uploadBrandLogo,
   uploadBanner,
   getDocument,
-  getConfigController // Import the new controller
+  getConfigController,
+  getRoleRequests,
+  handleRoleRequest
 } from '../controllers/adminController.js';
 import { bulkCreateProducts } from '../controllers/productController.js'; // Import bulkCreateProducts
 import { protect, admin } from '../middleware/authMiddleware.js';
@@ -72,5 +74,8 @@ router.get('/users/:userId/documents/:docType', protect, admin, getDocument);
 // New route to get configuration
 router.route('/config').get(protect, admin, getConfigController);
 
+// Role requests
+router.route('/role-requests').get(protect, admin, getRoleRequests);
+router.route('/role-requests/:userId').put(protect, admin, handleRoleRequest);
 
 export default router;

@@ -27,7 +27,7 @@ type RegisterFormInputs = {
 };
 
 const InputWrapper = ({ label, children }: any) => (
-  <div className="flex flex-col gap-1.5 min-h-[85px]">
+  <div className="flex flex-col gap-1.5 min-h-21.25">
     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{label}</label>
     {children}
   </div>

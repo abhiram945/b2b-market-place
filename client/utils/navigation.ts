@@ -8,20 +8,20 @@ interface NavLink {
 
 export const getNavLinks = (role: 'admin' | 'vendor' | 'buyer' | null | undefined): NavLink[] => {
   const buyerLinks: NavLink[] = [
-    { to: '/buyer-dashboard', icon: Home, text: 'Dashboard' },
+    { to: '/dashboard', icon: Home, text: 'Dashboard' },
     { to: '/products', icon: Package, text: 'Products' },
     { to: '/orders', icon: Truck, text: 'My Orders' },
     { to: '/cart', icon: ShoppingCart, text: 'My Cart'},
   ];
 
   const vendorLinks: NavLink[] = [
-    { to: '/vendor-dashboard', icon: Home, text: 'Dashboard' },
+    { to: '/dashboard', icon: Home, text: 'Dashboard' },
     { to: '/products', icon: Package, text: 'My Products' },
   ];
 
   const adminLinks: NavLink[] = [
-    { to: '/admin-dashboard', icon: Home, text: 'Dashboard' },
-    { to: '/admin-products', icon: Package, text: 'Manage Products' },
+    { to: '/dashboard', icon: Home, text: 'Dashboard' },
+    { to: '/admin/products', icon: Package, text: 'Manage Products' },
     { to: '/orders', icon: Truck, text: 'Manage Orders' },
   ];
 

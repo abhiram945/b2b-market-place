@@ -12,6 +12,8 @@ export const useAuth = () => {
     loading,
     isRehydrating,
     error,
-    role: user?.role,
+    roles: user?.roles,
+    activeRole: user?.activeRole,
+    roleRequest: user?.roleRequest,
   }), [isAuthenticated, user, loading, isRehydrating, error]);
 };

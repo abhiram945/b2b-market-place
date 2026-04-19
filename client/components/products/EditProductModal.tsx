@@ -16,7 +16,7 @@ interface EditProductModalProps {
   isOpen: boolean;
   onClose: () => void;
   product: Product | null;
-  role: 'admin' | 'vendor' | 'buyer' | '' | undefined;
+  activeRole: 'admin' | 'vendor' | 'buyer' | '' | undefined;
   onProductUpdated: () => void;
 }
 
@@ -57,7 +57,7 @@ const InputField: React.FC<InputFieldProps> = ({ label, name, type = "text", ste
   </div>
 );
 
-const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, product, role, onProductUpdated }) => {
+const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, product, activeRole, onProductUpdated }) => {
   const { config } = useSelector((state: RootState) => state.products);
   const { register, handleSubmit, formState: { isSubmitting }, reset, watch, setValue } = useForm<EditProductFormData>({
     resolver: yupResolver(schema) as any,
@@ -73,16 +73,16 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
   }, [product, reset]);
 
   useEffect(() => {
-    if (role === 'admin' && typeof watchedStockQty === 'number' && typeof watchedMaxOrderQty === 'number' && watchedMaxOrderQty > watchedStockQty) {
+    if (activeRole === 'admin' && typeof watchedStockQty === 'number' && typeof watchedMaxOrderQty === 'number' && watchedMaxOrderQty > watchedStockQty) {
       setValue('maxOrderQty', Number(watchedStockQty) as never, { shouldValidate: true });
     }
-  }, [role, watchedStockQty, watchedMaxOrderQty, setValue]);
+  }, [activeRole, watchedStockQty, watchedMaxOrderQty, setValue]);
 
   const onSubmit: SubmitHandler<EditProductFormData> = async (data) => {
     if (!product) return;
     
     // Vendor specific check
-    if (role === 'vendor' && data.price && data.price > product.price) {
+    if (activeRole === 'vendor' && data.price && data.price > product.price) {
       showAlert({
         variant: 'error',
         title: 'update blocked',
@@ -100,7 +100,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
       if (payload.condition) payload.condition = toLowerTrim(payload.condition);
       if (payload.eta !== undefined) payload.eta = Number(payload.eta);
 
-      const url = role === 'admin' ? `/products/${product._id}` : `/products/${product._id}/vendor-update`;
+      const url = activeRole === 'admin' ? `/products/${product._id}` : `/products/${product._id}/vendor-update`;
       await api.put(url, payload);
       showAlert({
         variant: 'success',
@@ -131,7 +131,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
       {product ? (
         <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-8 py-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-            {role === 'admin' ? (
+            {activeRole === 'admin' ? (
               <>
                 <div className="md:col-span-2">
                     <InputField label="title" name="title" register={register} />

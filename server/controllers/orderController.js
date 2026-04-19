@@ -9,6 +9,8 @@ import { ROLES } from '../utils/constants.js';
 import mongoose from 'mongoose';
 import { enqueueJob, JOB_TYPES } from '../utils/jobQueue.js';
 
+const getEffectiveRole = (user) => user?.activeRole || user?.role || user?.roles?.[0];
+
 // @desc    Create new order
 // @route   POST /api/orders
 // @access  Private
@@ -102,19 +104,21 @@ const createOrder = asyncHandler(async (req, res) => {
 // @route   GET /api/orders
 // @access  Private
 const getMyOrders = asyncHandler(async (req, res) => {
-  if (!req.user || !req.user._id || !req.user.role) {
+  if (!req.user || !req.user._id) {
     res.status(401);
     throw new Error('Not authorized, user data missing');
   }
 
+  const activeRole = getEffectiveRole(req.user);
+
   let orders;
   const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
-  if (req.user.role === ROLES.BUYER) {
+  if (activeRole === ROLES.BUYER) {
     orders = await Order.find({ user: req.user._id }).populate('items.vendor', 'fullName companyName');
-  } else if (req.user.role === ROLES.VENDOR) {
+  } else if (activeRole === ROLES.VENDOR) {
     // For vendors, find orders that contain at least one of their products
     orders = await Order.find({ 'items.vendor': req.user._id }).populate('user', 'fullName email companyName');
-  } else if (req.user.role === ROLES.ADMIN) {
+  } else if (activeRole === ROLES.ADMIN) {
     let adminQuery = {};
 
     if (search) {
@@ -141,7 +145,9 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     throw new Error('Order not found');
   }
 
-  if (req.user.role !== ROLES.ADMIN) {
+  const activeRole = getEffectiveRole(req.user);
+
+  if (activeRole !== ROLES.ADMIN) {
     res.status(401);
     throw new Error('Not authorized to update order status');
   }
@@ -169,7 +175,7 @@ const getInvoice = asyncHandler(async (req, res) => {
 
   // Check if user is buyer, an admin, or a vendor involved in the order
   const isBuyer = order.user.toString() === req.user._id.toString();
-  const isAdmin = req.user.role === ROLES.ADMIN;
+  const isAdmin = getEffectiveRole(req.user) === ROLES.ADMIN;
   const isVendor = order.items.some(item => item.vendor.toString() === req.user._id.toString());
 
   if (!isBuyer && !isVendor && !isAdmin) {

@@ -15,7 +15,7 @@ import AdminProductSkeleton from '../../components/products/AdminProductSkeleton
 
 const AdminProductList: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { role } = useAuth();
+  const { activeRole } = useAuth();
   const { showAlert } = useAlert();
 
   const { 
@@ -93,7 +93,7 @@ const AdminProductList: React.FC = () => {
             onSubmit={handleSearchSubmit}
             onClear={handleClearSearch}
             placeholder="search product id"
-            className="w-[360px]"
+            className="w-90"
             showClear={Boolean(searchInput)}
           />
         </div>
@@ -188,7 +188,7 @@ const AdminProductList: React.FC = () => {
             setSelectedProductForEdit(null);
           }}
           product={selectedProductForEdit}
-          role={role}
+          activeRole={activeRole}
           onProductUpdated={refresh}
         />
       )}

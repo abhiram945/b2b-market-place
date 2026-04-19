@@ -249,7 +249,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
           <button
             onClick={parseCsv}
             disabled={!file || isParsing || uploadComplete}
-            className="h-[42px] px-6 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-brand-red transition-all disabled:opacity-50 cursor-pointer"
+            className="h-10.5 px-6 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-brand-red transition-all disabled:opacity-50 cursor-pointer"
           >
             {isParsing ? 'Parsing...' : 'Parse CSV'}
           </button>
@@ -279,7 +279,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
                   {parsedData.map((product, index) => (
                     <tr key={index} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-400">{index + 1}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-900 truncate max-w-[150px]" title={product.title}>{product.title}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-900 truncate max-w-37.5" title={product.title}>{product.title}</td>
                       <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-600 uppercase">{product.brand}</td>
                       <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-600 capitalize">{product.category}</td>
                       <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-600 uppercase">{product.location}</td>

@@ -4,6 +4,7 @@ import { addToCart } from '../../redux/slices/cartSlice';
 import { Product } from '../../types';
 import Modal from '../common/Modal';
 import { useAlert } from '../../contexts/AlertContext';
+import { AppDispatch } from '../../redux/store';
 
 interface AddToCartModalProps {
   product: Product;
@@ -12,9 +13,10 @@ interface AddToCartModalProps {
 }
 
 const AddToCartModal: React.FC<AddToCartModalProps> = ({ product, isOpen, onClose }) => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const [quantity, setQuantity] = useState(product.minOrderQty);
   const [error, setError] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
   const { showAlert } = useAlert();
 
   useEffect(() => {
@@ -45,15 +47,21 @@ const AddToCartModal: React.FC<AddToCartModalProps> = ({ product, isOpen, onClos
     }
   };
   
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!error && !isNaN(quantity)) {
-      dispatch(addToCart({ product, quantity }));
-      showAlert({
-        variant: 'success',
-        title: 'added to cart',
-        items: [{ field: product.title, message: `${quantity} unit(s) added to your cart.` }],
-      });
-      onClose();
+      try {
+        setIsAdding(true);
+        await dispatch(addToCart({ product, quantity })).unwrap();
+        onClose();
+      } catch (err: any) {
+        showAlert({
+          variant: 'error',
+          title: 'cannot add to cart',
+          message: err || 'failed to update cart',
+        });
+      } finally {
+        setIsAdding(false);
+      }
       return;
     }
 
@@ -96,10 +104,10 @@ const AddToCartModal: React.FC<AddToCartModalProps> = ({ product, isOpen, onClos
                 </button>
                 <button
                     onClick={handleAddToCart}
-                    disabled={!!error || isNaN(quantity)}
+                    disabled={!!error || isNaN(quantity) || isAdding}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400:bg-blue-800"
                 >
-                    Add to Cart
+                    {isAdding ? 'Adding...' : 'Add to Cart'}
                 </button>
             </div>
         </div>

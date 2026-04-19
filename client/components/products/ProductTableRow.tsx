@@ -8,6 +8,7 @@ import { RootState, AppDispatch } from '../../redux/store';
 import { ShoppingCart, Bell } from '../icons';
 import { useAuth } from '../../hooks/useAuth';
 import AlertSubscriptionModal from './AlertSubscriptionModal';
+import { useAlert } from '../../contexts/AlertContext';
 
 interface ProductTableRowProps {
   product: Product;
@@ -18,9 +19,11 @@ interface ProductTableRowProps {
 const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductClick, onEditClick }) => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { role, isAuthenticated } = useAuth();
+  const { activeRole, isAuthenticated } = useAuth();
   const { items: cartItems } = useSelector((state: RootState) => state.cart);
   const { subscriptions } = useSelector((state: RootState) => state.notifications);
+  const { showAlert } = useAlert();
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   const [quantity, setQuantity] = useState(product.minOrderQty);
   const [error, setError] = useState('');
@@ -57,6 +60,22 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
     else setError('');
   };
 
+  const handleAddToCart = async () => {
+    if (isInCart || !!error || isNaN(quantity)) return;
+    try {
+      setIsAddingToCart(true);
+      await dispatch(addToCart({ product, quantity })).unwrap();
+    } catch (err: any) {
+      showAlert({
+        variant: 'error',
+        title: 'cart update failed',
+        message: err || 'Could not update cart.',
+      });
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
+
   return (
     <>
       <tr className="bg-white border-b border-zinc-100 hover:bg-zinc-50 transition-colors group">
@@ -64,7 +83,7 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
           className="px-6 py-4 cursor-pointer"
           onClick={() => onProductClick(product)}
         >
-          <div className="w-full max-w-[500px] overflow-x-auto whitespace-nowrap title-scrollbar">
+          <div className="w-full max-w-125 overflow-x-auto whitespace-nowrap title-scrollbar">
             <span className="text-sm font-bold text-zinc-900 uppercase tracking-tight group-hover:text-red-600 transition-colors">
                 {product.title}
             </span>
@@ -101,7 +120,7 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
         </td>
         <td className="px-6 py-4 text-center">
             <div className="flex items-center justify-center gap-3">
-                {(role === 'buyer' || !isAuthenticated) && (
+                {(activeRole === 'buyer' || !isAuthenticated) && (
                 <>
                     <button
                     onClick={() => setAlertModalOpen(true)}
@@ -116,29 +135,29 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
                         value={isNaN(quantity) ? '' : quantity}
                         onChange={handleQuantityChange}
                         className="w-12 h-8 border border-zinc-200 bg-white text-center text-[11px] font-black text-zinc-900 rounded-none outline-none focus:border-red-600 focus:ring-0 transition-all"
-                        disabled={isInCart}
+                        disabled={isInCart || isAddingToCart}
                     />
                     </div>
 
                     <button
-                    onClick={() => !isInCart && dispatch(addToCart({ product, quantity }))}
-                    disabled={isInCart || !!error || isNaN(quantity)}
-                    className={`h-9 px-6 rounded-none font-black text-[10px] tracking-widest transition-all active:scale-95 shadow-lg min-w-[120px] justify-center flex items-center gap-2 cursor-pointer ${
-                        isInCart 
+                    onClick={handleAddToCart}
+                    disabled={isInCart || !!error || isNaN(quantity) || isAddingToCart}
+                    className={`h-9 px-6 rounded-none font-black text-[10px] tracking-widest transition-all active:scale-95 shadow-lg min-w-30 justify-center flex items-center gap-2 cursor-pointer ${
+                        isInCart || isAddingToCart
                         ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed border border-zinc-200' 
                         : 'bg-zinc-900 text-white hover:bg-red-600'
                     }`}
                     >
                     <ShoppingCart className="w-3.5 h-3.5" />
-                    {isInCart ? 'In cart' : 'Add to cart'}
+                    {isInCart ? 'In cart' : isAddingToCart ? 'Adding...' : 'Add to cart'}
                     </button>
                 </>
                 )}
                 
-                {role === 'vendor' && (
+                {activeRole === 'vendor' && (
                 <button 
                     onClick={() => onEditClick(product)} 
-                    className="h-9 px-6 bg-zinc-900 hover:bg-red-600 text-white rounded-none font-black text-[10px] uppercase tracking-widest transition-colors min-w-[100px] cursor-pointer"
+                    className="h-9 px-6 bg-zinc-900 hover:bg-red-600 text-white rounded-none font-black text-[10px] uppercase tracking-widest transition-colors min-w-25 cursor-pointer"
                 >
                     EDIT STOCK
                 </button>

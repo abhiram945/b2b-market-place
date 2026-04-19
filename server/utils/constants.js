@@ -18,3 +18,10 @@ export const ORDER_STATUS = {
   COMPLETED: 'completed',
   CANCELLED: 'cancelled',
 };
+
+export const ROLE_REQUEST_STATUS = {
+  NONE: 'none',
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  REJECTED: 'rejected',
+};

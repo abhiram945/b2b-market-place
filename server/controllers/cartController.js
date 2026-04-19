@@ -25,6 +25,7 @@ const updateCart = asyncHandler(async (req, res) => {
   if (cart) {
     cart.items = items;
     const updatedCart = await cart.save();
+    await updatedCart.populate('items.product');
     res.json(updatedCart);
   } else {
     const newCart = new Cart({
@@ -32,6 +33,7 @@ const updateCart = asyncHandler(async (req, res) => {
       items,
     });
     const createdCart = await newCart.save();
+    await createdCart.populate('items.product');
     res.status(201).json(createdCart);
   }
 });

@@ -7,7 +7,8 @@ const generateToken = (user) => {
         fullName: user.fullName,
         email: user.email,
         companyName: user.companyName,
-        role: user.role
+        activeRole: user.activeRole,
+        roles: user.roles
     },
     process.env.JWT_SECRET,
     {
@@ -25,7 +26,8 @@ const generateRefreshToken = (user) => {
       phoneNumber: user.phoneNumber,
       companyName: user.companyName,
       address: user.address,
-      role: user.role,
+      activeRole: user.activeRole,
+      roles: user.roles,
       status: user.status,
       website: user.website,
     },

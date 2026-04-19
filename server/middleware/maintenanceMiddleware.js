@@ -16,7 +16,8 @@ const checkMaintenance = asyncHandler(async (req, res, next) => {
     }
 
     // If user is logged in and is an admin, let them through
-    if (req.user && req.user.role === ROLES.ADMIN) {
+    const isAdmin = req.user && (req.user.activeRole === ROLES.ADMIN || req.user.roles?.includes(ROLES.ADMIN));
+    if (isAdmin) {
       return next();
     }
 

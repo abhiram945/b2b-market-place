@@ -12,12 +12,30 @@ import { useAlert } from '../contexts/AlertContext';
 const Cart: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { items: cartItems } = useSelector((state: RootState) => state.cart);
+  const { items: cartItems, syncing: isCartSyncing } = useSelector((state: RootState) => state.cart);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [draftQuantities, setDraftQuantities] = useState<Record<string, string>>({});
+  const [quantityErrors, setQuantityErrors] = useState<Record<string, string>>({});
   const { showAlert } = useAlert();
 
-  const handleRemove = (id: string) => {
-    dispatch(removeFromCart(id));
+  useEffect(() => {
+    const nextDrafts: Record<string, string> = {};
+    cartItems.forEach((item) => {
+      nextDrafts[item._id] = String(item.quantity);
+    });
+    setDraftQuantities(nextDrafts);
+  }, [cartItems]);
+
+  const handleRemove = async (id: string) => {
+    try {
+      await dispatch(removeFromCart(id)).unwrap();
+    } catch (err: any) {
+      showAlert({
+        variant: 'error',
+        title: 'cart update failed',
+        message: err || 'failed to remove item',
+      });
+    }
   };
 
   const handleCheckout = async () => {
@@ -44,7 +62,7 @@ const Cart: React.FC = () => {
       showAlert({
         variant: 'success',
         title: 'order placed',
-        message: 'your order was placed successfully. An invoice will be emailed to you and will appear in your Orders section.',
+        message: 'Order was placed successfully. An invoice will be emailed to you',
       });
       dispatch(clearCart());
       navigate('/orders');
@@ -59,62 +77,73 @@ const Cart: React.FC = () => {
     }
   };
 
-  const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const getDraftQuantityInput = (item: CartItem) => {
+    const draft = draftQuantities[item._id];
+    return draft !== undefined ? draft : String(item.quantity);
+  };
 
-  const QuantityInput = ({ item }: { item: CartItem }) => {
-    const [quantity, setQuantity] = useState(item.quantity);
-    const [error, setError] = useState('');
+  const getDisplayedQuantity = (item: CartItem) => {
+    const draft = getDraftQuantityInput(item);
+    const parsed = parseInt(draft, 10);
+    return Number.isNaN(parsed) ? item.quantity : parsed;
+  };
 
-    useEffect(() => {
-      setQuantity(item.quantity)
-    }, [item.quantity])
-
-    const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      if (value === '') {
-        setQuantity(NaN);
-        setError('');
-        return;
-      }
-
-      const numValue = parseInt(value, 10);
-      setQuantity(numValue);
-
-      if (numValue < item.minOrderQty) {
-        setError(`Min order is ${item.minOrderQty}`);
-      } else if (numValue > item.maxOrderQty) {
-        setError(`Max order is ${item.maxOrderQty}`);
-      } else {
-        setError('');
-        dispatch(updateQuantity({ id: item._id, quantity: numValue }));
-      }
-    };
-
-    const handleBlur = () => {
-      if (isNaN(quantity) || quantity < item.minOrderQty) {
-        setQuantity(item.minOrderQty);
-        dispatch(updateQuantity({ id: item._id, quantity: item.minOrderQty }));
-        setError('');
-      }
+  const handleQuantityChange = (item: CartItem, e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === '') {
+      setDraftQuantities((prev) => ({ ...prev, [item._id]: '' }));
+      setQuantityErrors((prev) => ({ ...prev, [item._id]: '' }));
+      return;
     }
 
-    return (
-      <div className="flex flex-col items-center">
-        <label htmlFor={`quantity-${item._id}`} className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Vol.</label>
-        <input
-          id={`quantity-${item._id}`}
-          type="number"
-          value={isNaN(quantity) ? '' : quantity}
-          onChange={handleQuantityChange}
-          onBlur={handleBlur}
-          min={item.minOrderQty}
-          max={item.maxOrderQty}
-          className="w-16 h-10 border-2 border-gray-100 rounded-lg text-center text-sm font-black text-gray-900 outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all"
-        />
-        {error && <p className="text-red-600 text-[8px] font-bold mt-1 uppercase whitespace-nowrap">{error}</p>}
-      </div>
-    )
-  }
+    const numValue = parseInt(value, 10);
+    setDraftQuantities((prev) => ({ ...prev, [item._id]: value }));
+
+    if (numValue < item.minOrderQty) {
+      setQuantityErrors((prev) => ({ ...prev, [item._id]: `Min order is ${item.minOrderQty}` }));
+    } else if (numValue > item.maxOrderQty) {
+      setQuantityErrors((prev) => ({ ...prev, [item._id]: `Max order is ${item.maxOrderQty}` }));
+    } else {
+      setQuantityErrors((prev) => ({ ...prev, [item._id]: '' }));
+    }
+  };
+
+  const commitQuantity = async (item: CartItem) => {
+    const draft = getDraftQuantityInput(item);
+    const parsed = parseInt(draft, 10);
+    const quantity = Number.isNaN(parsed) ? NaN : parsed;
+    const fallbackValue = isNaN(quantity) || quantity < item.minOrderQty ? item.minOrderQty : quantity;
+
+    if (isNaN(quantity) || quantity < item.minOrderQty) {
+      setDraftQuantities((prev) => ({ ...prev, [item._id]: String(fallbackValue) }));
+      setQuantityErrors((prev) => ({ ...prev, [item._id]: '' }));
+    }
+
+    if (fallbackValue !== item.quantity) {
+      try {
+        await dispatch(updateQuantity({ id: item._id, quantity: fallbackValue })).unwrap();
+      } catch (err: any) {
+        showAlert({
+          variant: 'error',
+          title: 'cart update failed',
+          message: err || 'failed to update quantity',
+        });
+      }
+    }
+  };
+
+  const handleQuantityBlur = async (item: CartItem) => {
+    await commitQuantity(item);
+  };
+
+  const handleQuantityKeyDown = async (item: CartItem, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      await commitQuantity(item);
+    }
+  };
+
+  const subtotal = cartItems.reduce((acc, item) => acc + item.price * getDisplayedQuantity(item), 0);
 
   return (
     <div className="max-w-[90%] mx-auto py-8">
@@ -126,6 +155,13 @@ const Cart: React.FC = () => {
       </div>
 
       <div className="lg:grid lg:grid-cols-12 lg:items-start lg:gap-x-12">
+        {isCartSyncing && (
+          <div className="col-span-12 mb-4">
+            <div className="bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-lg">
+              Syncing cart changes...
+            </div>
+          </div>
+        )}
         <section className={cartItems.length>0 ? "col-span-8":"col-span-12"}>
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
             {cartItems.length > 0 ? (
@@ -147,7 +183,8 @@ const Cart: React.FC = () => {
                           <button
                             onClick={() => handleRemove(item._id)}
                             type="button"
-                            className="p-3 text-gray-400 bg-red-500 rounded-xl cursor-pointer"
+                            disabled={isCartSyncing}
+                            className="p-3 text-gray-400 bg-red-500 rounded-xl cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Remove Entity"
                           >
                             <TrashIcon className="h-5 w-5" />
@@ -159,10 +196,25 @@ const Cart: React.FC = () => {
                           <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter mb-1">Unit Value</span>
                           <p className="text-2xl font-black text-gray-900 tracking-tighter">${item.price.toFixed(2)}</p>
                         </div>
-                        <QuantityInput item={item} />
+                        <div className="flex flex-col items-center">
+                          <label htmlFor={`quantity-${item._id}`} className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Vol.</label>
+                          <input
+                            id={`quantity-${item._id}`}
+                            type="number"
+                            value={getDraftQuantityInput(item)}
+                            onChange={(e) => handleQuantityChange(item, e)}
+                            onBlur={() => handleQuantityBlur(item)}
+                            onKeyDown={(e) => handleQuantityKeyDown(item, e)}
+                            min={item.minOrderQty}
+                            max={item.maxOrderQty}
+                            className="w-16 h-10 border-2 border-gray-100 rounded-lg text-center text-sm font-black text-gray-900 outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            disabled={isCartSyncing}
+                          />
+                          {quantityErrors[item._id] && <p className="text-red-600 text-[8px] font-bold mt-1 uppercase whitespace-nowrap">{quantityErrors[item._id]}</p>}
+                        </div>
                         <div className="flex flex-col items-end">
                           <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter mb-1">Line Subtotal</span>
-                          <p className="text-2xl font-black text-brand-red tracking-tighter">${(item.price * item.quantity).toFixed(2)}</p>
+                          <p className="text-2xl font-black text-brand-red tracking-tighter">${(item.price * getDisplayedQuantity(item)).toFixed(2)}</p>
                         </div>
                       </div>
                     </div>
@@ -208,10 +260,10 @@ const Cart: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleCheckout}
-                  disabled={isPlacingOrder}
+                  disabled={isPlacingOrder || isCartSyncing}
                   className="w-full bg-brand-red hover:bg-brand-red-hover cursor-pointer text-white font-black text-md tracking-[0.2em] py-5 rounded-none transition-all disabled:opacity-50 "
                 >
-                  {isPlacingOrder ? 'Placing your order...' : 'Place Order'}
+                  {isPlacingOrder ? 'Placing your order...' : isCartSyncing ? 'Syncing cart...' : 'Place Order'}
                 </button>
               </div>
             </div>

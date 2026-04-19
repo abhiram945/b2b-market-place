@@ -1,6 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import User from '../models/User.js';
-import { USER_STATUS } from '../utils/constants.js';
+import { USER_STATUS, ROLE_REQUEST_STATUS, ROLES } from '../utils/constants.js';
 import { getConfig, updateConfig, addToConfig } from '../utils/appConfigStore.js';
 import path from 'path';
 import fs from 'fs';
@@ -151,5 +151,58 @@ const getConfigController = asyncHandler(async (req, res) => {
   res.json(config);
 });
 
+// --- New Endpoints for Role Management ---
 
-export { getUsers, updateUserStatus, toggleMaintenanceMode, getMaintenanceStatus, uploadBrandLogo, uploadBanner, getDocument, getConfigController };
+// @desc    Get all pending role requests
+// @route   GET /api/admin/role-requests
+// @access  Private/Admin
+const getRoleRequests = asyncHandler(async (req, res) => {
+    const users = await User.find({ 'roleRequest.status': ROLE_REQUEST_STATUS.PENDING }).sort({ 'roleRequest.requestDate': -1 });
+    res.json(users);
+});
+
+// @desc    Handle a role request (approve/reject)
+// @route   PUT /api/admin/role-requests/:userId
+// @access  Private/Admin
+const handleRoleRequest = asyncHandler(async (req, res) => {
+    const { action } = req.body; // 'approve' or 'reject'
+    const user = await User.findById(req.params.userId);
+
+    if (!user || !user.roleRequest || user.roleRequest.status !== ROLE_REQUEST_STATUS.PENDING) {
+        res.status(404);
+        throw new Error('Pending role request not found for this user');
+    }
+
+    if (action === 'approve') {
+        const newRole = user.roleRequest.requestedRole;
+        if (!user.roles.includes(newRole)) {
+            user.roles.push(newRole);
+        }
+        user.roleRequest.status = ROLE_REQUEST_STATUS.APPROVED; // Mark as approved temporarily
+        user.roleRequest.status = ROLE_REQUEST_STATUS.NONE; // Reset status for next request
+        user.roleRequest.requestedRole = undefined;
+        user.roleRequest.requestDate = undefined; // Clear date as well
+    } else if (action === 'reject') {
+        user.roleRequest.status = ROLE_REQUEST_STATUS.REJECTED;
+    } else {
+        res.status(400);
+        throw new Error('Invalid action. Action must be "approve" or "reject".');
+    }
+
+    await user.save();
+    res.json({ message: `Role request ${action}d successfully` });
+});
+
+
+export { 
+    getUsers, 
+    updateUserStatus, 
+    toggleMaintenanceMode, 
+    getMaintenanceStatus, 
+    uploadBrandLogo, 
+    uploadBanner, 
+    getDocument, 
+    getConfigController,
+    getRoleRequests,
+    handleRoleRequest
+};

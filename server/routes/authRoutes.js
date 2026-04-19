@@ -8,6 +8,8 @@ import {
   refreshToken,
   getRegisterConfig,
   getDashboardConfig,
+  switchRole,
+  requestRole,
 } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { registerValidation, loginValidation, validate } from '../middleware/validationMiddleware.js'; // Import validation middleware
@@ -65,5 +67,7 @@ router.post('/login', loginValidation, validate, loginUser);
 router.post('/logout', logoutUser);
 router.post('/refresh', refreshToken);
 router.get('/profile', protect, getUserProfile);
+router.put('/switch-role', protect, switchRole);
+router.post('/request-role', protect, requestRole);
 
 export default router;

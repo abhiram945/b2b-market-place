@@ -10,13 +10,14 @@ import { Product } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 
 const ProductsList: React.FC = () => {
-  const { role } = useAuth();
+  const { activeRole } = useAuth();
   const { 
     products, 
     loading, 
     error, 
     pageNum, 
     pages, 
+    currentFilters,
     setPage, 
     updateFilters, 
     refresh 
@@ -53,7 +54,7 @@ const ProductsList: React.FC = () => {
       {/* Sticky Filter Section */}
       <div className="bg-white border-b border-zinc-200 z-20">
         <ProductFilters 
-          filters={{ page: pageNum }} 
+          filters={currentFilters} 
           setFilters={updateFilters} 
           restoreFilters={updateFilters} 
         />
@@ -61,7 +62,7 @@ const ProductsList: React.FC = () => {
 
       <div className="w-full">
         <div className="min-w-full inline-block align-middle">
-          <table className="w-full border-collapse min-w-[1200px]">
+          <table className="w-full border-collapse min-w-300">
           <thead className="sticky top-0 z-10 bg-zinc-900 shadow-xl">
             <tr>
               <th className="px-6 py-3 text-left">
@@ -138,7 +139,7 @@ const ProductsList: React.FC = () => {
           isOpen={isEditModalOpen}
           onClose={handleCloseEditModal}
           product={selectedProductForEdit}
-          role={role}
+          activeRole={activeRole}
           onProductUpdated={refresh}
         />
       )}

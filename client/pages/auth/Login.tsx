@@ -18,26 +18,29 @@ const Login: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { loading, isAuthenticated, user } = useSelector((state: RootState) => state.user);
+  const { isAuthenticated, user, loading } = useSelector((state: RootState) => state.user);
   const { showAlert } = useAlert();
   
+  // Determine the intended redirect path, defaulting to '/dashboard' if not set
   const from = location.state?.from?.pathname || '/dashboard';
 
   const { register, handleSubmit } = useForm<LoginFormInputs>();
 
   useEffect(() => {
-    if (isAuthenticated && user && user.role) {
-      if (user.role === 'admin') {
-        navigate('/admin-dashboard', { replace: true });
-      } else if (user.role === 'buyer') {
-        navigate('/buyer-dashboard', { replace: true });
-      } else if (user.role === 'vendor') {
-        navigate('/vendor-dashboard', { replace: true });
-      } else {
-        navigate(from, { replace: true });
+    // Redirect authenticated users away from the login page
+    if (isAuthenticated && user && user.activeRole) {
+      let redirectPath = '/dashboard';
+
+      // If a previous path was intended (and it's not login/register), use that.
+      // This is often set by ProtectedRoute when redirecting unauthenticated users.
+      const intendedPath = location.state?.from?.pathname;
+      if (intendedPath && intendedPath !== '/login' && intendedPath !== '/register') {
+        redirectPath = intendedPath;
       }
+      
+      navigate(redirectPath, { replace: true });
     }
-  }, [isAuthenticated, navigate, from, user]);
+  }, [isAuthenticated, navigate, location.state?.from?.pathname, user]);
 
   const onSubmit: SubmitHandler<LoginFormInputs> = (data) => {
     dispatch(loginUser({
@@ -90,7 +93,7 @@ const Login: React.FC = () => {
                 })}
                 id="email-address"
                 type="email"
-                className="appearance-none relative block w-full px-4 py-3 border-2 border-gray-100 placeholder-gray-300 text-gray-900 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all sm:text-sm font-bold"
+                className="w-full h-11 bg-white border-2 border-gray-100 rounded-lg px-4 text-sm font-bold text-gray-900 outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all sm:text-sm"
                 placeholder="user@gmail.com"
               />
             </div>
@@ -102,7 +105,7 @@ const Login: React.FC = () => {
                 })}
                 id="password"
                 type="password"
-                className="appearance-none relative block w-full px-4 py-3 border-2 border-gray-100 placeholder-gray-300 text-gray-900 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all sm:text-sm font-bold"
+                className="w-full h-11 bg-white border-2 border-gray-100 rounded-lg px-4 text-sm font-bold text-gray-900 outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all sm:text-sm"
                 placeholder="••••••••"
               />
             </div>

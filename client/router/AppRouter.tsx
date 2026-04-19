@@ -14,69 +14,55 @@ import { useAuth } from '../hooks/useAuth';
 import Cart from '../pages/Cart';
 import ContactUs from '../pages/ContactUs';
 import Maintenance from '../pages/Maintenance';
-import AdminDashboard from '../pages/dashboard/AdminDashboard'; // Import AdminDashboard
-import AdminProductList from '../pages/products/AdminProductList'; // Import AdminProductList
+import AdminDashboard from '../pages/dashboard/AdminDashboard';
+import AdminProductList from '../pages/products/AdminProductList';
+import { ROLES } from '../utils/constants';
 
 const AppRouter = () => {
-    useAuth();
+  const { activeRole } = useAuth();
 
-    return (
-        <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/maintenance" element={<Maintenance />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/contact-us" element={<ContactUs />} />
-            <Route path="/products" element={<MainLayout><ProductsList /></MainLayout>} />
+  // Determine which dashboard route is appropriate based on activeRole
+  const getDashboardElement = (role: string) => {
+    switch (role) {
+      case 'vendor': return <VendorDashboard />;
+      case 'admin': return <AdminDashboard />;
+      case 'buyer':
+      default: return <BuyerDashboard />;
+    }
+  };
 
-            <Route
-                path="/buyer-dashboard"
-                element={(
-                    <ProtectedRoute allowedRoles={['buyer']}>
-                        <MainLayout><BuyerDashboard /></MainLayout>
-                    </ProtectedRoute>
-                )}
-            />
-            <Route
-                path="/vendor-dashboard"
-                element={(
-                    <ProtectedRoute allowedRoles={['vendor']}>
-                        <MainLayout><VendorDashboard /></MainLayout>
-                    </ProtectedRoute>
-                )}
-            />
-            <Route
-                path="/admin-dashboard"
-                element={(
-                    <ProtectedRoute allowedRoles={['admin']}>
-                        <MainLayout><AdminDashboard /></MainLayout>
-                    </ProtectedRoute>
-                )}
-            />
-            <Route
-                path="/admin-products"
-                element={(
-                    <ProtectedRoute allowedRoles={['admin']}>
-                        <MainLayout><AdminProductList /></MainLayout>
-                    </ProtectedRoute>
-                )}
-            />
+  return (
+    <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/maintenance" element={<Maintenance />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/contact-us" element={<ContactUs />} />
+      
+      {/* Publicly accessible product list */}
+      <Route path="/products" element={<MainLayout><ProductsList /></MainLayout>} />
 
-            <Route path="/orders" element={(
-                <ProtectedRoute allowedRoles={['buyer', 'vendor', 'admin']}>
-                    <MainLayout><MyOrders /></MainLayout>
-                </ProtectedRoute>
-            )} />
+      {/* Role-specific dashboards */}
+      {/* Using a single dynamic route for dashboards based on activeRole */}
+      <Route path="/dashboard" element={<ProtectedRoute allowedRoles={[ROLES.BUYER, ROLES.VENDOR, ROLES.ADMIN]}><MainLayout>{getDashboardElement(activeRole as string)}</MainLayout></ProtectedRoute>} />
+      <Route path="/buyer-dashboard" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/vendor-dashboard" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/admin-dashboard" element={<Navigate to="/dashboard" replace />} />
+      
+      {/* Orders page is accessible to all authenticated users */}
+      <Route path="/orders" element={<ProtectedRoute allowedRoles={[ROLES.BUYER, ROLES.VENDOR, ROLES.ADMIN]}><MainLayout><MyOrders /></MainLayout></ProtectedRoute>} />
+      
+      {/* Cart is only for buyers */}
+      <Route path="/cart" element={<ProtectedRoute allowedRoles={[ROLES.BUYER]}><MainLayout><Cart /></MainLayout></ProtectedRoute>} />
 
-            <Route path="/cart" element={(
-                <ProtectedRoute allowedRoles={['buyer']}>
-                    <MainLayout><Cart /></MainLayout>
-                </ProtectedRoute>
-            )} />
-
-            <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-    );
+      {/* Admin routes */}
+      <Route path="/admin" element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]}><MainLayout><AdminDashboard /></MainLayout></ProtectedRoute>} />
+      <Route path="/admin/products" element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]}><MainLayout><AdminProductList /></MainLayout></ProtectedRoute>} />
+      <Route path="/admin-products" element={<Navigate to="/admin/products" replace />} />
+      {/* Redirect any unmatched routes to home */}
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
+  );
 };
 
 export default AppRouter;

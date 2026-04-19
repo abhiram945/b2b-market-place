@@ -2,7 +2,7 @@ import asyncHandler from 'express-async-handler';
 import User from '../models/User.js';
 import { generateToken, generateRefreshToken } from '../utils/generateToken.js';
 import jwt from 'jsonwebtoken';
-import { ROLES, USER_STATUS } from '../utils/constants.js';
+import { ROLES, USER_STATUS, ROLE_REQUEST_STATUS } from '../utils/constants.js';
 import { addToConfig, getConfig } from '../utils/appConfigStore.js';
 
 const normalizeString = (value) => typeof value === 'string' ? value.trim().toLowerCase() : value;
@@ -16,7 +16,6 @@ const registerUser = asyncHandler(async (req, res) => {
   const normalizedEmail = normalizeString(email);
   const userExists = await User.findOne({ email: normalizedEmail });
   if (userExists) {
-    console.warn(`[AUTH] Registration failed: User ${email} already exists`);
     res.status(400);
     throw new Error('User already exists');
   }
@@ -40,13 +39,13 @@ const registerUser = asyncHandler(async (req, res) => {
     password,
     companyName: normalizeString(companyName),
     address: normalizeString(address),
-    role: selectedRole,
+    roles: [selectedRole],
+    activeRole: selectedRole,
     phoneNumber: normalizeString(phoneNumber),
     website: normalizeString(website),
   });
 
   if (user) {
-    // Add company name to dynamic JSON config
     if (companyName) {
       await addToConfig('companyNames', companyName);
     }
@@ -54,30 +53,9 @@ const registerUser = asyncHandler(async (req, res) => {
       message: 'Registration successful. Your account is pending approval.',
     });
   } else {
-    console.error(`[AUTH] Registration failed: Invalid user data for ${email}`);
     res.status(400);
     throw new Error('Invalid user data');
   }
-});
-
-// @desc    Get registration config (company names)
-// @route   GET /api/auth/register-config
-// @access  Public
-const getRegisterConfig = asyncHandler(async (req, res) => {
-  const config = await getConfig();
-  res.json({ companyNames: config.companyNames });
-});
-
-// @desc    Get dashboard config
-// @route   GET /api/auth/dashboard-config
-// @access  Public
-const getDashboardConfig = asyncHandler(async (req, res) => {
-  const config = await getConfig();
-  res.json({
-    banner: config.banner || '/uploads/banners/user-dashboard-banner.png',
-    heroHeading: config.heroHeading || '',
-    heroSubheading: config.heroSubheading || '',
-  });
 });
 
 // @desc    Auth user & get token
@@ -91,13 +69,11 @@ const loginUser = asyncHandler(async (req, res) => {
 
   if (user && (await user.matchPassword(password))) {
     if (user.status === USER_STATUS.PENDING) {
-      console.warn(`[AUTH] Login blocked: Account ${email} is pending approval`);
       res.status(401);
       throw new Error('Your account is pending approval');
     }
 
     if (user.status === USER_STATUS.REJECTED) {
-      console.warn(`[AUTH] Login blocked: Account ${email} is rejected`);
       res.status(401);
       throw new Error('Your account has been rejected');
     }
@@ -105,7 +81,6 @@ const loginUser = asyncHandler(async (req, res) => {
     const accessToken = generateToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    // Set refresh token in httpOnly cookie
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -120,28 +95,16 @@ const loginUser = asyncHandler(async (req, res) => {
       phoneNumber: user.phoneNumber,
       companyName: user.companyName,
       address: user.address,
-      role: user.role,
+      activeRole: user.activeRole,
+      roles: user.roles,
+      roleRequest: user.roleRequest,
       status: user.status,
       token: accessToken,
     });
   } else {
-    console.warn(`[AUTH] Login failed: Invalid credentials for ${email}`);
     res.status(401);
     throw new Error('Invalid email or password');
   }
-});
-
-// @desc    Logout user & clear cookie
-// @route   POST /api/auth/logout
-// @access  Public
-const logoutUser = asyncHandler(async (req, res) => {
-  res.cookie('refreshToken', '', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    expires: new Date(0),
-  });
-  res.status(200).json({ message: 'Logged out successfully' });
 });
 
 // @desc    Refresh access token
@@ -151,32 +114,88 @@ const refreshToken = asyncHandler(async (req, res) => {
   const token = req.cookies.refreshToken;
 
   if (!token) {
-    console.warn(`[AUTH] Refresh failed: No refresh token in cookies`);
     res.status(401);
     throw new Error('Not authorized, no refresh token');
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+    const user = await User.findById(decoded._id);
+    
+    if (!user) {
+        res.status(401);
+        throw new Error('User not found');
+    }
+
     const refreshUser = {
-      _id: decoded._id,
-      fullName: decoded.fullName,
-      email: decoded.email,
-      phoneNumber: decoded.phoneNumber,
-      companyName: decoded.companyName,
-      address: decoded.address,
-      role: decoded.role,
-      status: decoded.status,
-      website: decoded.website,
+      _id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
+      companyName: user.companyName,
+      address: user.address,
+      activeRole: user.activeRole,
+      roles: user.roles,
+      status: user.status,
+      website: user.website,
     };
 
     const accessToken = generateToken(refreshUser);
     res.json({ token: accessToken, user: refreshUser });
   } catch (error) {
-    console.error(`[AUTH] Refresh failed: Invalid or expired refresh token: ${error.message}`);
     res.status(401);
     throw new Error('Not authorized, refresh token failed');
   }
+});
+
+// @desc    Switch active role
+// @route   PUT /api/auth/switch-role
+// @access  Private
+const switchRole = asyncHandler(async (req, res) => {
+    const { role } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (!user.roles.includes(role)) {
+        res.status(400);
+        throw new Error('You do not possess this role');
+    }
+
+    user.activeRole = role;
+    await user.save();
+
+    const accessToken = generateToken(user);
+    res.json({
+        activeRole: user.activeRole,
+        roles: user.roles,
+        token: accessToken
+    });
+});
+
+// @desc    Request for a new portal (buyer/vendor)
+// @route   POST /api/auth/request-role
+// @access  Private
+const requestRole = asyncHandler(async (req, res) => {
+    const { role } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (user.roles.includes(role)) {
+        res.status(400);
+        throw new Error('You already have access to this portal');
+    }
+
+    if (user.roleRequest && user.roleRequest.status === ROLE_REQUEST_STATUS.PENDING) {
+        res.status(400);
+        throw new Error('You already have a pending request');
+    }
+
+    user.roleRequest = {
+        requestedRole: role,
+        status: ROLE_REQUEST_STATUS.PENDING,
+        requestDate: new Date()
+    };
+
+    await user.save();
+    res.json({ message: 'Request submitted successfully. Admin will review it soon.' });
 });
 
 // @desc    Get user profile
@@ -193,7 +212,9 @@ const getUserProfile = asyncHandler(async (req, res) => {
       phoneNumber: user.phoneNumber,
       companyName: user.companyName,
       address: user.address,
-      role: user.role,
+      activeRole: user.activeRole,
+      roles: user.roles,
+      roleRequest: user.roleRequest,
       status: user.status,
     });
   } else {
@@ -202,4 +223,38 @@ const getUserProfile = asyncHandler(async (req, res) => {
   }
 });
 
-export { registerUser, loginUser, logoutUser, getUserProfile, refreshToken, getRegisterConfig, getDashboardConfig };
+const logoutUser = asyncHandler(async (req, res) => {
+    res.cookie('refreshToken', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      expires: new Date(0),
+    });
+    res.status(200).json({ message: 'Logged out successfully' });
+  });
+  
+const getRegisterConfig = asyncHandler(async (req, res) => {
+    const config = await getConfig();
+    res.json({ companyNames: config.companyNames });
+});
+
+const getDashboardConfig = asyncHandler(async (req, res) => {
+    const config = await getConfig();
+    res.json({
+        banner: config.banner || '/uploads/banners/user-dashboard-banner.png',
+        heroHeading: config.heroHeading || '',
+        heroSubheading: config.heroSubheading || '',
+    });
+});
+
+export { 
+    registerUser, 
+    loginUser, 
+    logoutUser, 
+    getUserProfile, 
+    refreshToken, 
+    getRegisterConfig, 
+    getDashboardConfig,
+    switchRole,
+    requestRole
+};

@@ -10,14 +10,14 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
-  const { role } = useAuth();
+  const { activeRole } = useAuth();
   const location = useLocation();
-  const links = getNavLinks(role);
+  const links = getNavLinks(activeRole);
     
   const getDashboardLink = () => {
-    if (role === 'buyer') return '/buyer-dashboard';
-    if (role === 'vendor') return '/vendor-dashboard';
-    if (role === 'admin') return '/admin-dashboard';
+    if (activeRole === 'buyer') return '/dashboard';
+    if (activeRole === 'vendor') return '/dashboard';
+    if (activeRole === 'admin') return '/dashboard';
     return '/';
   };
 

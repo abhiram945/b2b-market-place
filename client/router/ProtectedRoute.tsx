@@ -25,18 +25,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (user && !allowedRoles.includes(user.role)) {
-    // Redirect to the user's specific dashboard if unauthorized for this route
-    let redirectPath = '/'; // Default to landing page
-
-    if (user.role === 'buyer') {
-        redirectPath = '/buyer-dashboard';
-    } else if (user.role === 'vendor') {
-        redirectPath = '/vendor-dashboard';
-    } else if (user.role === 'admin') {
-        redirectPath = '/admin-dashboard';
-    }
-    return <Navigate to={redirectPath} replace />;
+  if (user && !allowedRoles.includes(user.activeRole)) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;

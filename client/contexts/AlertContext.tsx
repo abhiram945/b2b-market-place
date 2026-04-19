@@ -57,7 +57,7 @@ const AlertCard: React.FC<{ alert: AlertEntry; onClose: (id: string) => void }> 
           <button
             type="button"
             onClick={() => onClose(alert.id)}
-            className="shrink-0 rounded-full border border-zinc-200 p-1.5 text-zinc-400 transition-colors hover:text-brand-red"
+            className="shrink-0 rounded-full border border-zinc-200 p-1.5 text-zinc-400 transition-colors hover:text-brand-red cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
@@ -102,7 +102,7 @@ export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <AlertContext.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed right-4 top-4 z-[100] flex max-w-[90vw] flex-col gap-3 items-end">
+      <div className="pointer-events-none fixed right-4 top-4 z-100 flex max-w-[90vw] flex-col gap-3 items-end">
         {alerts.map((alert) => (
           <div key={alert.id} className="pointer-events-auto">
             <AlertCard alert={alert} onClose={removeAlert} />

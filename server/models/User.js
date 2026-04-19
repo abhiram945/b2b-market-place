@@ -36,10 +36,26 @@ const userSchema = mongoose.Schema(
       required: false, // Required only for buyers, handled in controller
       set: lowerTrim,
     },
-    role: {
+    roles: {
+      type: [String],
+      required: true,
+      enum: Object.values(ROLES),
+      default: [ROLES.BUYER],
+    },
+    activeRole: {
       type: String,
       required: true,
       enum: Object.values(ROLES),
+      default: ROLES.BUYER,
+    },
+    roleRequest: {
+      requestedRole: { type: String, enum: Object.values(ROLES) },
+      status: {
+        type: String,
+        enum: ['none', 'pending', 'approved', 'rejected'],
+        default: 'none',
+      },
+      requestDate: { type: Date },
     },
     status: {
       type: String,

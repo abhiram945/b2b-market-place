@@ -43,39 +43,38 @@ const protect = asyncHandler(async (req, res, next) => {
 });
 
 const vendor = (req, res, next) => {
-  if (req.user && req.user.role === ROLES.VENDOR) {
+  if (req.user && req.user.roles.includes(ROLES.VENDOR)) {
     next();
   } else {
     res.status(401);
-    throw new Error('Not authorized as a vendor');
+    throw new Error('Not authorized. You do not have the vendor role.');
   }
 };
 
 const buyer = (req, res, next) => {
-  if (req.user && req.user.role === ROLES.BUYER) {
+  if (req.user && req.user.roles.includes(ROLES.BUYER)) {
     next();
   } else {
     res.status(401);
-    throw new Error('Not authorized as a buyer');
+    throw new Error('Not authorized. You do not have the buyer role.');
   }
 };
 
 const admin = (req, res, next) => {
-
-  if (req.user && req.user.role === ROLES.ADMIN) {
+  if (req.user && req.user.roles.includes(ROLES.ADMIN)) {
     next();
   } else {
     res.status(401);
-    throw new Error('Not authorized as an admin');
+    throw new Error('Not authorized. You do not have the admin role.');
   }
 };
 
 const vendorOrAdmin = (req, res, next) => {
-  if (req.user && (req.user.role === ROLES.VENDOR || req.user.role === ROLES.ADMIN)) {
+  if (req.user && (req.user.roles.includes(ROLES.VENDOR) || req.user.roles.includes(ROLES.ADMIN))) {
     next();
   } else {
     res.status(401);
-    throw new Error('Not authorized as a vendor or admin');
+    throw new Error('Not authorized. You do not have the vendor or admin role.');
   }
 };
 

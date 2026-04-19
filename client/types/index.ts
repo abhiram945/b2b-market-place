@@ -4,7 +4,13 @@ export interface User {
   email: string;
   companyName: string;
   address?: string;
-  role: 'buyer' | 'vendor' | 'admin';
+  roles: ('buyer' | 'vendor' | 'admin')[];
+  activeRole: 'buyer' | 'vendor' | 'admin';
+  roleRequest?: {
+    requestedRole: 'buyer' | 'vendor';
+    status: 'none' | 'pending' | 'approved' | 'rejected';
+    requestDate?: string;
+  };
   password: string;
   phoneNumber?: string;
   website?: string;

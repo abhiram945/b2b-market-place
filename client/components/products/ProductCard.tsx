@@ -8,6 +8,7 @@ import { RootState, AppDispatch } from '../../redux/store';
 import { ShoppingCart, Edit, Bell } from '../icons';
 import { useAuth } from '../../hooks/useAuth';
 import AlertSubscriptionModal from './AlertSubscriptionModal';
+import { useAlert } from '../../contexts/AlertContext';
 
 interface ProductCardProps {
   product: Product;
@@ -18,9 +19,11 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product, onProductClick, onEditClick }) => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { role, isAuthenticated } = useAuth();
+  const { activeRole, isAuthenticated } = useAuth();
   const { items: cartItems } = useSelector((state: RootState) => state.cart);
   const { subscriptions } = useSelector((state: RootState) => state.notifications);
+  const { showAlert } = useAlert();
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   const [quantity, setQuantity] = useState(product.minOrderQty);
   const [error, setError] = useState('');
@@ -55,6 +58,22 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onProductClick, onEd
     else if (value < product.minOrderQty) setError(`Min ${product.minOrderQty}`);
     else if (value > product.maxOrderQty) setError(`Max ${product.maxOrderQty}`);
     else setError('');
+  };
+
+  const handleAddToCart = async () => {
+    if (isInCart || !!error || isNaN(quantity)) return;
+    try {
+      setIsAddingToCart(true);
+      await dispatch(addToCart({ product, quantity })).unwrap();
+    } catch (err: any) {
+      showAlert({
+        variant: 'error',
+        title: 'cart update failed',
+        message: err || 'Could not update cart.',
+      });
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
   const MetaColumn = ({ val, width, colorClass = "text-gray-900" }: { val: any, width: string, colorClass?: string }) => (
@@ -106,7 +125,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onProductClick, onEd
 
           {/* 3. Actions Strip - Fixed Width to prevent jumping */}
           <div className="flex items-center gap-3 px-6 shrink-0 border-l-2 border-gray-100 h-10 ml-2">
-            {(role === 'buyer' || !isAuthenticated) && (
+            {(activeRole === 'buyer' || !isAuthenticated) && (
               <>
                 <button
                   onClick={() => setAlertModalOpen(true)}
@@ -121,29 +140,29 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onProductClick, onEd
                     value={isNaN(quantity) ? '' : quantity}
                     onChange={handleQuantityChange}
                     className="w-12 h-8 border border-gray-200 bg-white text-center text-[11px] font-black text-gray-900 rounded-lg outline-none focus:border-brand-red focus:ring-1 focus:ring-brand-red transition-all"
-                    disabled={isInCart}
+                    disabled={isInCart || isAddingToCart}
                   />
                 </div>
 
                 <button
-                  onClick={() => !isInCart && dispatch(addToCart({ product, quantity }))}
-                  disabled={isInCart || !!error || isNaN(quantity)}
-                  className={`h-9 px-6 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-md min-w-[120px] justify-center flex items-center gap-2 ${
-                    isInCart 
+                  onClick={handleAddToCart}
+                  disabled={isInCart || !!error || isNaN(quantity) || isAddingToCart}
+                  className={`h-9 px-6 rounded-lg font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-md min-w-30 justify-center flex items-center gap-2 ${
+                    isInCart || isAddingToCart
                       ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200' 
                       : 'bg-black text-white hover:bg-brand-red'
                   }`}
                 >
                   <ShoppingCart className="w-3.5 h-3.5" />
-                  {isInCart ? 'IN CART' : 'ORDER'}
+                  {isInCart ? 'IN CART' : isAddingToCart ? 'ADDING...' : 'ORDER'}
                 </button>
               </>
             )}
             
-            {role === 'vendor' && (
+            {activeRole === 'vendor' && (
               <button 
                 onClick={() => onEditClick(product)} 
-                className="h-9 px-6 bg-black hover:bg-brand-red text-white rounded-lg font-black text-[10px] uppercase tracking-widest transition-colors min-w-[100px] cursor-pointer"
+                className="h-9 px-6 bg-black hover:bg-brand-red text-white rounded-lg font-black text-[10px] uppercase tracking-widest transition-colors min-w-25 cursor-pointer"
               >
                 EDIT STOCK
               </button>

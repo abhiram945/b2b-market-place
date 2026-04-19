@@ -19,9 +19,9 @@ type OrderSearchCache = {
 const MyOrders: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { orders, loading, updatingOrderId } = useSelector((state: RootState) => state.orders);
-  const { role } = useAuth();
-  const isAdmin = role === 'admin';
-  const isBuyer = role === 'buyer';
+  const { activeRole } = useAuth();
+  const isAdmin = activeRole === 'admin';
+  const isBuyer = activeRole === 'buyer';
   const showProviderColumn = !isBuyer;
   const [viewingInvoiceId, setViewingInvoiceId] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState('');
@@ -199,7 +199,7 @@ const MyOrders: React.FC = () => {
               onChange={setSearchInput}
               onSubmit={handleSearchSubmit}
               onClear={handleClearSearch}
-              placeholder="search order id"
+              placeholder="search with order id"
               showClear={Boolean(searchInput || activeSearchId)}
             />
           </div>
@@ -209,7 +209,7 @@ const MyOrders: React.FC = () => {
       {orders.length === 0 ? (
         <div className="bg-white p-12 rounded-lg border border-gray-200 text-center shadow-sm">
           <p className="text-gray-500 font-bold uppercase tracking-widest text-lg italic">
-            {activeSearchId ? 'No orders match that exact _id.' : 'No transaction records detected.'}
+            {activeSearchId ? 'No orders match id.' : 'No transaction records detected.'}
           </p>
         </div>
       ) : (
@@ -237,16 +237,21 @@ const MyOrders: React.FC = () => {
 
                   <div className="flex items-center gap-3">
                     {isAdmin ? (
-                      <select
-                        value={order.status}
-                        onChange={(event) => handleStatusUpdate(order._id, event.target.value)}
-                        disabled={updatingOrderId === order._id}
-                        className={`text-[10px] font-black uppercase tracking-widest rounded-lg px-4 py-2 border shadow-sm cursor-pointer outline-none transition-all focus:ring-2 focus:ring-brand-red ${getStatusColor(order.status)}`}
-                      >
-                        {['pending', 'shipped', 'ready', 'delivered', 'completed', 'cancelled'].map(status => (
-                          <option key={status} value={status}>{status}</option>
-                        ))}
-                      </select>
+                      updatingOrderId === order._id ? (
+                        <div className="text-[10px] font-black uppercase tracking-widest rounded-lg px-4 py-2 border shadow-sm bg-gray-100 text-gray-600 border-gray-200">
+                          Updating...
+                        </div>
+                      ) : (
+                        <select
+                          value={order.status}
+                          onChange={(event) => handleStatusUpdate(order._id, event.target.value)}
+                          className={`text-[10px] font-black uppercase tracking-widest rounded-lg px-4 py-2 border shadow-sm cursor-pointer outline-none transition-all focus:ring-2 focus:ring-brand-red ${getStatusColor(order.status)}`}
+                        >
+                          {['pending', 'shipped', 'ready', 'delivered', 'completed', 'cancelled'].map(status => (
+                            <option key={status} value={status}>{status}</option>
+                          ))}
+                        </select>
+                      )
                     ) : (
                       <span className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg border ${getStatusColor(order.status)}`}>
                         {order.status}

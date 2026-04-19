@@ -1,3 +1,4 @@
+
 import React, { useState, ReactNode, useEffect, useRef } from 'react';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
@@ -16,7 +17,7 @@ interface MainLayoutProps {
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, activeRole } = useAuth(); // Destructure activeRole
   const { items: cartItems, isDirty } = useSelector((state: RootState) => state.cart);
   const cartSnapshotRef = useRef(cartItems);
   const didHydrateCartRef = useRef(false);
@@ -32,18 +33,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   }, [dispatch, isAuthenticated]);
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role === 'admin') {
+    if (!isAuthenticated || user?.activeRole === 'admin') {
       didHydrateCartRef.current = false;
       return;
     }
 
-    if (didHydrateCartRef.current) {
-      return;
-    }
-
-    didHydrateCartRef.current = true;
-
-    if (isDirty && cartItems.length > 0) {
+    // If local cart changed (including removing all items), push local state to backend first.
+    if (isDirty) {
+      didHydrateCartRef.current = true;
       dispatch(syncCart(cartItems))
         .unwrap()
         .then(() => {
@@ -55,13 +52,19 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       return;
     }
 
+    if (didHydrateCartRef.current) {
+      return;
+    }
+
+    didHydrateCartRef.current = true;
+
     dispatch(fetchCart()).unwrap().catch(() => {
       didHydrateCartRef.current = false;
     });
-  }, [dispatch, isAuthenticated, user?.role, isDirty, cartItems]);
+  }, [dispatch, isAuthenticated, user?.activeRole, isDirty, cartItems]); // Added user.activeRole dependency
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role === 'admin') {
+    if (!isAuthenticated || user?.activeRole === 'admin') { // Also check activeRole here for consistency
       return;
     }
 
@@ -105,7 +108,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       window.removeEventListener('blur', flushCart);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [isAuthenticated, isDirty, user?.role]);
+  }, [isAuthenticated, isDirty, user?.activeRole]); // Added user.activeRole dependency
 
   return (
     <div className="flex min-h-screen bg-gray-50 text-gray-900">

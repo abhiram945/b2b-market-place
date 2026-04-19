@@ -6,6 +6,8 @@ import { ROLES } from '../utils/constants.js';
 import { getConfig, updateConfig, addToConfig } from '../utils/appConfigStore.js';
 import { enqueueJob, JOB_TYPES } from '../utils/jobQueue.js';
 
+const getEffectiveRole = (user) => user?.activeRole || user?.role || user?.roles?.[0];
+
 const normalizeString = (value) => typeof value === 'string' ? value.trim().toLowerCase() : value;
 const normalizeInteger = (value) => {
   if (value === undefined || value === null || value === '') return undefined;
@@ -45,7 +47,7 @@ const getProducts = asyncHandler(async (req, res) => {
   let query = {};
 
   // Role-based or explicit vendor filtering:
-  if (user && user.role === ROLES.VENDOR) {
+  if (user && getEffectiveRole(user) === ROLES.VENDOR) {
     query.user = user._id;
   } else if (vendorId) {
     if (!mongoose.Types.ObjectId.isValid(String(vendorId))) {
@@ -119,7 +121,7 @@ const getFilterOptions = asyncHandler(async (req, res) => {
   let query = {};
 
   // Apply role-based filtering if user is authenticated and is a vendor
-  if (user && user.role === ROLES.VENDOR) {
+  if (user && getEffectiveRole(user) === ROLES.VENDOR) {
     query.user = user._id;
   }
 
@@ -325,7 +327,7 @@ const bulkCreateProducts = asyncHandler(async (req, res) => {
   const vendorIds = [...new Set(productsToCreate.map(product => product?.user).filter(Boolean))];
   const vendorRecords = await User.find({
     _id: { $in: vendorIds },
-    role: ROLES.VENDOR,
+    roles: ROLES.VENDOR,
   }).select('_id');
   const validVendorIds = new Set(vendorRecords.map(vendor => vendor._id.toString()));
 
