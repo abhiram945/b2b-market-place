@@ -14,9 +14,10 @@ interface ProductTableRowProps {
   product: Product;
   onProductClick: (product: Product) => void;
   onEditClick: (product: Product) => void;
+  onDeleteClick?: (productId: string) => void;
 }
 
-const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductClick, onEditClick }) => {
+const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductClick, onEditClick, onDeleteClick }) => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { activeRole, isAuthenticated } = useAuth();
@@ -79,13 +80,13 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
   return (
     <>
       <tr className="bg-white border-b border-zinc-100 hover:bg-zinc-50 transition-colors group">
-        <td 
-          className="px-6 py-4 cursor-pointer"
-          onClick={() => onProductClick(product)}
-        >
-          <div className="w-full max-w-125 overflow-x-auto whitespace-nowrap title-scrollbar">
-            <span className="text-sm font-bold text-zinc-900 uppercase tracking-tight group-hover:text-red-600 transition-colors">
+        <td className="px-6 py-4">
+          <div className="w-full max-w-125 overflow-x-auto whitespace-nowrap title-scrollbar flex flex-col gap-2">
+            <span className="text-sm font-bold text-zinc-900 uppercase tracking-tight group-hover:text-red-600 transition-colors cursor-pointer" onClick={() => onProductClick(product)}>
                 {product.title}
+            </span>
+            <span className="text-xs text-zinc-900 tracking-tighttransition-colors">
+                {product._id}
             </span>
           </div>
         </td>
@@ -161,6 +162,23 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
                 >
                     EDIT STOCK
                 </button>
+                )}
+
+                {activeRole === 'admin' && (
+                  <>
+                    <button
+                      onClick={() => onEditClick(product)}
+                      className="h-9 px-6 bg-zinc-900 hover:bg-red-600 text-white rounded-none font-black text-[10px] uppercase tracking-widest transition-colors min-w-25 cursor-pointer"
+                    >
+                      EDIT
+                    </button>
+                    <button
+                      onClick={() => onDeleteClick?.(product._id)}
+                      className="h-9 px-6 bg-red-600 hover:bg-red-700 text-white rounded-none font-black text-[10px] uppercase tracking-widest transition-colors min-w-25 cursor-pointer"
+                    >
+                      DELETE
+                    </button>
+                  </>
                 )}
             </div>
         </td>

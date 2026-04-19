@@ -33,6 +33,7 @@ export const useProducts = (options: { pageSize?: number; syncWithUrl?: boolean;
     }, [searchParams, syncWithUrl]);
 
     const lastFiltersKeyRef = useRef('');
+    const skipNextFetchRef = useRef(false);
 
     const currentFilters = useMemo(() => {
         const out: ProductFetchFilters = {};
@@ -75,11 +76,27 @@ export const useProducts = (options: { pageSize?: number; syncWithUrl?: boolean;
         }
     };
 
+    const primeFiltersKey = (overrides: Partial<ProductFetchFilters> = {}) => {
+        const params: ProductFetchFilters = { ...currentFilters, ...overrides, limit: pageSize };
+
+        if (autoVendorFilter && activeRole === 'vendor' && user?._id) {
+            params.vendorId = user._id;
+        }
+
+        const filterKeyObj = { ...params };
+        delete filterKeyObj.page;
+        lastFiltersKeyRef.current = JSON.stringify(filterKeyObj);
+    };
+
     useEffect(() => {
         dispatch(fetchFilterOptions());
     }, [dispatch]);
 
     useEffect(() => {
+        if (skipNextFetchRef.current) {
+            skipNextFetchRef.current = false;
+            return;
+        }
         fetchItems(pageNum);
     }, [pageNum, currentFilters, activeRole, user?._id]);
 
@@ -94,11 +111,20 @@ export const useProducts = (options: { pageSize?: number; syncWithUrl?: boolean;
     const updateFilters = (newFilters: Partial<ProductFetchFilters>) => {
         if (syncWithUrl) {
             const params = new URLSearchParams();
-            Object.entries({ ...currentFilters, ...newFilters }).forEach(([k, v]) => {
+            const mergedFilters = { ...currentFilters, ...newFilters };
+            Object.entries(mergedFilters).forEach(([k, v]) => {
+                if (k === 'page') return;
                 if (v) params.set(k, String(v));
             });
-            // Reset to page 1 on filter change
-            params.set('page', '1');
+
+            // Default behavior: reset to page 1 on filter change.
+            // If caller provides a valid numeric page, preserve that page.
+            const requestedPageRaw = (newFilters as any)?.page;
+            const requestedPage =
+                typeof requestedPageRaw === 'number' && requestedPageRaw > 0
+                    ? requestedPageRaw
+                    : 1;
+            params.set('page', String(requestedPage));
             setSearchParams(params);
         }
     };
@@ -115,6 +141,10 @@ export const useProducts = (options: { pageSize?: number; syncWithUrl?: boolean;
         config,
         setPage,
         updateFilters,
+        primeFiltersKey,
+        suppressNextFetch: () => {
+            skipNextFetchRef.current = true;
+        },
         refresh: () => fetchItems(pageNum, true)
     };
 };

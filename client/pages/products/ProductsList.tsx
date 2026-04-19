@@ -19,8 +19,7 @@ const ProductsList: React.FC = () => {
     pages, 
     currentFilters,
     setPage, 
-    updateFilters, 
-    refresh 
+    updateFilters
   } = useProducts();
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -140,7 +139,7 @@ const ProductsList: React.FC = () => {
           onClose={handleCloseEditModal}
           product={selectedProductForEdit}
           activeRole={activeRole}
-          onProductUpdated={refresh}
+          onProductUpdated={() => undefined}
         />
       )}
     </div>

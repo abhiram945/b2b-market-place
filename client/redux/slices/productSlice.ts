@@ -31,6 +31,13 @@ type ProductListPayload = {
   total: number;
 };
 
+type ProductsCachePayload = {
+  productsByPage: Record<number, Product[]>;
+  page: number;
+  pages: number;
+  total: number;
+};
+
 const initialState: ProductState = {
   productsByPage: {},
   loading: false,
@@ -149,6 +156,14 @@ const productSlice = createSlice({
       state.loading = false;
       state.error = null;
     },
+    restoreProductsCache(state, action: PayloadAction<ProductsCachePayload>) {
+      state.productsByPage = action.payload.productsByPage || {};
+      state.page = action.payload.page;
+      state.pages = action.payload.pages;
+      state.total = action.payload.total;
+      state.loading = false;
+      state.error = null;
+    },
     clearProductsCache(state) {
       state.productsByPage = {};
     },
@@ -182,7 +197,6 @@ const productSlice = createSlice({
       })
       // Update Product (covers both admin and vendor updates)
       .addCase(updateProduct.pending, (state) => {
-        state.loading = true;
         state.error = null;
       })
       .addCase(updateProduct.fulfilled, (state, action: PayloadAction<Product>) => {
@@ -202,7 +216,6 @@ const productSlice = createSlice({
         state.error = action.payload as string;
       })
       .addCase(updateProductByVendor.pending, (state) => {
-        state.loading = true;
         state.error = null;
       })
       .addCase(updateProductByVendor.fulfilled, (state, action: PayloadAction<Product>) => {
@@ -222,13 +235,14 @@ const productSlice = createSlice({
       })
       // Delete Product
       .addCase(deleteProduct.pending, (state) => {
-        state.loading = true;
         state.error = null;
       })
       .addCase(deleteProduct.fulfilled, (state, action: PayloadAction<string>) => {
         const id = action.payload;
-        // Clearing cache on delete is safer as it shifts indices across pages
-        state.productsByPage = {};
+        Object.keys(state.productsByPage).forEach(pageNum => {
+          const page = Number(pageNum);
+          state.productsByPage[page] = state.productsByPage[page].filter((p) => p._id !== id);
+        });
         if (state.selectedProduct?._id === action.payload) state.selectedProduct = null;
         state.total = Math.max(0, state.total - 1);
         state.loading = false;
@@ -262,5 +276,5 @@ const productSlice = createSlice({
   },
 });
 
-export const { restoreProductList, clearProductsCache } = productSlice.actions;
+export const { restoreProductList, restoreProductsCache, clearProductsCache } = productSlice.actions;
 export default productSlice.reducer;

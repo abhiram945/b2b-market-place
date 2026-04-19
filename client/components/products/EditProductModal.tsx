@@ -2,22 +2,23 @@
 import React, { useEffect } from 'react';
 import { useForm, SubmitHandler, SubmitErrorHandler, UseFormRegister } from 'react-hook-form';
 import { useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import Modal from '../common/Modal';
 import { Product } from '../../types';
-import api from '../../api';
-import { RootState } from '../../redux/store';
+import { RootState, AppDispatch } from '../../redux/store';
 import { toLowerTrim } from '../../utils/normalize';
 import { useAlert } from '../../contexts/AlertContext';
 import { apiErrorsToAlertItems, formErrorsToAlertItems } from '../../utils/alertHelpers';
+import { updateProduct, updateProductByVendor } from '../../redux/slices/productSlice';
 
 interface EditProductModalProps {
   isOpen: boolean;
   onClose: () => void;
   product: Product | null;
   activeRole: 'admin' | 'vendor' | 'buyer' | '' | undefined;
-  onProductUpdated: () => void;
+  onProductUpdated?: () => void;
 }
 
 type EditProductFormData = Partial<Omit<Product, '_id' | 'createdAt' | 'updatedAt' | 'user'>>;
@@ -58,6 +59,7 @@ const InputField: React.FC<InputFieldProps> = ({ label, name, type = "text", ste
 );
 
 const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, product, activeRole, onProductUpdated }) => {
+  const dispatch = useDispatch<AppDispatch>();
   const { config } = useSelector((state: RootState) => state.products);
   const { register, handleSubmit, formState: { isSubmitting }, reset, watch, setValue } = useForm<EditProductFormData>({
     resolver: yupResolver(schema) as any,
@@ -100,14 +102,24 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
       if (payload.condition) payload.condition = toLowerTrim(payload.condition);
       if (payload.eta !== undefined) payload.eta = Number(payload.eta);
 
-      const url = activeRole === 'admin' ? `/products/${product._id}` : `/products/${product._id}/vendor-update`;
-      await api.put(url, payload);
+      if (activeRole === 'admin') {
+        const mergedProduct = { ...product, ...payload } as Product;
+        await dispatch(updateProduct(mergedProduct)).unwrap();
+      } else {
+        await dispatch(updateProductByVendor({
+          _id: product._id,
+          price: payload.price !== undefined ? Number(payload.price) : product.price,
+          stockQty: payload.stockQty !== undefined ? Number(payload.stockQty) : product.stockQty,
+          isStockEnabled: payload.isStockEnabled !== undefined ? payload.isStockEnabled : product.isStockEnabled,
+        })).unwrap();
+      }
       showAlert({
         variant: 'success',
         title: 'product updated',
         message: 'changes saved successfully.',
       });
-      onProductUpdated();
+      onProductUpdated?.();
+      onClose();
     } catch (err: any) {
       showAlert({
         variant: 'error',

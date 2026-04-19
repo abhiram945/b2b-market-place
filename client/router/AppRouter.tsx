@@ -58,7 +58,6 @@ const AppRouter = () => {
       {/* Admin routes */}
       <Route path="/admin" element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]}><MainLayout><AdminDashboard /></MainLayout></ProtectedRoute>} />
       <Route path="/admin/products" element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]}><MainLayout><AdminProductList /></MainLayout></ProtectedRoute>} />
-      <Route path="/admin-products" element={<Navigate to="/admin/products" replace />} />
       {/* Redirect any unmatched routes to home */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>

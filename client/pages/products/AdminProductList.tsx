@@ -1,46 +1,121 @@
 import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { AppDispatch } from '../../redux/store';
-import { deleteProduct } from '../../redux/slices/productSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '../../redux/store';
+import { deleteProduct, restoreProductsCache } from '../../redux/slices/productSlice';
 import { FileText, PlusCircle } from '../../components/icons';
 import AddProductModal from '../../components/products/AddProductModal';
 import EditProductModal from '../../components/products/EditProductModal';
 import BulkUploadModal from '../../components/products/BulkUploadModal';
+import ProductDetailsModal from '../../components/products/ProductDetailsModal';
 import { Product } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import SearchBar from '../../components/common/SearchBar';
 import { useAlert } from '../../contexts/AlertContext';
 import { useProducts } from '../../hooks/useProducts';
-import AdminProductSkeleton from '../../components/products/AdminProductSkeleton';
+import ProductTableRow from '../../components/products/ProductTableRow';
+import ProductSkeleton from '../../components/products/ProductSkeleton';
+
+const ADMIN_PRODUCT_SEARCH_CACHE_KEY = 'admin-product-search-cache';
+
+type AdminProductSearchCache = {
+  productsByPage: Record<number, Product[]>;
+  page: number;
+  pages: number;
+  total: number;
+};
 
 const AdminProductList: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { activeRole } = useAuth();
   const { showAlert } = useAlert();
+  const { productsByPage } = useSelector((state: RootState) => state.products);
 
   const { 
     products, 
     loading, 
     pageNum, 
     pages, 
+    total,
+    currentFilters,
     setPage, 
     updateFilters, 
+    primeFiltersKey,
+    suppressNextFetch,
     refresh 
   } = useProducts({ autoVendorFilter: false });
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProductForEdit, setSelectedProductForEdit] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
+  const [activeSearchId, setActiveSearchId] = useState<string>((currentFilters.searchId as string) || '');
+
+  const cacheCurrentResults = () => {
+    const payload: AdminProductSearchCache = {
+      productsByPage,
+      page: pageNum,
+      pages,
+      total,
+    };
+    localStorage.setItem(ADMIN_PRODUCT_SEARCH_CACHE_KEY, JSON.stringify(payload));
+  };
+
+  const restoreCachedResults = (): number | null => {
+    const cachedValue = localStorage.getItem(ADMIN_PRODUCT_SEARCH_CACHE_KEY);
+    if (!cachedValue) return null;
+
+    try {
+      const cachedPayload = JSON.parse(cachedValue) as AdminProductSearchCache;
+      dispatch(restoreProductsCache({
+        productsByPage: cachedPayload.productsByPage,
+        page: cachedPayload.page,
+        pages: cachedPayload.pages,
+        total: cachedPayload.total,
+      }));
+      localStorage.removeItem(ADMIN_PRODUCT_SEARCH_CACHE_KEY);
+      return cachedPayload.page;
+    } catch (_error) {
+      localStorage.removeItem(ADMIN_PRODUCT_SEARCH_CACHE_KEY);
+      return null;
+    }
+  };
 
   const handleSearchSubmit = () => {
-    updateFilters({ searchId: searchInput.trim() || undefined });
+    const normalizedSearch = searchInput.trim();
+    if (!normalizedSearch || normalizedSearch === activeSearchId) return;
+
+    if (!activeSearchId) {
+      cacheCurrentResults();
+    }
+
+    setActiveSearchId(normalizedSearch);
+    updateFilters({ searchId: normalizedSearch });
   };
 
   const handleClearSearch = () => {
     setSearchInput('');
+
+    if (!activeSearchId) {
+      return;
+    }
+
+    const restoredPage = restoreCachedResults();
+    setActiveSearchId('');
+    if (restoredPage) {
+      primeFiltersKey({ ...currentFilters, searchId: undefined, page: restoredPage });
+      suppressNextFetch();
+      updateFilters({ searchId: undefined, page: restoredPage });
+      return;
+    }
     updateFilters({ searchId: undefined });
+  };
+
+  const handleProductClick = (product: Product) => {
+    setSelectedProduct(product);
+    setIsDetailsModalOpen(true);
   };
 
   const handleDeleteClick = async (productId: string) => {
@@ -55,7 +130,6 @@ const AdminProductList: React.FC = () => {
         title: 'product deleted',
         message: 'Product deleted successfully!',
       });
-      refresh();
     } catch (err: any) {
       showAlert({
         variant: 'error',
@@ -94,74 +168,53 @@ const AdminProductList: React.FC = () => {
             onClear={handleClearSearch}
             placeholder="search product id"
             className="w-90"
-            showClear={Boolean(searchInput)}
+            showClear={Boolean(searchInput || activeSearchId)}
           />
         </div>
       </div>
 
-      {loading && products.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">Product Info</th>
-                <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">Brand</th>
-                <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">Price</th>
-                <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">Stock</th>
-                <th className="px-6 py-4 text-center font-bold text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {[...Array(10)].map((_, i) => <AdminProductSkeleton key={i} />)}
-            </tbody>
-          </table>
-        </div>
-      ) : products.length === 0 ? (
+      {products.length === 0 && !loading ? (
         <div className="bg-white p-8 rounded-lg border border-gray-200 text-center shadow-sm">
           <p className="text-gray-500 font-bold uppercase tracking-widest">No products found in the inventory.</p>
         </div>
       ) : (
-        <div className="relative overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-200">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        <div className="w-full">
+          <div className="min-w-full inline-block align-middle">
+            <table className="w-full border-collapse min-w-300">
+            <thead className="sticky top-0 z-10 bg-zinc-900 shadow-xl">
               <tr>
-                <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">Product Info</th>
-                <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">Brand</th>
-                <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">Price</th>
-                <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">Stock</th>
-                <th className="px-6 py-4 text-center font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left">
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-red-600 italic">Product</span>
+                </th>
+                {['Brand', 'Category', 'Location', 'Condition', 'Price', 'MOQ', 'MXQ', 'Stock'].map((label) => (
+                  <th key={label} className="px-2 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-400 italic text-center">{label}</th>
+                ))}
+                <th className="px-2 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-400 italic text-center hidden lg:table-cell">ETA</th>
+                <th className="px-6 py-3 text-center">
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-red-600 italic">Actions</span>
+                </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-zinc-100">
               {loading ? (
-                 [...Array(products.length || 10)].map((_, i) => <AdminProductSkeleton key={i} />)
+                [...Array(products.length || 10)].map((_, i) => <ProductSkeleton key={i} />)
               ) : (
                 products.map((product) => (
-                  <tr key={product._id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-bold text-gray-900 capitalize">{product.title.length > 50 ? `${product.title.slice(0, 50)}...` : product.title}</div>
-                      <div className="text-[10px] text-gray-400 font-mono mt-1">{product._id}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-black uppercase tracking-tight">{product.brand}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium tracking-tight capitalize">{product.category}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-black text-gray-900 font-mono">${product.price.toFixed(2)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`text-sm font-bold ${product.stockQty < 50 ? 'text-red-600' : 'text-gray-600'}`}>{product.stockQty} Units</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-center items-center gap-4">
-                      <button onClick={() => {
-                        setSelectedProductForEdit(product);
-                        setIsEditModalOpen(true);
-                      }} className="text-zinc-900 hover:text-brand-red font-bold text-[10px] tracking-widest border border-zinc-200 px-3 py-1.5 rounded transition-all cursor-pointer">Edit</button>
-                      <button onClick={() => handleDeleteClick(product._id)} className="text-red-600 hover:text-red-700 font-bold text-[10px] tracking-widest border border-red-100 px-3 py-1.5 rounded transition-all cursor-pointer">Delete</button>
-                    </td>
-                  </tr>
+                  <ProductTableRow
+                    key={product._id}
+                    product={product}
+                    onProductClick={handleProductClick}
+                    onEditClick={(p) => {
+                      setSelectedProductForEdit(p);
+                      setIsEditModalOpen(true);
+                    }}
+                    onDeleteClick={handleDeleteClick}
+                  />
                 ))
               )}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -189,13 +242,18 @@ const AdminProductList: React.FC = () => {
           }}
           product={selectedProductForEdit}
           activeRole={activeRole}
-          onProductUpdated={refresh}
+          onProductUpdated={() => undefined}
         />
       )}
       <BulkUploadModal
         isOpen={isBulkUploadModalOpen}
         onClose={() => setIsBulkUploadModalOpen(false)}
         onUploadSuccess={refresh}
+      />
+      <ProductDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+        product={selectedProduct}
       />
     </div>
   );
