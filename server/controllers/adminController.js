@@ -7,8 +7,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { enqueueJob, JOB_TYPES } from '../utils/jobQueue.js';
 import mongoose from 'mongoose';
-
-const normalizeString = (value) => typeof value === 'string' ? value.trim().toLowerCase() : value;
+import { normalizeString } from '../utils/helpers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

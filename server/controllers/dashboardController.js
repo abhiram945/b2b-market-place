@@ -24,7 +24,7 @@ const getDashboardSummary = asyncHandler(async (req, res) => {
   }
 
   if (activeRole === ROLES.VENDOR) {
-    const [activeListings, lowStockItems, newOrders, recentOrders, totalSalesResult] = await Promise.all([
+    const [activeListings, lowStockItems, newOrders, recentOrders, vendorData] = await Promise.all([
       Product.countDocuments({ user: req.user._id }),
       Product.countDocuments({ user: req.user._id, stockQty: { $lt: 100 } }),
       Order.countDocuments({ status: ORDER_STATUS.PENDING, 'items.vendor': req.user._id }),
@@ -32,19 +32,7 @@ const getDashboardSummary = asyncHandler(async (req, res) => {
         .sort({ createdAt: -1 })
         .limit(10)
         .select('_id createdAt status items'),
-      Order.aggregate([
-        { $match: { status: { $ne: ORDER_STATUS.CANCELLED }, 'items.vendor': req.user._id } },
-        { $unwind: '$items' },
-        { $match: { 'items.vendor': req.user._id } },
-        {
-          $group: {
-            _id: null,
-            totalSales: {
-              $sum: { $multiply: ['$items.quantity', '$items.price'] },
-            },
-          },
-        },
-      ]),
+      User.findById(req.user._id).select('lifetimeSales'),
     ]);
 
     const filteredRecentOrders = recentOrders.map((order) => ({
@@ -61,7 +49,7 @@ const getDashboardSummary = asyncHandler(async (req, res) => {
       activeListings,
       lowStockItems,
       newOrders,
-      totalSales: totalSalesResult[0]?.totalSales || 0,
+      totalSales: vendorData?.lifetimeSales || 0,
       recentOrders: filteredRecentOrders,
     });
   }

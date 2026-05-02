@@ -68,6 +68,10 @@ const userSchema = mongoose.Schema(
       required: false,
       set: lowerTrim,
     },
+    lifetimeSales: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

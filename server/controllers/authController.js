@@ -4,8 +4,7 @@ import { generateToken, generateRefreshToken } from '../utils/generateToken.js';
 import jwt from 'jsonwebtoken';
 import { ROLES, USER_STATUS, ROLE_REQUEST_STATUS } from '../utils/constants.js';
 import { addToConfig, getConfig } from '../utils/appConfigStore.js';
-
-const normalizeString = (value) => typeof value === 'string' ? value.trim().toLowerCase() : value;
+import { normalizeString } from '../utils/helpers.js';
 
 // @desc    Register a new user
 // @route   POST /api/auth/register

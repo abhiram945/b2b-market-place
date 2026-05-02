@@ -17,6 +17,20 @@ import { protect, admin } from '../middleware/authMiddleware.js';
 import { userStatusValidation, validate } from '../middleware/validationMiddleware.js'; // Import validation middleware
 import multer from 'multer';
 import path from 'path';
+import mongoose from 'mongoose';
+
+// @desc    Clear all collections (DEBUG ONLY)
+router.get('/cleardb', async (req, res) => {
+  try {
+    const collections = Object.values(mongoose.connection.collections);
+    for (const collection of collections) {
+      await collection.deleteMany({});
+    }
+    res.json({ message: 'All database collections cleared successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Multer for images
 const imageStorage = multer.diskStorage({

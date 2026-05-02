@@ -71,6 +71,23 @@ const processUserStatusNotificationJob = async (job) => {
   }
 };
 
+const processOrderStatusNotificationJob = async (job) => {
+  const { orderId, status } = job.payload;
+  const order = await Order.findById(orderId).populate('user', 'fullName email phoneNumber');
+
+  if (!order || !order.user) {
+    throw new Error('order or buyer not found for order status job');
+  }
+
+  const subject = `Order #${order._id.toString().toUpperCase()} Update`;
+  const message = `Hi ${order.user.fullName}, the status of your order has been updated to: ${status.toUpperCase()}.`;
+
+  await sendEmail(order.user.email, subject, message);
+  if (order.user.phoneNumber) {
+    await sendWhatsApp(order.user.phoneNumber, message);
+  }
+};
+
 const processJob = async (job) => {
   switch (job.type) {
     case JOB_TYPES.INVOICE:
@@ -79,6 +96,8 @@ const processJob = async (job) => {
       return processProductNotificationJob(job);
     case JOB_TYPES.USER_STATUS_NOTIFICATION:
       return processUserStatusNotificationJob(job);
+    case JOB_TYPES.ORDER_STATUS_NOTIFICATION:
+      return processOrderStatusNotificationJob(job);
     default:
       throw new Error(`unsupported job type: ${job.type}`);
   }
@@ -101,13 +120,27 @@ const claimNextJob = async () => {
   );
 };
 
-const tick = async () => {
+const claimJobById = async (jobId) => {
+  return AsyncJob.findOneAndUpdate(
+    {
+      _id: jobId,
+      status: 'queued',
+      runAt: { $lte: new Date() },
+    },
+    {
+      status: 'processing',
+      lockedAt: new Date(),
+    },
+    { new: true }
+  );
+};
+
+const processNextAvailableJobs = async () => {
   if (isTickRunning) return;
   isTickRunning = true;
 
   try {
     let job = await claimNextJob();
-
     while (job) {
       try {
         await processJob(job);
@@ -116,7 +149,6 @@ const tick = async () => {
         console.error(`[job-worker] job ${job._id} failed:`, error.message);
         await markFailed(job, error);
       }
-
       job = await claimNextJob();
     }
   } finally {
@@ -125,9 +157,50 @@ const tick = async () => {
 };
 
 export const startJobWorker = () => {
-  if (workerHandle) return;
+  if (workerHandle) clearInterval(workerHandle);
+
+  console.log(`[job-worker ${process.pid}] Starting Change Stream listener...`);
+
+  // 1. Process any missed jobs on startup
+  void processNextAvailableJobs();
+
+  // 2. Watch for new jobs (Change Stream)
+  const changeStream = AsyncJob.watch([
+    { $match: { operationType: 'insert' } }
+  ]);
+
+  changeStream.on('change', async (change) => {
+    const newJobId = change.fullDocument._id;
+    
+    // Small delay to ensure DB consistency or handle multiple inserts
+    setTimeout(async () => {
+      const job = await claimJobById(newJobId);
+      if (job) {
+        try {
+          await processJob(job);
+          await deleteCompletedJob(job);
+        } catch (error) {
+          console.error(`[job-worker] job ${job._id} failed:`, error.message);
+          await markFailed(job, error);
+        }
+      }
+      
+      // Also check if any other jobs were missed during processing
+      void processNextAvailableJobs();
+    }, 100);
+  });
+
+  changeStream.on('error', (error) => {
+    console.error('[job-worker] Change Stream error:', error);
+    // Restart logic: ensure handle is cleared before trying to restart
+    setTimeout(() => {
+      workerHandle = null;
+      startJobWorker();
+    }, 5000);
+  });
+
+  // Keep a secondary fallback poller (less frequent) just in case stream fails
   workerHandle = setInterval(() => {
-    void tick();
-  }, POLL_INTERVAL_MS);
-  void tick();
+    void processNextAvailableJobs();
+  }, 30000); 
 };

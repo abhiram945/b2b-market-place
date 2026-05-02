@@ -1,6 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
+import User from '../models/User.js';
 import Cart from '../models/Cart.js';
 import path from 'path';
 import fs from 'fs';
@@ -83,6 +84,23 @@ const createOrder = asyncHandler(async (req, res) => {
     // Clear cart in DB
     await Cart.findOneAndUpdate({ user: req.user._id }, { items: [] }).session(session);
 
+    // Optimize: Aggregate sales per unique vendor to minimize database updates/locks
+    const salesPerVendor = new Map();
+    for (const item of orderItems) {
+      const vendorId = item.vendor.toString();
+      const amount = item.price * item.quantity;
+      salesPerVendor.set(vendorId, (salesPerVendor.get(vendorId) || 0) + amount);
+    }
+
+    // Perform one update per unique vendor
+    for (const [vendorId, totalAmount] of salesPerVendor.entries()) {
+      await User.findByIdAndUpdate(
+        vendorId,
+        { $inc: { lifetimeSales: totalAmount } },
+        { session }
+      );
+    }
+
     await session.commitTransaction();
     session.endSession();
 
@@ -154,6 +172,12 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
 
   order.status = status;
   await order.save();
+
+  // Enqueue notification for order status update
+  await enqueueJob(JOB_TYPES.ORDER_STATUS_NOTIFICATION, {
+    orderId: order._id,
+    status,
+  });
 
   const updatedOrder = await Order.findById(order._id)
     .populate('user', 'fullName email companyName')

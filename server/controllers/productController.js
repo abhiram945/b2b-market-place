@@ -4,16 +4,11 @@ import Product from '../models/Product.js';
 import User from '../models/User.js';
 import { ROLES } from '../utils/constants.js';
 import { getConfig, updateConfig, addToConfig } from '../utils/appConfigStore.js';
-import { enqueueJob, JOB_TYPES } from '../utils/jobQueue.js';
+import { enqueueJob, bulkEnqueueJobs, JOB_TYPES } from '../utils/jobQueue.js';
+import { normalizeString, normalizeInteger } from '../utils/helpers.js';
 
 const getEffectiveRole = (user) => user?.activeRole || user?.role || user?.roles?.[0];
 
-const normalizeString = (value) => typeof value === 'string' ? value.trim().toLowerCase() : value;
-const normalizeInteger = (value) => {
-  if (value === undefined || value === null || value === '') return undefined;
-  const parsed = Number.parseInt(value, 10);
-  return Number.isNaN(parsed) ? undefined : parsed;
-};
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const exactCaseInsensitive = (value) => ({ $regex: `^${escapeRegex(value)}$`, $options: 'i' });
 const clampOrderQuantities = ({ minOrderQty, maxOrderQty, stockQty }) => {
@@ -312,40 +307,34 @@ const bulkCreateProducts = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error('No products provided for bulk upload');
   }
-  const createdProducts = [];
-  const failedProducts = [];
-  const normalizedProducts = [];
-  
-  // Set to collect new config values to update once at the end
-  const newConfigs = {
-    brands: new Set(),
-    categories: new Set(),
-    locations: new Set(),
-    conditions: new Set()
-  };
 
-  const vendorIds = [...new Set(productsToCreate.map(product => product?.user).filter(Boolean))];
-  const vendorRecords = await User.find({
-    _id: { $in: vendorIds },
-    roles: ROLES.VENDOR,
-  }).select('_id');
-  const validVendorIds = new Set(vendorRecords.map(vendor => vendor._id.toString()));
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  for (let i = 0; i < productsToCreate.length; i++) {
-    const productData = productsToCreate[i];
-    const logPrefix = `[PRODUCT ${i + 1}/${productsToCreate.length}]`;
+  try {
+    const createdProducts = [];
+    const normalizedProducts = [];
     
-    try {
-      if (!productData.title || !productData.price || !productData.user) {
-        console.warn(`${logPrefix} Validation failed: Missing required fields`);
-        failedProducts.push({ product: productData, error: 'Missing required fields (title, price, user)' });
-        continue;
-      }
+    // Set to collect new config values to update once at the end
+    const newConfigs = {
+      brands: new Set(),
+      categories: new Set(),
+      locations: new Set(),
+      conditions: new Set()
+    };
 
+    const vendorIds = [...new Set(productsToCreate.map(product => product?.user).filter(Boolean))];
+    const vendorRecords = await User.find({
+      _id: { $in: vendorIds },
+      roles: ROLES.VENDOR,
+    }).select('_id').session(session);
+    const validVendorIds = new Set(vendorRecords.map(vendor => vendor._id.toString()));
+
+    for (let i = 0; i < productsToCreate.length; i++) {
+      const productData = productsToCreate[i];
+      
       if (!validVendorIds.has(String(productData.user))) {
-          console.warn(`${logPrefix} Validation failed: Invalid vendor ID ${productData.user}`);
-          failedProducts.push({ product: productData, error: 'Invalid or non-vendor user ID provided' });
-          continue;
+          throw new Error(`Invalid or non-vendor user ID provided at index ${i}`);
       }
 
       const normalizedProduct = {
@@ -365,12 +354,6 @@ const bulkCreateProducts = asyncHandler(async (req, res) => {
         isStockEnabled: productData.isStockEnabled !== undefined ? productData.isStockEnabled : true,
       };
 
-      const validationError = new Product(normalizedProduct).validateSync();
-      if (validationError) {
-        failedProducts.push({ product: productData, error: validationError.message });
-        continue;
-      }
-
       normalizedProducts.push(normalizedProduct);
 
       // Collect config values
@@ -378,26 +361,30 @@ const bulkCreateProducts = asyncHandler(async (req, res) => {
       if (normalizedProduct.category) newConfigs.categories.add(normalizedProduct.category.trim());
       if (normalizedProduct.location) newConfigs.locations.add(normalizedProduct.location.trim());
       if (normalizedProduct.condition) newConfigs.conditions.add(normalizedProduct.condition.trim());
-
-    } catch (error) {
-      console.error(`${logPrefix} System error: ${error.message}`);
-      failedProducts.push({ product: productData, error: error.message });
     }
-  }
 
-  if (normalizedProducts.length > 0) {
-    const insertedProducts = await Product.insertMany(normalizedProducts, { ordered: false });
-    createdProducts.push(...insertedProducts);
-  }
+    if (normalizedProducts.length > 0) {
+      const insertedProducts = await Product.insertMany(normalizedProducts, { session });
+      createdProducts.push(...insertedProducts);
 
-  // Batch update config once
-  try {
+      // Handover the product notification to the worker thread
+      const notificationJobs = insertedProducts.map((p) => ({
+        type: JOB_TYPES.PRODUCT_NOTIFICATION,
+        payload: {
+          productId: p._id,
+          oldPrice: 0,
+          oldStock: 0,
+        },
+      }));
+      await bulkEnqueueJobs(notificationJobs, { session });
+    }
+
+    // Batch update config once
     const config = await getConfig();
     let configUpdated = false;
 
     for (const key of ['brands', 'categories', 'locations', 'conditions']) {
       if (!config[key]) {
-        console.warn(`[BULK UPLOAD] Key '${key}' missing in config, initializing...`);
         config[key] = [];
       }
       
@@ -417,16 +404,22 @@ const bulkCreateProducts = asyncHandler(async (req, res) => {
     if (configUpdated) {
       await updateConfig(config);
     }
-  } catch (configError) {
-    console.error(`[BULK UPLOAD] CRITICAL: Failed to update configuration:`, configError.message);
-  }
 
-  res.status(201).json({
-    message: `${createdProducts.length} products created successfully.${failedProducts.length > 0 ? ` ${failedProducts.length} products failed.` : ''}`,
-    createdCount: createdProducts.length,
-    failedCount: failedProducts.length,
-    failedProducts: failedProducts,
-  });
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(201).json({
+      message: `${createdProducts.length} products created successfully.`,
+      createdCount: createdProducts.length,
+    });
+
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error(`[BULK UPLOAD] Transaction failed: ${error.message}`);
+    res.status(400);
+    throw new Error(`Bulk upload failed: ${error.message}`);
+  }
 });
 
 export {
