@@ -16,7 +16,20 @@ const transporter = nodemailer.createTransport({
 });
 // Initialize Twilio Client
 let twilioClient;
-const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+const twilioWhatsAppFrom = process.env.TWILIO_WHATSAPP_FROM || process.env.TWILIO_PHONE_NUMBER;
+export const WHATSAPP_TEMPLATE_KEYS = Object.freeze({
+    ACCOUNT_STATUS_UPDATE: 'ACCOUNT_STATUS_UPDATE',
+    PRODUCT_ALERT: 'PRODUCT_ALERT',
+    INVOICE_READY_NOTICE: 'INVOICE_READY_NOTICE',
+    ORDER_STATUS_UPDATE: 'ORDER_STATUS_UPDATE',
+});
+
+const twilioWhatsAppContentSidByTemplate = {
+    [WHATSAPP_TEMPLATE_KEYS.ACCOUNT_STATUS_UPDATE]: process.env.TWILIO_WHATSAPP_CONTENT_SID_ACCOUNT_STATUS_UPDATE,
+    [WHATSAPP_TEMPLATE_KEYS.PRODUCT_ALERT]: process.env.TWILIO_WHATSAPP_CONTENT_SID_PRODUCT_ALERT,
+    [WHATSAPP_TEMPLATE_KEYS.INVOICE_READY_NOTICE]: process.env.TWILIO_WHATSAPP_CONTENT_SID_INVOICE_READY_NOTICE,
+    [WHATSAPP_TEMPLATE_KEYS.ORDER_STATUS_UPDATE]: process.env.TWILIO_WHATSAPP_CONTENT_SID_ORDER_STATUS_UPDATE,
+};
 
 if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
     try {
@@ -55,25 +68,99 @@ export const sendEmail = async (to, subject, text, attachments = []) => {
     }
 };
 
-export const sendWhatsApp = async (to, message) => {
-    if (!twilioClient || !twilioPhoneNumber) {
-        // Fallback to log if not configured
-        console.log(`[MOCK WHATSAPP] To: ${to} | Message: ${message}`);
+const normalizeWhatsAppAddress = (value) => {
+    if (!value) return null;
+    return value.startsWith('whatsapp:') ? value : `whatsapp:${value}`;
+};
+
+const resolveContentSid = (templateKey, overrideSid) => {
+    if (overrideSid) return overrideSid;
+    if (!templateKey) return null;
+
+    return twilioWhatsAppContentSidByTemplate[templateKey] || null;
+};
+
+const resolveContentVariables = (templateKey, message, templateData, overrideVariables) => {
+    if (overrideVariables && typeof overrideVariables === 'object' && !Array.isArray(overrideVariables)) {
+        return JSON.stringify(overrideVariables);
+    }
+
+    const builders = {
+        [WHATSAPP_TEMPLATE_KEYS.ACCOUNT_STATUS_UPDATE]: (data) => ({
+            user_name: data.userName,
+            status: data.status,
+        }),
+        [WHATSAPP_TEMPLATE_KEYS.PRODUCT_ALERT]: (data) => ({
+            customer_name: data.customerName,
+            product_title: data.productTitle,
+            alert_message_text: data.alertMessageText,
+        }),
+        [WHATSAPP_TEMPLATE_KEYS.INVOICE_READY_NOTICE]: (data) => ({
+            user_name: data.userName,
+            order_id: data.orderId,
+        }),
+        [WHATSAPP_TEMPLATE_KEYS.ORDER_STATUS_UPDATE]: (data) => ({
+            user_name: data.userName,
+            order_id: data.orderId,
+            order_status: data.orderStatus,
+        }),
+    };
+
+    const builder = builders[templateKey];
+    if (builder) {
+        return JSON.stringify(builder(templateData || {}));
+    }
+
+    return JSON.stringify({ 1: message });
+};
+
+export const sendWhatsApp = async (to, message, options = {}) => {
+    if (!twilioClient) {
+        console.log(`[WHATSAPP] Twilio client is not initialized. To=${to}`);
         return;
     }
 
     try {
-        // Ensure numbers are prefixed for Twilio WhatsApp API
-        const from = twilioPhoneNumber.startsWith('whatsapp:') ? twilioPhoneNumber : `whatsapp:${twilioPhoneNumber}`;
-        const toUser = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`;
+        const toUser = normalizeWhatsAppAddress(to);
+        const from = normalizeWhatsAppAddress(twilioWhatsAppFrom);
+        const contentSid = resolveContentSid(options.templateKey, options.contentSid);
 
-        const response = await twilioClient.messages.create({
-            body: message,
-            from: from,
-            to: toUser
-        });
+        if (!toUser) {
+            console.log('[WHATSAPP] Missing recipient phone number. Aborting send.');
+            return;
+        }
+
+        if (!from) {
+            console.log(`[WHATSAPP] Missing sender configuration for ${toUser}. Set TWILIO_WHATSAPP_FROM or TWILIO_PHONE_NUMBER.`);
+            return;
+        }
+
+        const payload = {
+            to: toUser,
+        };
+
+        if (contentSid) {
+            payload.contentSid = contentSid;
+            payload.contentVariables = resolveContentVariables(
+                options.templateKey,
+                message,
+                options.templateData,
+                options.contentVariables
+            );
+        } else if (options.templateKey) {
+            console.log(`[WHATSAPP] Missing content SID for template "${options.templateKey}". Check the matching TWILIO_WHATSAPP_CONTENT_SID_* env var.`);
+            return;
+        } else {
+            payload.body = message;
+        }
+
+        payload.from = from;
+
+        const response = await twilioClient.messages.create(payload);
+        return response;
     } catch (error) {
-        console.error(`Error sending WhatsApp to ${to}:`, error);
+        console.error(`[WHATSAPP] Error sending WhatsApp to ${to}:`, error?.message || error);
+        throw error;
     }
 };
 
@@ -112,7 +199,14 @@ export const processProductNotifications = async (updatedProduct, oldPrice, oldS
             if (shouldNotify) {
                 await sendEmail(user.email, subject, message);
                 if (user.phoneNumber) {
-                    await sendWhatsApp(user.phoneNumber, message);
+                    await sendWhatsApp(user.phoneNumber, message, {
+                        templateKey: WHATSAPP_TEMPLATE_KEYS.PRODUCT_ALERT,
+                        templateData: {
+                            customerName: user.fullName,
+                            productTitle: updatedProduct.title,
+                            alertMessageText: message,
+                        },
+                    });
                 } else {
                     console.log(`[Notification] Skipped WhatsApp for user ${user.email} (no phone number).`);
                 }

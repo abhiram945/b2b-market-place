@@ -15,9 +15,9 @@ const Landing: React.FC = () => {
     ];
 
     return (
-        <div className="bg-white dark:bg-zinc-950 font-sans selection:bg-red-600 selection:text-white">
+        <div className="dark:bg-zinc-950 font-sans selection:bg-red-600 selection:text-white">
             {/* Header */}
-            <header className="absolute inset-x-0 top-0 z-50 border-b border-gray-100/10 backdrop-blur-sm">
+            <header className="absolute bg-white inset-x-0 top-0 z-50 border-b border-gray-100/10 backdrop-blur-sm">
                 <nav className="flex items-center justify-between p-4 lg:px-8 max-w-7xl mx-auto" aria-label="Global">
                     <div className="flex lg:flex-1">
                         <Link to="/" className="flex items-center text-2xl font-black text-gray-900 dark:text-white tracking-tighter italic uppercase">
@@ -25,7 +25,7 @@ const Landing: React.FC = () => {
                         </Link>
                     </div>
                     <div className="flex flex-1 justify-end space-x-6">
-                        <Link to="/login" className="flex items-center text-xs font-black uppercase tracking-widest text-gray-900 hover:text-red-600 dark:text-gray-200 dark:hover:text-red-500 transition-colors">
+                        <Link to="/login" className="flex items-center text-xs font-black uppercase tracking-widest hover:text-red-600 dark:text-zinc-950 dark:hover:text-red-500 transition-colors">
                             Log in <LogIn className="ml-2 w-4 h-4" />
                         </Link>
                         <Link to="/register" className="flex items-center rounded-none bg-red-600 px-5 py-2 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-red-600/20 hover:bg-red-700 transition-all active:scale-95">

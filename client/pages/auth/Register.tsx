@@ -14,6 +14,7 @@ import logo from "../../assets/transparent-logo.png";
 type RegisterFormInputs = {
   fullName: string;
   email: string;
+  countryCode: string;
   phoneNumber: string;
   companyName: string;
   website?: string;
@@ -32,6 +33,8 @@ const InputWrapper = ({ label, children }: any) => (
     {children}
   </div>
 );
+
+const onlyDigits = (value: string) => value.replace(/\D/g, '');
 
 const Register: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -64,10 +67,14 @@ const Register: React.FC = () => {
     if (data.role === '') return;
 
     const normalizedWebsite = toLowerTrimOptional(data.website);
+    const countryCode = onlyDigits(data.countryCode);
+    const phoneNumber = onlyDigits(data.phoneNumber);
+    const finalPhoneNumber = countryCode && phoneNumber ? `+${countryCode}${phoneNumber}` : '';
+
     const formData = new FormData();
     formData.append('fullName', toLowerTrim(data.fullName));
     formData.append('email', toLowerTrim(data.email));
-    formData.append('phoneNumber', toLowerTrim(data.phoneNumber));
+    formData.append('phoneNumber', finalPhoneNumber);
     formData.append('companyName', toLowerTrim(data.companyName));
     formData.append('password', data.password);
     formData.append('role', toLowerTrim(data.role));
@@ -89,6 +96,7 @@ const Register: React.FC = () => {
         reset({
           fullName: '',
           email: '',
+          countryCode: '',
           phoneNumber: '',
           companyName: '',
           website: '',
@@ -109,10 +117,30 @@ const Register: React.FC = () => {
   };
 
   const onInvalid: SubmitErrorHandler<RegisterFormInputs> = (formErrors) => {
+    const alertItemOrder = new Map([
+      ['Full Name', 1],
+      ['Email', 2],
+      ['Country Code', 3],
+      ['Phone Number', 4],
+      ['Company Name', 5],
+      ['Website', 6],
+      ['Role', 7],
+      ['Address', 8],
+      ['Trade License', 9],
+      ['Id Document', 10],
+      ['Vat Registration', 11],
+      ['Password', 12],
+      ['Confirm Password', 13],
+    ]);
+
     showAlert({
       variant: 'error',
       title: 'fix registration fields',
-      items: formErrorsToAlertItems(formErrors),
+      items: formErrorsToAlertItems(formErrors).sort((a, b) => {
+        const aOrder = alertItemOrder.get(a.field || '') ?? 999;
+        const bOrder = alertItemOrder.get(b.field || '') ?? 999;
+        return aOrder - bOrder;
+      }),
     });
   };
 
@@ -155,12 +183,34 @@ const Register: React.FC = () => {
             </InputWrapper>
 
             <InputWrapper label="Phone Number">
-              <input
-                {...register('phoneNumber', { required: 'Phone number is required' })}
-                placeholder="Phone Number (e.g. +1234567890)"
-                type="tel"
-                className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
-              />
+              <div className="flex gap-3">
+                <input
+                  {...register('countryCode', {
+                    required: 'Country code is required',
+                    pattern: {
+                      value: /^\d+$/,
+                      message: 'Country code must contain numbers only',
+                    },
+                  })}
+                  placeholder="Country code"
+                  inputMode="numeric"
+                  type="text"
+                  className="w-1/3 px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
+                />
+                <input
+                  {...register('phoneNumber', {
+                    required: 'Phone number is required',
+                    pattern: {
+                      value: /^\d+$/,
+                      message: 'Phone number must contain numbers only',
+                    },
+                  })}
+                  placeholder="Phone number"
+                  inputMode="numeric"
+                  type="text"
+                  className="w-2/3 px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
+                />
+              </div>
             </InputWrapper>
 
             <InputWrapper label="Company Name">

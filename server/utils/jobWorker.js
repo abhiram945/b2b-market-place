@@ -4,7 +4,12 @@ import Product from '../models/Product.js';
 import User from '../models/User.js';
 import { JOB_TYPES } from './jobQueue.js';
 import { generateInvoice } from './invoiceGenerator.js';
-import { processProductNotifications, sendEmail, sendWhatsApp } from './notificationSender.js';
+import {
+  processProductNotifications,
+  sendEmail,
+  sendWhatsApp,
+  WHATSAPP_TEMPLATE_KEYS,
+} from './notificationSender.js';
 
 const POLL_INTERVAL_MS = 4000;
 const RETRY_DELAY_MS = 15000;
@@ -41,6 +46,16 @@ const processInvoiceJob = async (job) => {
   }
 
   await generateInvoice(order, buyer);
+
+  if (buyer.phoneNumber) {
+    await sendWhatsApp(buyer.phoneNumber, `Your invoice for order ${order._id.toString().toUpperCase()} is ready.`, {
+      templateKey: WHATSAPP_TEMPLATE_KEYS.INVOICE_READY_NOTICE,
+      templateData: {
+        userName: buyer.fullName,
+        orderId: order._id.toString().toUpperCase(),
+      },
+    });
+  }
 };
 
 const processProductNotificationJob = async (job) => {
@@ -67,7 +82,13 @@ const processUserStatusNotificationJob = async (job) => {
 
   await sendEmail(user.email, subject, message);
   if (user.phoneNumber) {
-    await sendWhatsApp(user.phoneNumber, message);
+    await sendWhatsApp(user.phoneNumber, message, {
+      templateKey: WHATSAPP_TEMPLATE_KEYS.ACCOUNT_STATUS_UPDATE,
+      templateData: {
+        userName: user.fullName,
+        status,
+      },
+    });
   }
 };
 
@@ -84,7 +105,14 @@ const processOrderStatusNotificationJob = async (job) => {
 
   await sendEmail(order.user.email, subject, message);
   if (order.user.phoneNumber) {
-    await sendWhatsApp(order.user.phoneNumber, message);
+    await sendWhatsApp(order.user.phoneNumber, message, {
+      templateKey: WHATSAPP_TEMPLATE_KEYS.ORDER_STATUS_UPDATE,
+      templateData: {
+        userName: order.user.fullName,
+        orderId: order._id.toString().toUpperCase(),
+        orderStatus: status.toUpperCase(),
+      },
+    });
   }
 };
 
