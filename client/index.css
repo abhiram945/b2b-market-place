@@ -41,11 +41,11 @@ body {
   @apply bg-white rounded-lg shadow-xl;
 }
 
-/* Scrollbar for title */
-.title-scrollbar {
+/* Hide Scrollbar Utility */
+.no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
-.title-scrollbar::-webkit-scrollbar {
+.no-scrollbar::-webkit-scrollbar {
   display: none;
 }

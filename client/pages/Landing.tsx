@@ -2,16 +2,22 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Footer from '../components/common/Footer';
-import { CheckCircle, LogIn, UserPlus } from '../components/icons';
+import { LogIn, UserPlus } from '../components/icons';
 import logo from "../assets/navbar-logo.png"
+import Verify from '../components/icons/Verify';
+import Location from '../components/icons/Location';
+import Parcel from '../components/icons/Parcel';
+import Secure from '../components/icons/Secure';
+
+import howMmWorks from "../assets/how-mm-works.png";
 
 const Landing: React.FC = () => {
     
     const features = [
-        { name: 'Global Reach', description: 'Connect with verified buyers and sellers from around the world.' },
-        { name: 'Secure Transactions', description: 'End-to-end encrypted payments and robust escrow services.' },
-        { name: 'Streamlined Logistics', description: 'Integrated shipping and logistics solutions for seamless delivery.' },
-        { name: 'Powerful Analytics', description: 'Gain insights into your sales, purchases, and market trends.' },
+        { name: 'Verified Suppliers', description: 'Only approved and trusted distributers' },
+        { name: 'Multi-Country Trade', description: 'Trade across UAE, Africa and South Asia' },
+        { name: 'Bulk Pricing', description: 'Request quotations for large volume orders' },
+        { name: 'Secure Transactions', description: 'Encrypted payments and buyer protection' },
     ];
 
     return (
@@ -46,14 +52,17 @@ const Landing: React.FC = () => {
                         <div className="mx-auto max-w-7xl px-6 lg:px-8">
                             <div className="mx-auto max-w-3xl text-center">
                                 <h1 className="text-5xl font-black tracking-tighter text-zinc-900 sm:text-7xl dark:text-white uppercase italic leading-none">
-                                    The Future of <span className="text-red-600">B2B</span> <br/>Commerce
+                                    GLOBAL TECHNOLOGY <br/> TRADE. <span className="text-red-600">SIMPLIFIED.</span>
                                 </h1>
                                 <p className="mt-8 text-lg font-medium leading-8 text-zinc-600 dark:text-zinc-400 uppercase tracking-tight">
-                                    Empowering global enterprises through decentralized distribution. <br className="hidden md:inline"/> Secure, high-velocity trade for the modern industrial age.
+                                    Connect with verified distributors, resellers,<br/>system integrators, and enterprise buyers across the world
                                 </p>
                                 <div className="mt-12 flex items-center justify-center gap-x-8">
                                     <Link to="/register" className="btn-red py-4 px-10 text-sm tracking-widest uppercase italic">
-                                        Get started
+                                        Become a buyer
+                                    </Link>
+                                    <Link to="/register" className="btn-red py-4 px-10 text-sm tracking-widest uppercase italic">
+                                        Become a seller
                                     </Link>
                                     <Link to="/products" className="text-sm font-black leading-6 text-zinc-900 dark:text-zinc-100 uppercase tracking-widest hover:text-red-600 transition-colors flex items-center gap-2">
                                         Explore Products <span aria-hidden="true">→</span>
@@ -65,7 +74,7 @@ const Landing: React.FC = () => {
                 </div>
 
                 {/* Features section */}
-                <div className="bg-zinc-50 py-24 sm:py-32 dark:bg-zinc-900 border-y border-zinc-200 dark:border-zinc-800">
+                <div className="bg-zinc-50 py-8 dark:bg-zinc-900 border-y border-zinc-200 dark:border-zinc-800">
                     <div className="mx-auto max-w-7xl px-6 lg:px-8">
                         <div className="mx-auto max-w-2xl lg:text-center">
                             <h2 className="text-xs font-black leading-7 text-red-600 uppercase tracking-[0.3em] italic">System Core</h2>
@@ -75,15 +84,18 @@ const Landing: React.FC = () => {
                         </div>
                         <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-4xl">
                             <dl className="grid max-w-xl grid-cols-1 gap-x-12 gap-y-16 lg:max-w-none lg:grid-cols-2">
-                                {features.map((feature) => (
+                                {features.map((feature,idx) => (
                                     <div key={feature.name} className="relative pl-20 group">
                                         <dt className="text-sm font-black uppercase tracking-widest text-zinc-900 dark:text-white italic">
-                                            <div className="absolute left-0 top-0 flex h-14 w-14 items-center justify-center bg-zinc-900 dark:bg-zinc-800 border border-zinc-800 group-hover:border-red-600 transition-colors">
-                                                <CheckCircle className="h-6 w-6 text-red-600" />
+                                            <div className="absolute left-0 top-0 flex h-14 w-14 items-center justify-center bg-zinc-900 dark:bg-zinc-800 border border-zinc-800 group-hover:border-red-600 transition-colors rounded-full">
+                                                {idx===0 && <Verify className='text-red-600 p-2'/>}
+                                                {idx===1 && <Location className='text-red-600 p-2'/>}
+                                                {idx===2 && <Parcel className='text-red-600 p-2'/>}
+                                                {idx===3 && <Secure className='text-red-600 p-3'/>}
                                             </div>
                                             {feature.name}
                                         </dt>
-                                        <dd className="mt-2 text-sm leading-7 text-zinc-500 dark:text-zinc-400 font-medium uppercase tracking-tight">{feature.description}</dd>
+                                        <dd className="mt-1 text-md leading-7 text-zinc-500 dark:text-zinc-400 font-medium tracking-tight">{feature.description}</dd>
                                     </div>
                                 ))}
                             </dl>
@@ -91,22 +103,9 @@ const Landing: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Testimonials section */}
-                <section className="relative isolate overflow-hidden bg-white px-6 py-24 sm:py-32 lg:px-8 dark:bg-zinc-950">
-                     <div className="mx-auto max-w-2xl lg:max-w-4xl border-l-4 border-red-600 pl-8 lg:pl-16">
-                        <figure>
-                            <blockquote className="text-xl font-black leading-8 text-zinc-900 sm:text-2xl sm:leading-9 dark:text-white uppercase italic tracking-tighter">
-                                <p>“This platform has revolutionized how we source materials. The efficiency and transparency are unmatched. It has saved us countless hours and significantly reduced our procurement costs.”</p>
-                            </blockquote>
-                            <figcaption className="mt-10 flex items-center gap-x-6">
-                                <img className="h-14 w-14 rounded-none border-2 border-red-600 grayscale" src="https://i.pravatar.cc/100?u=jane" alt="" />
-                                <div className="text-base">
-                                    <div className="font-black text-zinc-900 dark:text-white uppercase tracking-widest italic">Jane Doe</div>
-                                    <div className="text-xs font-black text-red-600 uppercase tracking-widest mt-1">CEO // Innovate Inc.</div>
-                                </div>
-                            </figcaption>
-                        </figure>
-                    </div>
+                {/* How MarketMea works section */}
+                <section className="relative isolate overflow-hidden bg-white px-6 py-16 lg:px-8 dark:bg-zinc-950">
+                    <img src={howMmWorks} alt='how market mea works' className='w-full rounded-2xl'/>
                 </section>
             </main>
 

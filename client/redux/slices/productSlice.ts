@@ -178,7 +178,7 @@ const productSlice = createSlice({
       .addCase(fetchProducts.fulfilled, (state, action) => {
         const incoming = action.payload.products || [];
         const requestedPage = Number((action.meta?.arg as any)?.page || action.payload.page || 1);
-
+        
         state.productsByPage[requestedPage] = incoming;
         state.page = requestedPage;
         state.pages = action.payload.pages;

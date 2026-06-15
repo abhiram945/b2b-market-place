@@ -81,7 +81,7 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
     <>
       <tr className="bg-white border-b border-zinc-100 hover:bg-zinc-50 transition-colors group">
         <td className="px-6 py-4">
-          <div className="w-full max-w-125 overflow-x-auto whitespace-nowrap title-scrollbar flex flex-col gap-2">
+          <div className="w-full max-w-125 overflow-x-auto whitespace-nowrap no-scrollbar flex flex-col gap-2">
             <span className="text-sm font-bold text-zinc-900 uppercase tracking-tight group-hover:text-red-600 transition-colors cursor-pointer" onClick={() => onProductClick(product)}>
                 {product.title}
             </span>

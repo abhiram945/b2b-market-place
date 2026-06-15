@@ -4,6 +4,8 @@ export { default as Bell } from './Bell';
 export { default as Building } from './Building';
 export { default as CheckCircle } from './CheckCircle';
 export { default as ChevronDown } from './ChevronDown';
+export { default as ChevronLeft } from './ChevronLeft';
+export { default as ChevronRight } from './ChevronRight';
 export { default as Edit } from './Edit';
 export { default as Home } from './Home';
 export { default as LogIn } from './LogIn';

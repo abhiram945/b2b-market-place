@@ -7,7 +7,7 @@ import { RootState, AppDispatch } from '../../redux/store';
 import { toLowerTrim } from '../../utils/normalize';
 import { useAlert } from '../../contexts/AlertContext';
 import { apiErrorsToAlertItems, formErrorsToAlertItems } from '../../utils/alertHelpers';
-import logo from "../../assets/transparent-logo.png";
+import logo from "../../assets/navbar-logo.png";
 
 type LoginFormInputs = {
   email: string;
@@ -68,9 +68,8 @@ const Login: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-xl border border-gray-100">
         <div>
-          <Link to="/" className="mx-auto h-12 w-auto flex items-center justify-center text-3xl font-black text-gray-900 tracking-tighter italic">
-            <img src={logo} alt='' className='w-20'/>
-            <span className="text-brand-red">Market<span className="text-black"> Mea</span></span>
+          <Link to="/" className="mx-auto h-12 w-auto px-8 flex items-center justify-center text-3xl font-black text-gray-900 tracking-tighter italic">
+            <img src={logo} alt='' className='w-full'/>
           </Link>
           <h2 className="mt-8 text-center text-3xl font-black text-gray-900 uppercase tracking-tight">
             SIGN IN
@@ -130,7 +129,7 @@ const Login: React.FC = () => {
                 </Link>
             </p>
             <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">
-                Support: <a href="mailto:support@b2bmarket.com" className="hover:text-gray-900">support@b2bmarket.com</a>
+                Support: <a href="mailto:support@marketmea.com" className="hover:text-gray-900">support@marketmea.com</a>
             </p>
         </div>
       </div>

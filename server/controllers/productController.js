@@ -36,15 +36,10 @@ const getProducts = asyncHandler(async (req, res) => {
 
   const { search, searchId, brand, category, location, minPrice, maxPrice, sort, vendorId } = req.query;
 
-  // req.user is populated by optionalProtect middleware if token exists
-  const user = req.user;
-
   let query = {};
 
-  // Role-based or explicit vendor filtering:
-  if (user && getEffectiveRole(user) === ROLES.VENDOR) {
-    query.user = user._id;
-  } else if (vendorId) {
+  // Filter by vendor only if explicitly requested (e.g., from vendor dashboard)
+  if (vendorId) {
     if (!mongoose.Types.ObjectId.isValid(String(vendorId))) {
       return res.json({ products: [], page, pages: 0, total: 0 });
     }
@@ -75,10 +70,9 @@ const getProducts = asyncHandler(async (req, res) => {
   }
 
   let sortOption = {};
-  let projection = {};
-  if (sort === 'price_desc') sortOption = { price: -1 };
-  else if (sort === 'price_asc') sortOption = { price: 1 };
-  else sortOption = { createdAt: -1 };
+  if (sort === 'price_desc') sortOption = { price: -1, _id: 1 };
+  else if (sort === 'price_asc') sortOption = { price: 1, _id: 1 };
+  else sortOption = { createdAt: -1, _id: 1 };
 
   // --- Text Search Logic ---
   if (search) {
@@ -111,13 +105,13 @@ const getProducts = asyncHandler(async (req, res) => {
 // @route   GET /api/products/filter-options
 // @access  Public
 const getFilterOptions = asyncHandler(async (req, res) => {
-  const user = req.user;
-
+  const { vendorId } = req.query;
   let query = {};
 
-  // Apply role-based filtering if user is authenticated and is a vendor
-  if (user && getEffectiveRole(user) === ROLES.VENDOR) {
-    query.user = user._id;
+  if (vendorId) {
+    if (mongoose.Types.ObjectId.isValid(String(vendorId))) {
+      query.user = new mongoose.Types.ObjectId(String(vendorId));
+    }
   }
 
   // Get all unique categories and locations from products

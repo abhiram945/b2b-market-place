@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useForm, SubmitHandler, SubmitErrorHandler } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
@@ -9,7 +8,9 @@ import api from '../../api';
 import { toLowerTrim, toLowerTrimOptional } from '../../utils/normalize';
 import { useAlert } from '../../contexts/AlertContext';
 import { apiErrorsToAlertItems, formErrorsToAlertItems } from '../../utils/alertHelpers';
-import logo from "../../assets/transparent-logo.png";
+import { COUNTRY_CODES } from '../../utils/constants';
+import { ChevronDown } from '../../components/icons';
+import logo from "../../assets/navbar-logo.png";
 
 type RegisterFormInputs = {
   fullName: string;
@@ -42,11 +43,26 @@ const Register: React.FC = () => {
   const [companyNames, setCompanyNames] = useState<string[]>([]);
   const { showAlert } = useAlert();
 
-  const { register, handleSubmit, watch, reset } = useForm<RegisterFormInputs>({
+  const { register, handleSubmit, watch, reset, setValue } = useForm<RegisterFormInputs>({
     defaultValues: {
-      role: ''
+      role: '',
+      countryCode: ''
     }
   });
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -148,9 +164,8 @@ const Register: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-4 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl w-full space-y-8 bg-white px-10 py-6 rounded-2xl shadow-xl border border-gray-100">
         <div className="text-center">
-          <Link to="/" className="inline-flex items-center text-3xl font-black text-gray-900 tracking-tighter italic">
-            <img src={logo} alt='' className='w-20'/>
-            <span className="text-brand-red">Market<span className="text-black"> Mea</span></span>
+          <Link to="/" className="mx-auto h-16 w-auto flex items-center justify-center text-3xl font-black text-gray-900 tracking-tighter italic">
+            <img src={logo} alt='' className='w-full h-full object-contain'/>
           </Link>
           <h2 className="mt-3 text-2xl font-black text-gray-900 uppercase tracking-tight">
             Create account
@@ -183,20 +198,60 @@ const Register: React.FC = () => {
             </InputWrapper>
 
             <InputWrapper label="Phone Number">
-              <div className="flex gap-3">
-                <input
-                  {...register('countryCode', {
-                    required: 'Country code is required',
-                    pattern: {
-                      value: /^\d+$/,
-                      message: 'Country code must contain numbers only',
-                    },
-                  })}
-                  placeholder="Country code"
-                  inputMode="numeric"
-                  type="text"
-                  className="w-1/3 px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
-                />
+              <div className="flex gap-2">
+                <div className="relative w-[100px] flex-shrink-0" ref={dropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="w-full h-full px-2 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm bg-white text-left flex items-center justify-between"
+                  >
+                    <span className="truncate">{watch('countryCode') ? `+${watch('countryCode')}` : 'Code'}</span>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {isDropdownOpen && (
+                    <div className="absolute z-50 top-full mt-1 w-[250px] bg-white border-2 border-gray-100 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                      <div className="p-2 border-b border-gray-50">
+                        <input
+                          type="text"
+                          placeholder="Search country..."
+                          className="w-full px-3 py-2 text-xs border border-gray-100 rounded-lg focus:outline-none focus:border-brand-red font-bold"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          autoFocus
+                          onKeyDown={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                      <div className="max-h-[250px] overflow-y-auto">
+                        {COUNTRY_CODES.filter(c => 
+                          c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          c.code.includes(searchTerm)
+                        ).length > 0 ? (
+                          COUNTRY_CODES.filter(c => 
+                            c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            c.code.includes(searchTerm)
+                          ).map((c) => (
+                            <div
+                              key={`${c.code}-${c.name}`}
+                              className="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm font-bold flex justify-between items-center group"
+                              onClick={() => {
+                                setValue('countryCode', c.code);
+                                setIsDropdownOpen(false);
+                                setSearchTerm('');
+                              }}
+                            >
+                              <span className="truncate text-gray-700 group-hover:text-black">{c.name.split(' (+')[0]}</span>
+                              <span className="text-brand-red text-xs">+{c.code}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="px-4 py-3 text-xs text-gray-400 font-bold text-center">No results found</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <input type="hidden" {...register('countryCode', { required: 'Country code is required' })} />
+                </div>
                 <input
                   {...register('phoneNumber', {
                     required: 'Phone number is required',
@@ -208,7 +263,7 @@ const Register: React.FC = () => {
                   placeholder="Phone number"
                   inputMode="numeric"
                   type="text"
-                  className="w-2/3 px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
+                  className="flex-1 min-w-0 px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
                 />
               </div>
             </InputWrapper>

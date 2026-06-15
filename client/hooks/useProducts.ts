@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSearchParams } from 'react-router-dom';
 import { RootState, AppDispatch } from '../redux/store';
@@ -27,10 +27,7 @@ export const useProducts = (options: { pageSize?: number; syncWithUrl?: boolean;
 
     const { productsByPage, loading, error, pages, total, filterOptions, config } = useSelector((state: RootState) => state.products);
 
-    const pageNum = useMemo(() => {
-        if (syncWithUrl) return Number(searchParams.get('page') || '1');
-        return 1; // Fallback or managed externally if not synced
-    }, [searchParams, syncWithUrl]);
+    const [pageNum, setInternalPage] = useState(1);
 
     const lastFiltersKeyRef = useRef('');
     const skipNextFetchRef = useRef(false);
@@ -40,7 +37,7 @@ export const useProducts = (options: { pageSize?: number; syncWithUrl?: boolean;
         if (syncWithUrl) {
             for (const [k, v] of searchParams.entries()) {
                 if (!v) continue;
-                if (k === 'page') out.page = Number(v);
+                if (k === 'page') continue; // Ignore page from URL
                 else if (k === 'search') out.search = v;
                 else if (k === 'brand') out.brand = v;
                 else if (k === 'category') out.category = v;
@@ -53,6 +50,12 @@ export const useProducts = (options: { pageSize?: number; syncWithUrl?: boolean;
         return out;
     }, [searchParams, syncWithUrl]);
 
+    // Reset page to 1 whenever filters change
+    const filtersKey = useMemo(() => JSON.stringify(currentFilters), [currentFilters]);
+    useEffect(() => {
+        setInternalPage(1);
+    }, [filtersKey]);
+
     const fetchItems = (requestedPage: number, forceRefresh = false) => {
         const params: ProductFetchFilters = { ...currentFilters, page: requestedPage, limit: pageSize };
         
@@ -62,10 +65,10 @@ export const useProducts = (options: { pageSize?: number; syncWithUrl?: boolean;
 
         const filterKeyObj = { ...params };
         delete filterKeyObj.page;
-        const filtersKey = JSON.stringify(filterKeyObj);
+        const currentFiltersKey = JSON.stringify(filterKeyObj);
 
-        if (filtersKey !== lastFiltersKeyRef.current || forceRefresh) {
-            lastFiltersKeyRef.current = filtersKey;
+        if (currentFiltersKey !== lastFiltersKeyRef.current || forceRefresh) {
+            lastFiltersKeyRef.current = currentFiltersKey;
             dispatch(clearProductsCache());
             dispatch(fetchProducts(params));
             return;
@@ -101,36 +104,32 @@ export const useProducts = (options: { pageSize?: number; syncWithUrl?: boolean;
     }, [pageNum, currentFilters, activeRole, user?._id]);
 
     const setPage = (page: number) => {
-        if (syncWithUrl) {
-            const newParams = new URLSearchParams(searchParams);
-            newParams.set('page', page.toString());
-            setSearchParams(newParams);
-        }
+        setInternalPage(page);
     };
 
     const updateFilters = (newFilters: Partial<ProductFetchFilters>) => {
         if (syncWithUrl) {
             const params = new URLSearchParams();
-            const mergedFilters = { ...currentFilters, ...newFilters };
-            Object.entries(mergedFilters).forEach(([k, v]) => {
-                if (k === 'page') return;
-                if (v) params.set(k, String(v));
+            
+            // Start with current filters and apply updates
+            const merged = { ...currentFilters, ...newFilters };
+            
+            Object.entries(merged).forEach(([k, v]) => {
+                // Skip page and any empty/null/undefined values
+                if (k === 'page' || v === '' || v === null || v === undefined) return;
+                params.set(k, String(v));
             });
 
-            // Default behavior: reset to page 1 on filter change.
-            // If caller provides a valid numeric page, preserve that page.
-            const requestedPageRaw = (newFilters as any)?.page;
-            const requestedPage =
-                typeof requestedPageRaw === 'number' && requestedPageRaw > 0
-                    ? requestedPageRaw
-                    : 1;
-            params.set('page', String(requestedPage));
             setSearchParams(params);
         }
+        
+        // Always reset to page 1 for ANY filter change
+        setInternalPage(1);
     };
 
     return {
         products: productsByPage[pageNum] || [],
+        productsByPage,
         loading,
         error,
         pageNum,

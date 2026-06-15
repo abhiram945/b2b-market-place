@@ -91,7 +91,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onProductClick, onEd
           className="flex-1 min-w-0 h-full flex items-center cursor-pointer px-4 relative z-0"
           onClick={() => onProductClick(product)}
         >
-          <div className="title-scrollbar overflow-x-auto whitespace-nowrap scroll-smooth">
+          <div className="no-scrollbar overflow-x-auto whitespace-nowrap scroll-smooth">
             <span className="text-sm font-bold text-gray-900 uppercase tracking-tight group-hover:text-brand-red transition-colors pr-10">
                 {product.title}
             </span>
