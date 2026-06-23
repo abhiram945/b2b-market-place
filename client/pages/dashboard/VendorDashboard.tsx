@@ -87,16 +87,16 @@ const VendorDashboard: React.FC = () => {
         <div className="max-w-[90%] mx-auto py-8">
             <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 mb-6">
                 <div>
-                    <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tight">
+                    <h1 className="text-4xl font-black text-gray-900 dark:text-zinc-100 uppercase tracking-tight">
                         Vendor <span className="text-brand-red font-black">Portal</span>
                     </h1>
                 </div>
                 <div className="flex flex-col items-end">
                     <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest bg-zinc-100 px-2 py-1 rounded border border-zinc-200">ID: {user?._id}</span>
+                        <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700">ID: {user?._id}</span>
                         <button 
                             onClick={handleCopyId}
-                            className="p-1 hover:text-brand-red transition-colors text-zinc-400 cursor-pointer"
+                            className="p-1 hover:text-brand-red transition-colors text-zinc-400 dark:text-zinc-500 cursor-pointer"
                             title="Copy ID"
                         >
                             {copied ? (
@@ -106,11 +106,11 @@ const VendorDashboard: React.FC = () => {
                             )}
                         </button>
                     </div>
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Managing Store: {user?.companyName}</p>
+                    <p className="text-xs font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-widest mt-1">Managing Store: {user?.companyName}</p>
                 </div>
             </div>
             {message && (
-                <div className={`${message.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'} border px-4 py-3 rounded-md mb-4 flex justify-between items-start`} role="alert">
+                <div className={`${message.type === 'error' ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400' : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400'} border px-4 py-3 rounded-md mb-4 flex justify-between items-start`} role="alert">
                     <div className="text-sm font-bold">{message.text}</div>
                     {message.type === 'error' ? (
                         <button type="button" onClick={() => setMessage(null)} className="ml-4 text-xs font-black uppercase tracking-widest">
@@ -120,51 +120,51 @@ const VendorDashboard: React.FC = () => {
                 </div>
             )}
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-10">
-                <DashboardCard title="Active Listings" value={summary.activeListings} icon={<Package className="h-6 w-6 text-white" />} colorClass="bg-black" />
+                <DashboardCard title="Active Listings" value={summary.activeListings} icon={<Package className="h-6 w-6 text-white" />} colorClass="bg-black dark:bg-zinc-800" />
                 <DashboardCard title="Total Revenue" value={`$${summary.totalSales.toFixed(2)}`} icon={<Tag className="h-6 w-6 text-white" />} colorClass="bg-brand-red" />
                 <DashboardCard title="New Orders" value={summary.newOrders} icon={<ShoppingCart className="h-6 w-6 text-white" />} colorClass="bg-brand-red" />
-                <DashboardCard title="Low Stock Items" value={summary.lowStockItems} icon={<AlertCircle className="h-6 w-6 text-white" />} colorClass="bg-black" />
+                <DashboardCard title="Low Stock Items" value={summary.lowStockItems} icon={<AlertCircle className="h-6 w-6 text-white" />} colorClass="bg-black dark:bg-zinc-800" />
             </div>
 
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-                <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                    <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-gray-100 dark:border-zinc-800 overflow-hidden transition-colors">
+                <div className="p-6 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between bg-gray-50/50 dark:bg-zinc-800/50">
+                    <h2 className="text-xl font-black text-gray-900 dark:text-zinc-100 uppercase tracking-tight">
                         Recent <span className="text-brand-red">Orders</span>
                     </h2>
                 </div>
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-zinc-800">
+                        <thead className="bg-gray-50 dark:bg-zinc-800/50">
                             <tr>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Order ID</th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Product</th>
-                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">Order date</th>
-                                <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest">Order ID</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest">Product</th>
+                                <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest">Order date</th>
+                                <th className="px-6 py-4 text-center text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest">Status</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 bg-white">
+                        <tbody className="divide-y divide-gray-100 dark:divide-zinc-800 bg-white dark:bg-zinc-900">
                             {recentLoading ? (
                                 <tr>
                                     <td colSpan={4} className="py-10">
                                         <div className="flex flex-col items-center justify-center gap-3">
-                                            <div className="w-10 h-10 border-4 border-zinc-100 border-t-red-600 rounded-full animate-spin"></div>
-                                            <div className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Loading recent orders...</div>
+                                            <div className="w-10 h-10 border-4 border-zinc-100 dark:border-zinc-800 border-t-red-600 rounded-full animate-spin"></div>
+                                            <div className="text-[10px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-widest">Loading recent orders...</div>
                                         </div>
                                     </td>
                                 </tr>
                             ) : (
                                 <>
                                     {summary.recentOrders.map(order => (
-                                        <tr key={order._id} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 font-mono">{order._id}</td>
-                                            <td className="px-6 py-4 text-sm text-gray-600 font-medium">
+                                        <tr key={order._id} className="hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-zinc-200 font-mono">{order._id}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-600 dark:text-zinc-400 font-medium">
                                                 <ul className="space-y-1">
                                                     {order.items.map((item, idx) => (
-                                                        <li key={idx} className="uppercase tracking-tight text-gray-900 font-bold">{item.productTitle} <span className="text-gray-400 text-xs">(x{item.quantity})</span></li>
+                                                        <li key={idx} className="uppercase tracking-tight text-gray-900 dark:text-zinc-100 font-bold">{item.productTitle} <span className="text-gray-400 dark:text-zinc-500 text-xs">(x{item.quantity})</span></li>
                                                     ))}
                                                 </ul>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-bold uppercase">{new Date(order.createdAt).toLocaleDateString()}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-zinc-400 font-bold uppercase">{new Date(order.createdAt).toLocaleDateString()}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-center">
                                                 <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${getStatusColor(order.status)} shadow-sm`}>
                                                     {order.status}
@@ -174,7 +174,7 @@ const VendorDashboard: React.FC = () => {
                                     ))}
                                     {summary.recentOrders.length === 0 && (
                                         <tr>
-                                            <td colSpan={4} className="px-6 py-10 text-center text-sm font-bold text-zinc-400 uppercase tracking-widest">
+                                            <td colSpan={4} className="px-6 py-10 text-center text-sm font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
                                                 no recent orders found
                                             </td>
                                         </tr>

@@ -79,13 +79,13 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
 
   return (
     <>
-      <tr className="bg-white border-b border-zinc-100 hover:bg-zinc-50 transition-colors group">
+      <tr className="bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors group">
         <td className="px-6 py-4">
           <div className="w-full max-w-125 overflow-x-auto whitespace-nowrap no-scrollbar flex flex-col gap-2">
-            <span className="text-sm font-bold text-zinc-900 uppercase tracking-tight group-hover:text-red-600 transition-colors cursor-pointer" onClick={() => onProductClick(product)}>
+            <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-tight group-hover:text-red-600 transition-colors cursor-pointer" onClick={() => onProductClick(product)}>
                 {product.title}
             </span>
-            <span className="text-xs text-zinc-900 tracking-tighttransition-colors">
+            <span className="text-xs text-zinc-900 dark:text-zinc-400 tracking-tight transition-colors">
                 {product._id}
             </span>
           </div>
@@ -94,30 +94,30 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
             <span className="text-[11px] font-black text-red-600 uppercase italic tracking-tighter">{product.brand}</span>
         </td>
         <td className="px-2 py-4 text-center">
-            <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">{product.category}</span>
+            <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">{product.category}</span>
         </td>
         <td className="px-2 py-4 text-center">
-            <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">{product.location}</span>
+            <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">{product.location}</span>
         </td>
         <td className="px-2 py-4 text-center">
-            <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">{product.condition}</span>
+            <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">{product.condition}</span>
         </td>
         <td className="px-2 py-4 text-center">
-            <span className="text-sm font-black text-zinc-900 tracking-tighter">${product.price.toFixed(2)}</span>
+            <span className="text-sm font-black text-zinc-900 dark:text-zinc-100 tracking-tighter">${product.price.toFixed(2)}</span>
         </td>
         <td className="px-2 py-4 text-center">
-            <span className="text-[10px] font-bold text-zinc-500 tracking-tighter">{product.minOrderQty}</span>
+            <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-tighter">{product.minOrderQty}</span>
         </td>
         <td className="px-2 py-4 text-center">
-            <span className="text-[10px] font-bold text-zinc-500 tracking-tighter">{product.maxOrderQty}</span>
+            <span className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 tracking-tighter">{product.maxOrderQty}</span>
         </td>
         <td className="px-2 py-4 text-center">
-            <span className={`text-[11px] font-black ${product.stockQty < product.minOrderQty * 2 ? 'text-red-600' : 'text-zinc-900'}`}>
+            <span className={`text-[11px] font-black ${product.stockQty < product.minOrderQty * 2 ? 'text-red-600' : 'text-zinc-900 dark:text-zinc-100'}`}>
               {product.stockQty}
             </span>
         </td>
         <td className="px-2 py-4 text-center hidden lg:table-cell">
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{product.eta || '-'}</span>
+            <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">{product.eta || '-'}</span>
         </td>
         <td className="px-6 py-4 text-center">
             <div className="flex items-center justify-center gap-3">
@@ -125,7 +125,7 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
                 <>
                     <button
                     onClick={() => setAlertModalOpen(true)}
-                    className={`p-1.5 transition-colors ${initialPriceAlert || initialStockAlert ? 'text-red-600' : 'text-zinc-300 hover:text-red-600'}`}
+                    className={`p-1.5 transition-colors ${initialPriceAlert || initialStockAlert ? 'text-red-600' : 'text-zinc-300 dark:text-zinc-600 hover:text-red-600'}`}
                     >
                     <Bell className="w-5 h-5 fill-current" />
                     </button>
@@ -135,7 +135,7 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
                         type="number"
                         value={isNaN(quantity) ? '' : quantity}
                         onChange={handleQuantityChange}
-                        className="w-12 h-8 border border-zinc-200 bg-white text-center text-[11px] font-black text-zinc-900 rounded-none outline-none focus:border-red-600 focus:ring-0 transition-all"
+                        className="w-12 h-8 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-center text-[11px] font-black text-zinc-900 dark:text-zinc-100 rounded-none outline-none focus:border-red-600 focus:ring-0 transition-all"
                         disabled={isInCart || isAddingToCart}
                     />
                     </div>
@@ -145,8 +145,8 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
                     disabled={isInCart || !!error || isNaN(quantity) || isAddingToCart}
                     className={`h-9 px-6 rounded-none font-black text-[10px] tracking-widest transition-all active:scale-95 shadow-lg min-w-30 justify-center flex items-center gap-2 cursor-pointer ${
                         isInCart || isAddingToCart
-                        ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed border border-zinc-200' 
-                        : 'bg-zinc-900 text-white hover:bg-red-600'
+                        ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600 cursor-not-allowed border border-zinc-200 dark:border-zinc-700' 
+                        : 'bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white hover:bg-red-600 dark:hover:bg-red-600 dark:hover:text-white'
                     }`}
                     >
                     <ShoppingCart className="w-3.5 h-3.5" />
@@ -158,7 +158,7 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
                 {activeRole === 'vendor' && (
                 <button 
                     onClick={() => onEditClick(product)} 
-                    className="h-9 px-6 bg-zinc-900 hover:bg-red-600 text-white rounded-none font-black text-[10px] uppercase tracking-widest transition-colors min-w-25 cursor-pointer"
+                    className="h-9 px-6 bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white hover:bg-red-600 dark:hover:bg-red-600 dark:hover:text-white rounded-none font-black text-[10px] uppercase tracking-widest transition-colors min-w-25 cursor-pointer"
                 >
                     EDIT STOCK
                 </button>
@@ -168,7 +168,7 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
                   <>
                     <button
                       onClick={() => onEditClick(product)}
-                      className="h-9 px-6 bg-zinc-900 hover:bg-red-600 text-white rounded-none font-black text-[10px] uppercase tracking-widest transition-colors min-w-25 cursor-pointer"
+                      className="h-9 px-6 bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white hover:bg-red-600 dark:hover:bg-red-600 dark:hover:text-white rounded-none font-black text-[10px] uppercase tracking-widest transition-colors min-w-25 cursor-pointer"
                     >
                       EDIT
                     </button>

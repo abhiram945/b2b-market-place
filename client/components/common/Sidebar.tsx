@@ -30,9 +30,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
       ></div>
 
       {/* Sidebar Container */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:hidden ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex items-center justify-between p-6 border-b border-gray-100">
-           <Link to={getDashboardLink()} className="text-xl font-black text-gray-900 tracking-tight italic" onClick={() => setIsOpen(false)}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-white dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800 transform transition-transform duration-300 ease-in-out lg:hidden ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-zinc-800">
+           <Link to={getDashboardLink()} className="text-xl font-black text-gray-900 dark:text-zinc-100 tracking-tight italic" onClick={() => setIsOpen(false)}>
             <span className="text-brand-red mr-1">Market</span> Mea
           </Link>
           <button className="text-gray-400 hover:text-brand-red transition-all cursor-pointer" onClick={() => setIsOpen(false)}>
@@ -51,10 +51,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                 className={`flex items-center px-4 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all ${
                   isActive
                     ? 'bg-brand-red text-white shadow-lg shadow-red-600/20'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                    : 'text-gray-500 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-zinc-100'
                 }`}
               >
-                <link.icon className={`w-5 h-5 mr-3 ${isActive ? 'text-white' : 'text-gray-400'}`} />
+                <link.icon className={`w-5 h-5 mr-3 ${isActive ? 'text-white' : 'text-gray-400 dark:text-zinc-500'}`} />
                 {link.text}
               </Link>
             );
@@ -62,8 +62,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         </nav>
         
         {/* Version Info */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-100">
-            <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest text-center">Version 2.0.4 Release</p>
+        <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-100 dark:border-zinc-800">
+            <p className="text-[10px] font-black text-gray-300 dark:text-zinc-600 uppercase tracking-widest text-center">Version 2.0.4 Release</p>
         </div>
       </aside>
     </>

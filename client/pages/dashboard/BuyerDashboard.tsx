@@ -64,7 +64,7 @@ const BuyerDashboard: React.FC = () => {
   return (
     <div className="max-w-[90%] mx-auto py-8">
       <div className="pb-6">
-        <h1 className="text-4xl font-black text-black uppercase tracking-tighter">
+        <h1 className="text-4xl font-black text-gray-900 dark:text-zinc-100 uppercase tracking-tighter">
             Dashboard <span className="text-red-600">Overview</span>
         </h1>
         <p className="mt-2 text-gray-500 dark:text-zinc-400 font-medium">WELCOME BACK, {user?.fullName?.toUpperCase()}</p>
@@ -74,13 +74,13 @@ const BuyerDashboard: React.FC = () => {
               title="PENDING ORDERS" 
               value={summary.pendingOrders} 
               icon={<Truck className="h-6 w-6 text-white" />}
-              colorClass="bg-red-600"
+              colorClass="bg-red-600 dark:bg-gray-900"
           />
           <DashboardCard 
               title="TOTAL ORDERS" 
               value={summary.totalOrders} 
               icon={<Package className="h-6 w-6 text-white" />}
-              colorClass="bg-zinc-900 dark:bg-zinc-800"
+              colorClass="bg-red-600 dark:bg-gray-900"
           />
         </div>
       </div>

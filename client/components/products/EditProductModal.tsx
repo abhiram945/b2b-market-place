@@ -218,8 +218,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, pr
           </div>
 
           <div className="pt-8 border-t border-gray-100 flex justify-end items-center gap-6">
-            <button type="button" onClick={onClose} className="text-[11px] font-black uppercase tracking-[0.2em] px-10 py-4 text-gray-400 hover:text-gray-900 transition-colors cursor-pointer">Cancel</button>
-            <button type="submit" disabled={isSubmitting} className="bg-black hover:bg-brand-red text-white font-black text-[11px] uppercase tracking-[0.2em] px-10 py-4 rounded-none shadow-xl transition-all disabled:opacity-50 cursor-pointer">
+            <button type="button" onClick={onClose} className="text-[11px] font-black uppercase tracking-[0.2em] px-10 py-4 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer">Cancel</button>
+            <button type="submit" disabled={isSubmitting} className="bg-black hover:bg-brand-red dark:bg-brand-red text-white font-black text-[11px] uppercase tracking-[0.2em] px-10 py-4 rounded-none shadow-xl transition-all disabled:opacity-50 cursor-pointer">
               {isSubmitting ? 'UPDATING...' : 'Update'}
             </button>
           </div>

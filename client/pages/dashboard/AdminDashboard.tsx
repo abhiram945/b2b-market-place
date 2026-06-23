@@ -357,18 +357,18 @@ const AdminDashboard: React.FC = () => {
     <div className="max-w-[90%] mx-auto py-8">
       <div className="mb-8 flex justify-between items-end">
         <div>
-          <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tight">ADMIN <span className="text-brand-red">DASHBOARD</span></h1>
-          <p className="text-gray-500 font-bold uppercase tracking-widest mt-1">User Management & Authorization</p>
+          <h1 className="text-4xl font-black text-gray-900 dark:text-zinc-100 uppercase tracking-tight">ADMIN <span className="text-brand-red">DASHBOARD</span></h1>
+          <p className="text-gray-500 dark:text-zinc-400 font-bold uppercase tracking-widest mt-1">User Management & Authorization</p>
         </div>
 
         <div className="flex flex-col items-end gap-2">
-          <span className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] italic">Critical Systems Control</span>
+          <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-[0.2em] italic">Critical Systems Control</span>
           <button
             onClick={handleMaintenanceToggle}
             disabled={isMaintenanceLoading}
             className={`px-6 py-3 rounded-none font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl flex items-center gap-3 cursor-pointer ${maintenanceMode
-              ? 'bg-red-600 text-white hover:bg-zinc-900 ring-4 ring-red-600/20'
-              : 'bg-zinc-900 text-white hover:bg-red-600'
+              ? 'bg-red-600 text-white hover:bg-zinc-900 dark:hover:bg-zinc-800 ring-4 ring-red-600/20'
+              : 'bg-zinc-900 dark:bg-zinc-800 text-white hover:bg-red-600'
               }`}
           >
             <div className={`w-2 h-2 rounded-full ${maintenanceMode ? 'bg-white animate-pulse' : 'bg-red-600'}`}></div>
@@ -378,23 +378,23 @@ const AdminDashboard: React.FC = () => {
       </div>
       <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Brand Logo Upload */}
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-          <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 italic">Brand Asset Management</h3>
+        <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm">
+          <h3 className="text-xs font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-4 italic">Brand Asset Management</h3>
           <form onSubmit={handleBrandLogoUpload} className="space-y-4">
             <div className='w-full flex items-center'>
               <div className={`space-y-4 ${brandLogoPreviewUrl ? "w-3/4 pr-4" : "w-full"}`}>
                 <div>
-                  <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Brand Name</label>
+                  <label className="block text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-1">Brand Name</label>
                   <input
                     type="text"
                     value={brandName}
                     onChange={(e) => setBrandName(e.target.value)}
                     placeholder="e.g. Apple, Dell"
-                    className="w-full px-3 py-2 border border-zinc-200 rounded text-xs font-bold focus:outline-none focus:border-brand-red"
+                    className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded text-xs font-bold text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-brand-red"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Logo Image (PNG Only)</label>
+                  <label className="block text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-1">Logo Image (PNG Only)</label>
                   <input
                     ref={brandLogoInputRef}
                     type="file"
@@ -402,20 +402,20 @@ const AdminDashboard: React.FC = () => {
                       setBrandLogo(e.target.files?.[0] || null);
                     }}
                     accept=".png,image/png"
-                    className="w-full text-xs file:bg-zinc-100 file:border-0 file:rounded file:px-3 file:py-1 file:text-[10px] file:font-black file:uppercase file:tracking-widest cursor-pointer"
+                    className="w-full text-xs text-gray-500 dark:text-zinc-400 file:bg-zinc-100 dark:file:bg-zinc-800 file:text-zinc-600 dark:file:text-zinc-300 file:border-0 file:rounded file:px-3 file:py-1 file:text-[10px] file:font-black file:uppercase file:tracking-widest cursor-pointer"
                   />
                 </div>
               </div>
               {brandLogoPreviewUrl && (
                 <div className="flex flex-col items-center w-1/4"> {/* Container for preview label and image */}
-                  <img src={brandLogoPreviewUrl} alt="Brand Logo Preview" className="max-h-24 w-auto rounded border border-zinc-200" />
+                  <img src={brandLogoPreviewUrl} alt="Brand Logo Preview" className="max-h-24 w-auto rounded border border-zinc-200 dark:border-zinc-700" />
                 </div>
               )}
             </div>
             <button
               type="submit"
               disabled={isBrandLogoUploading} // Use specific upload state
-              className="w-full bg-zinc-900 text-white font-black text-[10px] uppercase tracking-widest py-2 hover:bg-brand-red transition-all disabled:opacity-50 cursor-pointer"
+              className="w-full bg-zinc-900 dark:bg-zinc-800 text-white font-black text-[10px] uppercase tracking-widest py-2 hover:bg-brand-red dark:hover:bg-brand-red transition-all disabled:opacity-50 cursor-pointer"
             >
               {isBrandLogoUploading ? 'Uploading...' : 'Upload Brand Assets'}
             </button>
@@ -423,52 +423,52 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Banner Upload */}
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-          <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 italic">Core Banner System</h3>
+        <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm">
+          <h3 className="text-xs font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-4 italic">Core Banner System</h3>
           <form onSubmit={handleBannerUpload} className="space-y-4">
             <div>
-              <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Main Heading</label>
+              <label className="block text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-1">Main Heading</label>
               <input
                 type="text"
                 value={heroHeading}
                 onChange={(e) => setHeroHeading(e.target.value)}
                 placeholder="e.g. Exclusive B2B Deals"
-                className="w-full px-3 py-2 border border-zinc-200 rounded text-xs font-bold focus:outline-none focus:border-brand-red"
+                className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded text-xs font-bold text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-brand-red"
               />
             </div>
             <div>
-              <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Sub Heading</label>
+              <label className="block text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-1">Sub Heading</label>
               <input
                 type="text"
                 value={heroSubheading}
                 onChange={(e) => setHeroSubheading(e.target.value)}
                 placeholder="e.g. Bulk purchase discounts on top brands this week!"
-                className="w-full px-3 py-2 border border-zinc-200 rounded text-xs font-bold focus:outline-none focus:border-brand-red"
+                className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded text-xs font-bold text-gray-900 dark:text-zinc-100 focus:outline-none focus:border-brand-red"
               />
             </div>
             <div className='flex w-full'>
               <div className='w-2/3'>
-                <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Global Banner Image (PNG Only)</label>
+                <label className="block text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-1">Global Banner Image (PNG Only)</label>
                 <div className="flex items-center gap-4 mt-2"> {/* Flex container for input and display section */}
                   <input
                     ref={bannerInputRef}
                     type="file"
                     onChange={(e) => setBanner(e.target.files?.[0] || null)}
                     accept=".png,image/png"
-                    className="w-full text-xs file:bg-zinc-100 file:border-0 file:rounded file:px-3 file:py-1 file:text-[10px] file:font-black file:uppercase file:tracking-widest cursor-pointer"
+                    className="w-full text-xs text-gray-500 dark:text-zinc-400 file:bg-zinc-100 dark:file:bg-zinc-800 file:text-zinc-600 dark:file:text-zinc-300 file:border-0 file:rounded file:px-3 file:py-1 file:text-[10px] file:font-black file:uppercase file:tracking-widest cursor-pointer"
                   />
                 </div>
               </div>
               {banner && (
                 <div className="flex flex-col items-center w-1/3">
-                  <img src={banner ? URL.createObjectURL(banner) : ''} alt="Banner Preview" className="w-full rounded border border-zinc-200" />
+                  <img src={banner ? URL.createObjectURL(banner) : ''} alt="Banner Preview" className="w-full rounded border border-zinc-200 dark:border-zinc-700" />
                 </div>
               )}
             </div>
             <button
               type="submit"
               disabled={isBannerUploading} // Use specific upload state
-              className="w-full bg-zinc-900 text-white font-black text-[10px] uppercase tracking-widest py-2 hover:bg-brand-red transition-all disabled:opacity-50 cursor-pointer"
+              className="w-full bg-zinc-900 dark:bg-zinc-800 text-white font-black text-[10px] uppercase tracking-widest py-2 hover:bg-brand-red dark:hover:bg-brand-red transition-all disabled:opacity-50 cursor-pointer"
             >
               {isBannerUploading ? 'Updating...' : 'Update Banner Content'}
             </button>
@@ -476,8 +476,8 @@ const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-        <div className="border-b border-gray-200 px-6 py-4">
+      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl shadow-sm overflow-hidden">
+        <div className="border-b border-gray-200 dark:border-zinc-800 px-6 py-4">
           <SearchBar
             value={userIdSearch}
             onChange={setUserIdSearch}
@@ -489,59 +489,59 @@ const AdminDashboard: React.FC = () => {
           />
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-zinc-800">
+            <thead className="bg-gray-50 dark:bg-zinc-800/50">
               <tr>
-                <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">User</th>
-                <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">Organization</th>
-                <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">Documents</th>
-                    <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">Roles</th>
-                <th className="px-6 py-4 text-left font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-center font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-4 text-left font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">User</th>
+                <th className="px-6 py-4 text-left font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Organization</th>
+                <th className="px-6 py-4 text-left font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Documents</th>
+                    <th className="px-6 py-4 text-left font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Roles</th>
+                <th className="px-6 py-4 text-left font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-4 text-center font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-zinc-900 divide-y divide-gray-200 dark:divide-zinc-800">
               {loading ? (
                 [...Array(6)].map((_, index) => (
                   <tr key={`user-skeleton-${index}`} className="animate-pulse">
                     <td className="px-6 py-4">
-                      <div className="h-4 w-40 bg-gray-200 rounded mb-2"></div>
-                      <div className="h-3 w-48 bg-gray-100 rounded mb-2"></div>
-                      <div className="h-3 w-56 bg-gray-100 rounded"></div>
+                      <div className="h-4 w-40 bg-gray-200 dark:bg-zinc-800 rounded mb-2"></div>
+                      <div className="h-3 w-48 bg-gray-100 dark:bg-zinc-800/50 rounded mb-2"></div>
+                      <div className="h-3 w-56 bg-gray-100 dark:bg-zinc-800/50 rounded"></div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="h-4 w-36 bg-gray-200 rounded mb-2"></div>
-                      <div className="h-3 w-24 bg-gray-100 rounded"></div>
+                      <div className="h-4 w-36 bg-gray-200 dark:bg-zinc-800 rounded mb-2"></div>
+                      <div className="h-3 w-24 bg-gray-100 dark:bg-zinc-800/50 rounded"></div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="h-6 w-28 bg-gray-200 rounded mb-2"></div>
-                      <div className="h-6 w-28 bg-gray-200 rounded mb-2"></div>
-                      <div className="h-6 w-28 bg-gray-200 rounded"></div>
+                      <div className="h-6 w-28 bg-gray-200 dark:bg-zinc-800 rounded mb-2"></div>
+                      <div className="h-6 w-28 bg-gray-200 dark:bg-zinc-800 rounded mb-2"></div>
+                      <div className="h-6 w-28 bg-gray-200 dark:bg-zinc-800 rounded"></div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="h-4 w-24 bg-gray-200 rounded mb-2"></div>
-                      <div className="h-3 w-32 bg-gray-100 rounded"></div>
+                      <div className="h-4 w-24 bg-gray-200 dark:bg-zinc-800 rounded mb-2"></div>
+                      <div className="h-3 w-32 bg-gray-100 dark:bg-zinc-800/50 rounded"></div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="h-6 w-20 bg-gray-200 rounded-full"></div>
+                      <div className="h-6 w-20 bg-gray-200 dark:bg-zinc-800 rounded-full"></div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-center gap-2">
-                        <div className="h-8 w-24 bg-gray-200 rounded"></div>
-                        <div className="h-8 w-24 bg-gray-200 rounded"></div>
+                        <div className="h-8 w-24 bg-gray-200 dark:bg-zinc-800 rounded"></div>
+                        <div className="h-8 w-24 bg-gray-200 dark:bg-zinc-800 rounded"></div>
                       </div>
                     </td>
                   </tr>
                 ))
               ) : (
                 users.map((user) => (
-                <tr key={user._id} className="hover:bg-gray-50 transition-colors">
+                <tr key={user._id} className="hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-bold text-gray-900 capitalize">{user.fullName}</div>
-                    <div className="text-xs text-gray-500 font-mono">{user.email}</div>
-                    <div className="text-[10px] text-zinc-400 font-mono mt-1">{user._id}</div>
+                    <div className="text-sm font-bold text-gray-900 dark:text-zinc-100 capitalize">{user.fullName}</div>
+                    <div className="text-xs text-gray-500 dark:text-zinc-400 font-mono">{user.email}</div>
+                    <div className="text-[10px] text-zinc-400 dark:text-zinc-600 font-mono mt-1">{user._id}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-zinc-300 font-medium">
                     <div className="font-bold capitalize">{user.companyName}</div>
                     {user.website && (
                       <a
@@ -554,34 +554,34 @@ const AdminDashboard: React.FC = () => {
                       </a>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 font-medium">
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-zinc-300 font-medium">
                     <div className="flex flex-col items-start gap-2">
-                      <button onClick={() => handleViewDocument(user._id, 'tradeLicense')} className="text-[9px] bg-zinc-100 px-2 py-1 rounded border border-zinc-200 hover:bg-zinc-200 transition-colors font-black uppercase tracking-widest text-zinc-600 cursor-pointer w-[80%] text-center">
+                      <button onClick={() => handleViewDocument(user._id, 'tradeLicense')} className="text-[9px] bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors font-black uppercase tracking-widest text-zinc-600 dark:text-zinc-300 cursor-pointer w-[80%] text-center">
                         Trade License
                       </button>
-                      <button onClick={() => handleViewDocument(user._id, 'idDocument')} className="text-[9px] bg-zinc-100 px-2 py-1 rounded border border-zinc-200 hover:bg-zinc-200 transition-colors font-black uppercase tracking-widest text-zinc-600 cursor-pointer w-[80%] text-center">
+                      <button onClick={() => handleViewDocument(user._id, 'idDocument')} className="text-[9px] bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors font-black uppercase tracking-widest text-zinc-600 dark:text-zinc-300 cursor-pointer w-[80%] text-center">
                         ID Document
                       </button>
-                      <button onClick={() => handleViewDocument(user._id, 'vatRegistration')} className="text-[9px] bg-zinc-100 px-2 py-1 rounded border border-zinc-200 hover:bg-zinc-200 transition-colors font-black uppercase tracking-widest text-zinc-600 cursor-pointer w-[80%] text-center">
+                      <button onClick={() => handleViewDocument(user._id, 'vatRegistration')} className="text-[9px] bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors font-black uppercase tracking-widest text-zinc-600 dark:text-zinc-300 cursor-pointer w-[80%] text-center">
                         VAT/Tax
                       </button>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-zinc-200">
                     <div className="font-black text-brand-red italic capitalize">{user.activeRole}</div>
-                    <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                    <div className="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-widest">
                       {Array.isArray(user.roles) ? user.roles.join(', ') : ''}
                     </div>
                     {user.roleRequest?.status === 'pending' && (
-                      <div className="mt-2 text-[10px] font-black uppercase tracking-widest text-yellow-700 bg-yellow-100 border border-yellow-200 px-2 py-1 rounded w-max">
+                      <div className="mt-2 text-[10px] font-black uppercase tracking-widest text-yellow-700 dark:text-yellow-500 bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700/50 px-2 py-1 rounded w-max">
                         Request: {user.roleRequest.requestedRole}
                       </div>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${user.status === 'approved' ? 'bg-green-100 text-green-800' :
-                      user.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${user.status === 'approved' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-500' :
+                      user.status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-500' :
+                        'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-500'
                       }`}>
                       {user.status}
                     </span>
@@ -631,7 +631,7 @@ const AdminDashboard: React.FC = () => {
               )}
               {!loading && users.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-sm font-bold text-zinc-400 uppercase tracking-widest">
+                  <td colSpan={6} className="px-6 py-10 text-center text-sm font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-widest">
                     {activeUserIdSearch ? 'No users match with id.' : 'No users found'}
                   </td>
                 </tr>

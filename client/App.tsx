@@ -9,9 +9,6 @@ function App() {
   const dispatch = useDispatch<AppDispatch>();
 
   useEffect(() => {
-    // Force light theme root
-    document.documentElement.classList.remove('dark');
-
     // On initial app load, try to rehydrate session from token or cookie.
     dispatch(rehydrateAuth());
   }, [dispatch]);

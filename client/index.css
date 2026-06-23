@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @keyframes alert-progress {
   from {
     transform: scaleX(1);
@@ -14,31 +16,44 @@
   --color-brand-red-hover: #b91c1c; /* Red-700 */
 }
 
-/* Force Light Theme Only */
+/* Theme-Aware Global Styles */
 body {
-  background-color: #f9fafb; /* gray-50 */
-  color: #111827; /* gray-900 */
+  @apply bg-gray-50 text-gray-900 dark:bg-zinc-950 dark:text-zinc-100 transition-colors duration-300;
   font-family: 'Inter', system-ui, sans-serif;
 }
 
-/* Consistent Red Button */
+/* Direct CSS Fallback if Tailwind variant fails */
+.dark body {
+  background-color: #09090b; /* zinc-950 */
+  color: #f4f4f5; /* zinc-100 */
+}
+
+/* Adaptive UI Components */
 .btn-red {
   @apply bg-brand-red hover:bg-brand-red-hover text-white font-bold py-2 px-4 rounded transition-all shadow-sm active:scale-95 disabled:opacity-50;
 }
 
-/* Card Style */
-.card-light {
-  @apply bg-white border border-gray-200 shadow-sm rounded-lg;
+.card-adaptive {
+  @apply bg-white border border-gray-200 shadow-sm rounded-lg dark:bg-zinc-900 dark:border-zinc-800;
 }
 
-/* Table Style */
-.table-header {
-  @apply bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider;
+.table-header-adaptive {
+  @apply bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider dark:bg-zinc-900/50 dark:text-zinc-400;
 }
 
-/* Modal Style */
-.modal-content {
-  @apply bg-white rounded-lg shadow-xl;
+.modal-content-adaptive {
+  @apply bg-white rounded-lg shadow-xl dark:bg-zinc-900 dark:border dark:border-zinc-800;
+}
+
+/* Logo Dark Mode Handling */
+.logo-adaptive path[fill="#282829"],
+.logo-adaptive path[fill="#000000"] {
+  @apply transition-colors duration-300;
+}
+
+.dark .logo-adaptive path[fill="#282829"],
+.dark .logo-adaptive path[fill="#000000"] {
+  fill: #f4f4f5; /* zinc-100 */
 }
 
 /* Hide Scrollbar Utility */

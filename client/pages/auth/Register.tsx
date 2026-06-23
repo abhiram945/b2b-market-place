@@ -10,7 +10,7 @@ import { useAlert } from '../../contexts/AlertContext';
 import { apiErrorsToAlertItems, formErrorsToAlertItems } from '../../utils/alertHelpers';
 import { COUNTRY_CODES } from '../../utils/constants';
 import { ChevronDown } from '../../components/icons';
-import logo from "../../assets/navbar-logo.png";
+import logoLight from "../../assets/navbar-logo-light.png";
 
 type RegisterFormInputs = {
   fullName: string;
@@ -165,7 +165,9 @@ const Register: React.FC = () => {
       <div className="max-w-2xl w-full space-y-8 bg-white px-10 py-6 rounded-2xl shadow-xl border border-gray-100">
         <div className="text-center">
           <Link to="/" className="mx-auto h-16 w-auto flex items-center justify-center text-3xl font-black text-gray-900 tracking-tighter italic">
-            <img src={logo} alt='' className='w-full h-full object-contain'/>
+          <div className='w-64 h-16 overflow-hidden'>
+            <img src={logoLight} alt='' className='w-full h-full object-cover'/>
+          </div>
           </Link>
           <h2 className="mt-3 text-2xl font-black text-gray-900 uppercase tracking-tight">
             Create account
@@ -199,7 +201,7 @@ const Register: React.FC = () => {
 
             <InputWrapper label="Phone Number">
               <div className="flex gap-2">
-                <div className="relative w-[100px] flex-shrink-0" ref={dropdownRef}>
+                <div className="relative w-25 shrink-0" ref={dropdownRef}>
                   <button
                     type="button"
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -210,7 +212,7 @@ const Register: React.FC = () => {
                   </button>
                   
                   {isDropdownOpen && (
-                    <div className="absolute z-50 top-full mt-1 w-[250px] bg-white border-2 border-gray-100 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                    <div className="absolute z-50 top-full mt-1 w-62.5 bg-white border-2 border-gray-100 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
                       <div className="p-2 border-b border-gray-50">
                         <input
                           type="text"
@@ -222,7 +224,7 @@ const Register: React.FC = () => {
                           onKeyDown={(e) => e.stopPropagation()}
                         />
                       </div>
-                      <div className="max-h-[250px] overflow-y-auto">
+                      <div className="max-h-62.5 overflow-y-auto">
                         {COUNTRY_CODES.filter(c => 
                           c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           c.code.includes(searchTerm)

@@ -149,7 +149,7 @@ const Cart: React.FC = () => {
     <div className="max-w-[90%] mx-auto py-8">
       <div className="flex items-center gap-4 mb-8">
         <ShoppingCart className="w-10 h-10 text-brand-red" />
-        <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tight italic">
+        <h1 className="text-4xl font-black text-gray-900 dark:text-gray-100 uppercase tracking-tight italic">
           My <span className="text-brand-red">Cart</span>
         </h1>
       </div>
@@ -157,27 +157,27 @@ const Cart: React.FC = () => {
       <div className="lg:grid lg:grid-cols-12 lg:items-start lg:gap-x-12">
         {isCartSyncing && (
           <div className="col-span-12 mb-4">
-            <div className="bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-lg">
+            <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-lg">
               Syncing cart changes...
             </div>
           </div>
         )}
         <section className={cartItems.length>0 ? "col-span-8":"col-span-12"}>
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-gray-100 dark:border-zinc-700 overflow-hidden">
             {cartItems.length > 0 ? (
-              <ul role="list" className="divide-y divide-gray-100">
+              <ul role="list" className="divide-y divide-gray-100 dark:divide-zinc-700">
                 {cartItems.map(item => (
-                  <li key={item._id} className="flex py-8 px-6 hover:bg-gray-50/50 transition-colors">
+                  <li key={item._id} className="flex py-8 px-6 hover:bg-gray-50/50 dark:hover:bg-zinc-800/50 transition-colors">
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
                         <div className="min-w-0 flex-1">
                           <span className="text-[10px] font-black text-brand-red uppercase tracking-widest">{item.brand}</span>
-                          <h4 className="text-lg font-bold text-gray-900 uppercase tracking-tight truncate">
+                          <h4 className="text-lg font-bold text-gray-900 dark:text-zinc-100 uppercase tracking-tight truncate">
                             <Link to={`/products/${item._id}`} className="hover:text-brand-red transition-colors">
                               {item.title}
                             </Link>
                           </h4>
-                          <p className="mt-1 text-xs font-bold text-gray-400 uppercase tracking-wider">{item.category}</p>
+                          <p className="mt-1 text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">{item.category}</p>
                         </div>
                         <div className="ml-4 shrink-0">
                           <button
@@ -193,11 +193,11 @@ const Cart: React.FC = () => {
                       </div>
                       <div className="mt-6 flex items-end justify-between">
                         <div className="flex flex-col">
-                          <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter mb-1">Unit Value</span>
-                          <p className="text-2xl font-black text-gray-900 tracking-tighter">${item.price.toFixed(2)}</p>
+                          <span className="text-[9px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-tighter mb-1">Unit Value</span>
+                          <p className="text-2xl font-black text-gray-900 dark:text-zinc-100 tracking-tighter">${item.price.toFixed(2)}</p>
                         </div>
                         <div className="flex flex-col items-center">
-                          <label htmlFor={`quantity-${item._id}`} className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Vol.</label>
+                          <label htmlFor={`quantity-${item._id}`} className="text-[9px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-1">Vol.</label>
                           <input
                             id={`quantity-${item._id}`}
                             type="number"
@@ -207,13 +207,13 @@ const Cart: React.FC = () => {
                             onKeyDown={(e) => handleQuantityKeyDown(item, e)}
                             min={item.minOrderQty}
                             max={item.maxOrderQty}
-                            className="w-16 h-10 border-2 border-gray-100 rounded-lg text-center text-sm font-black text-gray-900 outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            className="w-16 h-10 border-2 border-gray-100 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-lg text-center text-sm font-black text-gray-900 dark:text-zinc-100 outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             disabled={isCartSyncing}
                           />
                           {quantityErrors[item._id] && <p className="text-red-600 text-[8px] font-bold mt-1 uppercase whitespace-nowrap">{quantityErrors[item._id]}</p>}
                         </div>
                         <div className="flex flex-col items-end">
-                          <span className="text-[9px] font-black text-gray-400 uppercase tracking-tighter mb-1">Line Subtotal</span>
+                          <span className="text-[9px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-tighter mb-1">Line Subtotal</span>
                           <p className="text-2xl font-black text-brand-red tracking-tighter">${(item.price * getDisplayedQuantity(item)).toFixed(2)}</p>
                         </div>
                       </div>
@@ -223,11 +223,11 @@ const Cart: React.FC = () => {
               </ul>
             ) : (
               <div className="text-center py-24 px-6">
-                <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <ShoppingCart className="w-10 h-10 text-gray-300" />
+                <div className="w-20 h-20 bg-gray-50 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <ShoppingCart className="w-10 h-10 text-gray-300 dark:text-zinc-600" />
                 </div>
-                <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight italic">Your cart is empty</h2>
-                <p className="mt-2 text-sm text-gray-500 font-medium uppercase tracking-widest">No products were added into the cart.</p>
+                <h2 className="text-xl font-black text-gray-900 dark:text-zinc-100 uppercase tracking-tight italic">Your cart is empty</h2>
+                <p className="mt-2 text-sm text-gray-500 dark:text-zinc-400 font-medium uppercase tracking-widest">No products were added into the cart.</p>
                 <div className="mt-10">
                   <Link to="/products" className="btn-red px-10 py-4 rounded-none text-xs font-black uppercase italic tracking-widest shadow-2xl">
                     Browse Products

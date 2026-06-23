@@ -93,9 +93,9 @@ const ProductsList: React.FC = () => {
   );
 
   return (
-    <div className="bg-zinc-50 min-h-[calc(100vh-64px)]">
+    <div className="bg-gray-50 dark:bg-zinc-950 min-h-[calc(100vh-64px)] transition-colors duration-300">
       {/* Sticky Filter Section */}
-      <div className="bg-white border-b border-zinc-200 z-20 sticky top-0">
+      <div className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 z-20 sticky top-0 transition-colors">
         <ProductFilters 
           filters={currentFilters} 
           setFilters={updateFilters} 
@@ -106,7 +106,7 @@ const ProductsList: React.FC = () => {
       <div className="w-full">
         <div className="min-w-full inline-block align-middle">
           <table className="w-full border-collapse min-w-300">
-          <thead className="sticky top-[72px] z-10 bg-zinc-900 shadow-xl">
+          <thead className="sticky top-[72px] z-10 bg-zinc-900 dark:bg-zinc-900 shadow-xl border-b dark:border-zinc-800">
             <tr>
               <th className="px-6 py-3 text-left">
                   <span className="text-[10px] font-black uppercase tracking-[0.3em] text-red-600 italic">Product</span>
@@ -125,7 +125,7 @@ const ProductsList: React.FC = () => {
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-zinc-100">
+          <tbody className="bg-white dark:bg-zinc-900 divide-y divide-zinc-100 dark:divide-zinc-800">
             {allProducts.length > 0 ? (
               allProducts.map((product) => (
               <ProductTableRow 
@@ -137,10 +137,10 @@ const ProductsList: React.FC = () => {
               ))
             ) : !loading && !error && (
                 <tr>
-                    <td colSpan={11} className="px-6 py-12">
-                        <div className="w-full py-32 text-center bg-white border border-zinc-200 rounded-2xl shadow-sm">
-                            <p className="text-zinc-400 font-black uppercase tracking-widest text-sm italic">NO COMPATIBLE STOCK DETECTED</p>
-                            <p className="text-zinc-300 text-[10px] font-bold uppercase tracking-[0.2em] mt-2">Check filters or contact support for manual sourcing</p>
+                    <td colSpan={11} className="px-6 py-12 bg-gray-50 dark:bg-zinc-950">
+                        <div className="w-full py-32 text-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm">
+                            <p className="text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-widest text-sm italic">NO COMPATIBLE STOCK DETECTED</p>
+                            <p className="text-zinc-300 dark:text-zinc-600 text-[10px] font-bold uppercase tracking-[0.2em] mt-2">Check filters or contact support for manual sourcing</p>
                         </div>
                     </td>
                 </tr>
@@ -152,9 +152,9 @@ const ProductsList: React.FC = () => {
 
             {error && (
                 <tr>
-                    <td colSpan={11} className="py-20 px-6">
-                        <div className="bg-red-50 border-l-4 border-red-600 p-6 text-center max-w-2xl mx-auto">
-                            <p className="text-red-600 font-black uppercase tracking-widest italic">{error}</p>
+                    <td colSpan={11} className="py-20 px-6 bg-gray-50 dark:bg-zinc-950">
+                        <div className="bg-red-50 dark:bg-red-900/10 border-l-4 border-red-600 p-6 text-center max-w-2xl mx-auto">
+                            <p className="text-red-600 dark:text-red-500 font-black uppercase tracking-widest italic">{error}</p>
                         </div>
                     </td>
                 </tr>
@@ -165,19 +165,19 @@ const ProductsList: React.FC = () => {
       </div>
 
       {/* Infinite Scroll Trigger & Status */}
-      <div className="w-full py-12 bg-zinc-50 flex flex-col items-center justify-center border-t border-zinc-100">
+      <div className="w-full py-12 bg-gray-50 dark:bg-zinc-950 flex flex-col items-center justify-center border-t border-zinc-100 dark:border-zinc-800 transition-colors">
         <div ref={observerTarget} className="h-10 w-full flex items-center justify-center">
           {loading && hasMore && (
             <div className="flex items-center gap-3">
               <div className="w-5 h-5 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Loading more assets...</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">Loading more assets...</span>
             </div>
           )}
         </div>
 
         {!hasMore && allProducts.length > 0 && (
           <div className="text-center py-4">
-            <p className="text-zinc-400 font-black uppercase tracking-[0.2em] text-[10px] italic">No more products, visit after some time.</p>
+            <p className="text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-[0.2em] text-[10px] italic">No more products, visit after some time.</p>
             <div className="mt-2 w-12 h-1 bg-red-600/20 mx-auto rounded-full"></div>
           </div>
         )}

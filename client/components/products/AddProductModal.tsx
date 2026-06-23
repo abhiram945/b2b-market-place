@@ -35,6 +35,7 @@ const schema = yup.object().shape({
 
 interface InputFieldProps {
   label: string;
+  placeholder?:string;
   name: keyof AddProductFormData;
   type?: string;
   step?: string;
@@ -42,13 +43,14 @@ interface InputFieldProps {
   register: UseFormRegister<AddProductFormData>;
 }
 
-const InputField: React.FC<InputFieldProps> = ({ label, name, type = "text", step, list, register }) => (
+const InputField: React.FC<InputFieldProps> = ({ label, placeholder, name, type = "text", step, list, register }) => (
   <div className="flex flex-col gap-1.5">
     <label className="text-[11px] font-black text-gray-500 uppercase tracking-widest ml-1">{label}</label>
     <input
       type={type}
       step={step}
       list={list}
+      placeholder={placeholder||""}
       {...register(name)}
       className="w-full h-11 bg-white border-2 border-gray-100 rounded-lg px-4 text-sm font-bold text-gray-900 outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all"
     />
@@ -132,51 +134,51 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onPr
       <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-8 py-2">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
           <div className="md:col-span-2">
-            <InputField label="title" name="title" register={register} />
+            <InputField label="title" placeholder='Enter product title' name="title" register={register} />
           </div>
-          <InputField label="vendor" name="user" register={register} />
+          <InputField label="vendor" placeholder='Enter vendor ID' name="user" register={register} />
           
           <div className="relative">
-            <InputField label="brand" name="brand" list="brand-list" register={register} />
+            <InputField label="brand" placeholder='Enter/Select brand name' name="brand" list="brand-list" register={register} />
             <datalist id="brand-list">
               {config.brands.map(b => <option key={b} value={b} />)}
             </datalist>
           </div>
 
           <div className="relative">
-            <InputField label="category" name="category" list="category-list" register={register} />
+            <InputField label="category" placeholder='Enter/Select category' name="category" list="category-list" register={register} />
             <datalist id="category-list">
               {config.categories.map(c => <option key={c} value={c} />)}
             </datalist>
           </div>
 
           <div className="relative">
-            <InputField label="location" name="location" list="location-list" register={register} />
+            <InputField label="location" placeholder='Enter/Select location' name="location" list="location-list" register={register} />
             <datalist id="location-list">
               {config.locations.map(l => <option key={l} value={l} />)}
             </datalist>
           </div>
 
-          <InputField label="price" name="price" type="number" step="0.01" register={register} />
+          <InputField label="price" placeholder='Enter price' name="price" type="number" step="0.01" register={register} />
 
           <div className="relative">
-            <InputField label="condition" name="condition" list="condition-list" register={register} />
+            <InputField label="condition" placeholder='Enter/Select condition' name="condition" list="condition-list" register={register} />
             <datalist id="condition-list">
               {config.conditions.map(c => <option key={c} value={c} />)}
             </datalist>
           </div>
 
-          <InputField label="Min Order Qty" name="minOrderQty" type="number" register={register} />
-          <InputField label="max Order Qty" name="maxOrderQty" type="number" register={register} />
-          <InputField label="stock Qty" name="stockQty" type="number" register={register} />
-          <InputField label="eta" name="eta" type="number" register={register} />
+          <InputField label="Min Order Qty" placeholder='Enter min order qty' name="minOrderQty" type="number" register={register} />
+          <InputField label="max Order Qty" placeholder='Enter max order qty' name="maxOrderQty" type="number" register={register} />
+          <InputField label="stock Qty" placeholder='Enter stock qty' name="stockQty" type="number" register={register} />
+          <InputField label="eta" name="eta" placeholder='Enter ETA' type="number" register={register} />
         </div>
 
         <div className="pt-8 border-t border-gray-100 flex justify-end items-center gap-6">
           <button
             type="button"
             onClick={onClose}
-            className="text-[11px] px-10 py-4 font-black tracking-[0.2em] text-gray-400 hover:text-gray-900 transition-colors cursor-pointer"
+            className="text-[11px] px-10 py-4 font-black tracking-[0.2em] text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors cursor-pointer"
           >
             Cancel
           </button>

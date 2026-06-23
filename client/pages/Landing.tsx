@@ -2,8 +2,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Footer from '../components/common/Footer';
-import { LogIn, UserPlus } from '../components/icons';
-import logo from "../assets/navbar-logo.png"
+import { LogIn, UserPlus, Sun, Moon } from '../components/icons';
+import { useTheme } from '../contexts/ThemeContext';
+import logoDark from "../assets/navbar-logo-dark.png"
+import logoLight from "../assets/navbar-logo-light.png"
 import Verify from '../components/icons/Verify';
 import Location from '../components/icons/Location';
 import Parcel from '../components/icons/Parcel';
@@ -12,6 +14,7 @@ import Secure from '../components/icons/Secure';
 import howMmWorks from "../assets/how-mm-works.png";
 
 const Landing: React.FC = () => {
+    const { theme, toggleTheme } = useTheme();
     
     const features = [
         { name: 'Verified Suppliers', description: 'Only approved and trusted distributers' },
@@ -21,17 +24,29 @@ const Landing: React.FC = () => {
     ];
 
     return (
-        <div className="dark:bg-zinc-950 font-sans selection:bg-red-600 selection:text-white">
+        <div className="bg-white dark:bg-zinc-950 font-sans selection:bg-red-600 selection:text-white transition-colors duration-300">
             {/* Header */}
-            <header className="absolute bg-white inset-x-0 top-0 z-50 border-b border-gray-100/10 backdrop-blur-sm">
-                <nav className="flex items-center justify-between p-4 lg:px-8 max-w-7xl mx-auto" aria-label="Global">
+            <header className="absolute bg-[#FEFEFE] dark:bg-[#000000] inset-x-0 top-0 z-50 border-b border-gray-100 dark:border-zinc-800/50 backdrop-blur-md">
+                <nav className="flex items-center justify-between px-4 py-1 lg:px-8 max-w-7xl mx-auto" aria-label="Global">
                     <div className="flex lg:flex-1">
                         <Link to="/" className="flex items-center text-2xl font-black text-gray-900 dark:text-white tracking-tighter italic uppercase">
-                            <img src={logo} alt='Market Mea' className='w-64 mr-2'/>
+                        <div className='w-64 h-16 overflow-hidden'>
+                            <img src={logoLight} alt='Market Mea' className='w-full h-full object-cover logo-adaptive block dark:hidden'/>
+                            <img src={logoDark} alt='Market Mea' className='w-full h-full object-cover logo-adaptive hidden dark:block'/>
+                        </div>
                         </Link>
                     </div>
-                    <div className="flex flex-1 justify-end space-x-6">
-                        <Link to="/login" className="flex items-center text-xs font-black uppercase tracking-widest hover:text-red-600 dark:text-zinc-950 dark:hover:text-red-500 transition-colors">
+                    <div className="flex flex-1 justify-end items-center space-x-6">
+                        {/* Theme Toggle */}
+                        <button 
+                            onClick={toggleTheme}
+                            className="p-2 text-gray-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-500 transition-all cursor-pointer rounded-lg"
+                            aria-label="Toggle theme"
+                        >
+                            {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                        </button>
+
+                        <Link to="/login" className="flex items-center text-xs font-black uppercase tracking-widest text-gray-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-500 transition-colors">
                             Log in <LogIn className="ml-2 w-4 h-4" />
                         </Link>
                         <Link to="/register" className="flex items-center rounded-none bg-red-600 px-5 py-2 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-red-600/20 hover:bg-red-700 transition-all active:scale-95">
@@ -115,4 +130,3 @@ const Landing: React.FC = () => {
 };
 
 export default Landing;
-

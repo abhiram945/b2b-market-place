@@ -249,7 +249,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
           <button
             onClick={parseCsv}
             disabled={!file || isParsing || uploadComplete}
-            className="h-10.5 px-6 bg-zinc-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-brand-red transition-all disabled:opacity-50 cursor-pointer"
+            className="h-10.5 px-6 bg-zinc-900 dark:bg-red-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-brand-red transition-all disabled:opacity-50 cursor-pointer"
           >
             {isParsing ? 'Parsing...' : 'Parse CSV'}
           </button>
@@ -258,37 +258,37 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
         {parsedData.length > 0 && (
           <div className="mt-4">
             <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-2">Parsed Products ({parsedData.length})</h3>
-            <div className="h-64 overflow-auto border border-gray-100 rounded-xl shadow-sm">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50 sticky top-0">
+            <div className="h-64 overflow-auto border border-gray-200 dark:border-zinc-700 rounded-xl shadow-sm bg-white dark:bg-zinc-900">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-zinc-700/60">
+                <thead className="bg-gray-50 dark:bg-zinc-800 sticky top-0">
                   <tr>
-                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 uppercase tracking-widest">Row</th>
-                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 uppercase tracking-widest">Title</th>
-                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 uppercase tracking-widest">Brand</th>
-                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 uppercase tracking-widest">Category</th>
-                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 uppercase tracking-widest">Location</th>
-                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 uppercase tracking-widest">Price</th>
-                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 uppercase tracking-widest">Stock</th>
-                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 uppercase tracking-widest">Min/Max</th>
-                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 uppercase tracking-widest">ETA</th>
-                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 uppercase tracking-widest">Condition</th>
-                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 uppercase tracking-widest">Vendor ID</th>
+                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 dark:text-zinc-400 uppercase tracking-widest">Row</th>
+                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 dark:text-zinc-400 uppercase tracking-widest">Title</th>
+                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 dark:text-zinc-400 uppercase tracking-widest">Brand</th>
+                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 dark:text-zinc-400 uppercase tracking-widest">Category</th>
+                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 dark:text-zinc-400 uppercase tracking-widest">Location</th>
+                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 dark:text-zinc-400 uppercase tracking-widest">Price</th>
+                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 dark:text-zinc-400 uppercase tracking-widest">Stock</th>
+                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 dark:text-zinc-400 uppercase tracking-widest">Min/Max</th>
+                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 dark:text-zinc-400 uppercase tracking-widest">ETA</th>
+                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 dark:text-zinc-400 uppercase tracking-widest">Condition</th>
+                    <th className="px-4 py-3 text-left text-[9px] font-black text-gray-500 dark:text-zinc-400 uppercase tracking-widest">Vendor ID</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-100">
+                <tbody className="bg-white dark:bg-zinc-900 divide-y divide-gray-100 dark:divide-zinc-700/40">
                   {parsedData.map((product, index) => (
-                    <tr key={index} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-400">{index + 1}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-900 truncate max-w-37.5" title={product.title}>{product.title}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-600 uppercase">{product.brand}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-600 capitalize">{product.category}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-600 uppercase">{product.location}</td>
+                    <tr key={index} className="hover:bg-gray-50 dark:hover:bg-zinc-800/60 transition-colors">
+                      <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-400 dark:text-zinc-500">{index + 1}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-900 dark:text-zinc-100 truncate max-w-37.5" title={product.title}>{product.title}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-600 dark:text-zinc-300 uppercase">{product.brand}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-600 dark:text-zinc-300 capitalize">{product.category}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-600 dark:text-zinc-300 uppercase">{product.location}</td>
                       <td className="px-4 py-3 whitespace-nowrap text-[10px] font-black text-brand-red">${product.price}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-900">{product.stockQty}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-500">{product.minOrderQty}/{product.maxOrderQty}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-500">{product.eta ?? '-'}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-600">{product.condition}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-[9px] font-mono text-gray-400">{product.user}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-900 dark:text-zinc-100">{product.stockQty}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-500 dark:text-zinc-400">{product.minOrderQty}/{product.maxOrderQty}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-500 dark:text-zinc-400">{product.eta ?? '-'}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-[10px] font-bold text-gray-600 dark:text-zinc-300">{product.condition}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-[9px] font-mono text-gray-400 dark:text-zinc-500">{product.user}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -325,7 +325,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
           </button>
           <button
             type="button"
-            className="px-8 border-2 border-gray-100 text-gray-400 font-black text-xs uppercase tracking-[0.2em] py-4 rounded-xl transition-all hover:bg-gray-50 cursor-pointer"
+            className="px-8 border-2 border-gray-300 text-gray-500 dark:text-gray-300 font-black text-xs uppercase tracking-[0.2em] py-4 rounded-xl transition-all hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
             onClick={handleModalClose}
             disabled={isUploading}
           >

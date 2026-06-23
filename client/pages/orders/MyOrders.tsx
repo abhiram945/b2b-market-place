@@ -188,7 +188,7 @@ const MyOrders: React.FC = () => {
     <div className="max-w-[90%] mx-auto py-8">
       <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tight">ORDER <span className="text-brand-red">MANAGEMENT</span></h1>
+          <h1 className="text-4xl font-black text-gray-900 dark:text-gray-100 uppercase tracking-tight">ORDER <span className="text-brand-red">MANAGEMENT</span></h1>
           <p className="text-gray-500 font-bold uppercase tracking-widest text-xs mt-1">Transaction History & Fulfilment</p>
         </div>
 
@@ -215,24 +215,24 @@ const MyOrders: React.FC = () => {
       ) : (
         <div className="space-y-10">
           {paginatedOrders.map(order => (
-            <div key={order._id} className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden transition-all hover:shadow-md">
-              <div className="p-6 bg-gray-50/50 border-b border-gray-200 flex flex-wrap justify-between items-center gap-6">
+            <div key={order._id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden transition-all hover:shadow-md">
+              <div className="p-6 bg-gray-50/50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-600 flex flex-wrap justify-between items-center gap-6">
                 <div>
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Order ID</p>
-                  <p className="text-lg font-black text-gray-900 font-mono">{order._id.toUpperCase()}</p>
-                  <p className="text-xs font-bold text-gray-500 uppercase italic mt-1">{new Date(order.createdAt).toLocaleDateString()}</p>
+                  <p className="text-lg font-black text-gray-900 dark:text-gray-100 font-mono">{order._id.toUpperCase()}</p>
+                  <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase italic mt-1">{new Date(order.createdAt).toLocaleDateString()}</p>
                 </div>
-                {isAdmin && (
+                {isAdmin && ( 
                   <div>
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Customer ID</p>
-                    <p className="text-sm font-black text-gray-900 font-mono">{getCustomerId(order.user)}</p>
+                    <p className="text-sm font-black text-gray-900 dark:text-gray-100 font-mono">{getCustomerId(order.user)}</p>
                   </div>
                 )}
 
                 <div className="flex items-center gap-8">
                   <div className="text-right">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Grand Total</p>
-                    <p className="text-3xl font-black text-gray-900 tracking-tighter">${order.totalPrice.toFixed(2)}</p>
+                    <p className="text-3xl font-black text-gray-900 dark:text-gray-100 tracking-tighter">${order.totalPrice.toFixed(2)}</p>
                   </div>
 
                   <div className="flex items-center gap-3">
@@ -275,7 +275,7 @@ const MyOrders: React.FC = () => {
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-white">
-                    <tr>
+                    <tr className='dark:bg-gray-700'>
                       <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Product Description</th>
                       {showProviderColumn && (
                         <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Provider</th>
@@ -290,17 +290,17 @@ const MyOrders: React.FC = () => {
                   </thead>
                   <tbody className="divide-y divide-gray-50 bg-white">
                     {order.items.map((item, index) => (
-                      <tr key={index} className="hover:bg-gray-50/50">
-                        <td className="px-8 py-5 text-sm font-bold text-gray-900 tracking-tight capitalize">{item.productTitle}</td>
+                      <tr key={index} className="dark:bg-gray-600">
+                        <td className="px-8 py-5 text-sm font-bold text-gray-900 dark:text-gray-100 tracking-tight capitalize">{item.productTitle}</td>
                         {showProviderColumn && (
-                          <td className="px-8 py-5 text-xs font-bold text-gray-500 capitalize">{getVendorName(item)}</td>
+                          <td className="px-8 py-5 text-xs font-bold text-gray-500 dark:text-gray-400 capitalize">{getVendorName(item)}</td>
                         )}
                         {isAdmin && (
-                          <td className="px-8 py-5 text-[11px] font-bold text-gray-500 font-mono">{getVendorId(item.vendor)}</td>
+                          <td className="px-8 py-5 text-[11px] font-bold text-gray-500 font-mono dark:text-gray-400">{getVendorId(item.vendor)}</td>
                         )}
-                        <td className="px-8 py-5 text-sm font-bold text-gray-900 text-center italic">{item.quantity}</td>
-                        <td className="px-8 py-5 text-sm font-bold text-gray-500 text-right font-mono">${item.price.toFixed(2)}</td>
-                        <td className="px-8 py-5 text-sm font-black text-brand-red text-right font-mono">${(item.quantity * item.price).toFixed(2)}</td>
+                        <td className="px-8 py-5 text-sm font-bold text-gray-900 text-center italic dark:text-gray-100">{item.quantity}</td>
+                        <td className="px-8 py-5 text-sm font-bold text-gray-500 text-right font-mono dark:text-gray-400">${item.price.toFixed(2)}</td>
+                        <td className="px-8 py-5 text-sm font-black text-brand-red text-right font-mono dark:text-brand-red-hover">${(item.quantity * item.price).toFixed(2)}</td>
                       </tr>
                     ))}
                   </tbody>

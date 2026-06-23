@@ -7,7 +7,7 @@ import { RootState, AppDispatch } from '../../redux/store';
 import { toLowerTrim } from '../../utils/normalize';
 import { useAlert } from '../../contexts/AlertContext';
 import { apiErrorsToAlertItems, formErrorsToAlertItems } from '../../utils/alertHelpers';
-import logo from "../../assets/navbar-logo.png";
+import logoLight from "../../assets/navbar-logo-light.png";
 
 type LoginFormInputs = {
   email: string;
@@ -69,7 +69,9 @@ const Login: React.FC = () => {
       <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-xl border border-gray-100">
         <div>
           <Link to="/" className="mx-auto h-12 w-auto px-8 flex items-center justify-center text-3xl font-black text-gray-900 tracking-tighter italic">
-            <img src={logo} alt='' className='w-full'/>
+            <div className='w-64 h-16 overflow-hidden'>
+            <img src={logoLight} alt='' className='w-full h-full object-cover'/>
+            </div>
           </Link>
           <h2 className="mt-8 text-center text-3xl font-black text-gray-900 uppercase tracking-tight">
             SIGN IN

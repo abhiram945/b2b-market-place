@@ -143,8 +143,8 @@ const AdminProductList: React.FC = () => {
     <div className="max-w-[90%] mx-auto py-8">
       <div className="flex justify-between items-end mb-8 gap-4">
         <div>
-          <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tight">PRODUCT <span className="text-brand-red">MANAGEMENT</span></h1>
-          <p className="text-gray-500 font-bold uppercase tracking-widest mt-1">Global Inventory Control</p>
+          <h1 className="text-4xl font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">PRODUCT <span className="text-brand-red">MANAGEMENT</span></h1>
+          <p className="text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1">Global Inventory Control</p>
         </div>
         <div className="flex items-center gap-4">
           <button

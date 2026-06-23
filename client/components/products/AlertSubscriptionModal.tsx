@@ -46,7 +46,7 @@ const AlertSubscriptionModal: React.FC<AlertSubscriptionModalProps> = ({
             onChange={(e) => setPriceAlert(e.target.checked)}
             className="h-4 w-4 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700"
           />
-          <label htmlFor="priceAlert" className="ml-2 block text-sm text-gray-900">
+          <label htmlFor="priceAlert" className="ml-2 block text-sm text-gray-900 dark:text-white">
             Price Alert
           </label>
         </div>
@@ -58,7 +58,7 @@ const AlertSubscriptionModal: React.FC<AlertSubscriptionModalProps> = ({
             onChange={(e) => setStockAlert(e.target.checked)}
             className="h-4 w-4 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700"
           />
-          <label htmlFor="stockAlert" className="ml-2 block text-sm text-gray-900">
+          <label htmlFor="stockAlert" className="ml-2 block text-sm text-gray-900 dark:text-white">
             Stock Alert
           </label>
         </div>

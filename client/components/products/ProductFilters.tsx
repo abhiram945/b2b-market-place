@@ -160,7 +160,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters, re
   };
 
   return (
-    <div className="bg-white border-b border-gray-200 px-4 py-3 sticky top-16 z-30">
+    <div className="bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 px-4 py-3 sticky top-16 z-30 transition-colors">
       <div className="w-full mx-auto flex flex-wrap items-center space-x-2">
 
         {/* Search */}
@@ -174,10 +174,10 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters, re
         />
 
         {/* Brands */}
-        <div className="flex items-center gap-1 group relative bg-gray-50/50 rounded-xl px-1 py-1 border border-gray-100 max-w-[35%] overflow-hidden">
+        <div className="flex items-center gap-1 group relative bg-gray-50/50 dark:bg-zinc-800/50 rounded-xl px-1 py-1 border border-gray-100 dark:border-zinc-800 max-w-[35%] overflow-hidden">
           <button 
             onClick={() => scrollBrands('left')}
-            className="p-1 hover:bg-white rounded-lg transition-all text-gray-400 hover:text-brand-red z-10 cursor-pointer"
+            className="p-1 hover:bg-white dark:hover:bg-zinc-700 rounded-lg transition-all text-gray-400 hover:text-brand-red z-10 cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -190,7 +190,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters, re
               <button
                 key={b}
                 onClick={() => handleBrandClick(b)}
-                className={`p-1.5 rounded-lg border transition-all bg-white flex items-center justify-center min-w-10 h-8 flex-shrink-0 ${filters.brand === b.toLowerCase() ? 'border-brand-red shadow-sm bg-red-50/10' : 'border-gray-200 hover:border-gray-200'}`}
+                className={`p-1.5 rounded-lg border transition-all bg-white dark:bg-zinc-800 flex items-center justify-center min-w-10 h-8 shrink-0 ${filters.brand === b.toLowerCase() ? 'border-brand-red shadow-sm bg-red-50/10 dark:bg-red-500/5' : 'border-gray-200 dark:border-zinc-700 hover:border-gray-200 dark:hover:border-zinc-600'}`}
                 title={b}
               >
                 <BrandLogo brand={b} />
@@ -200,7 +200,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters, re
 
           <button 
             onClick={() => scrollBrands('right')}
-            className="p-1 hover:bg-white rounded-lg transition-all text-gray-400 hover:text-brand-red z-10 cursor-pointer"
+            className="p-1 hover:bg-white dark:hover:bg-zinc-700 rounded-lg transition-all text-gray-400 hover:text-brand-red z-10 cursor-pointer"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -212,7 +212,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters, re
             name="category" 
             value={filters.category || ''} 
             onChange={handleInputChange} 
-            className="h-10 pl-3 pr-9 bg-gray-50 border border-gray-200 rounded-lg text-[10px] font-black tracking-widest text-gray-700 outline-none focus:border-brand-red cursor-pointer appearance-none min-w-35 capitalize"
+            className="h-10 pl-3 pr-9 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg text-[10px] font-black tracking-widest text-gray-700 dark:text-zinc-300 outline-none focus:border-brand-red cursor-pointer appearance-none min-w-35 capitalize"
           >
             <option value="">All Categories</option>
             {filterOptions.categories.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
@@ -226,7 +226,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters, re
             name="location" 
             value={filters.location || ''} 
             onChange={handleInputChange} 
-            className="h-10 pl-3 pr-9 bg-gray-50 border border-gray-200 rounded-lg text-[10px] font-black tracking-widest text-gray-700 outline-none focus:border-brand-red cursor-pointer appearance-none min-w-35 capitalize"
+            className="h-10 pl-3 pr-9 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg text-[10px] font-black tracking-widest text-gray-700 dark:text-zinc-300 outline-none focus:border-brand-red cursor-pointer appearance-none min-w-35 capitalize"
           >
             <option value="">All Locations</option>
             {filterOptions.locations.map(l => <option key={l} value={l} className="capitalize">{l}</option>)}
@@ -240,7 +240,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters, re
             name="sort" 
             value={filters.sort || ''} 
             onChange={handleInputChange} 
-            className="h-10 pl-3 pr-9 bg-gray-50 border border-gray-200 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-700 outline-none focus:border-brand-red cursor-pointer appearance-none min-w-35"
+            className="h-10 pl-3 pr-9 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-zinc-300 outline-none focus:border-brand-red cursor-pointer appearance-none min-w-35"
           >
             <option value="">Sort By</option>
             <option value="price_asc">Price: Low to High</option>
@@ -254,7 +254,7 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({ filters, setFilters, re
           type="button"
           onClick={handleClearFilters}
           disabled={!hasActiveFilters}
-          className="h-10 px-4 border border-gray-200 rounded-lg bg-white text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-gray-900 hover:border-gray-300 disabled:opacity-40 disabled:cursor-default transition-all cursor-pointer"
+          className="h-10 px-4 border border-gray-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:border-gray-300 dark:hover:border-zinc-600 disabled:opacity-40 disabled:cursor-default transition-all cursor-pointer"
         >
           Clear Filters
         </button>
