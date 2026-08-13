@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Footer from '../components/common/Footer';
 import { LogIn, UserPlus, Sun, Moon } from '../components/icons';
@@ -15,6 +15,7 @@ import howMmWorks from "../assets/how-mm-works.png";
 
 const Landing: React.FC = () => {
     const { theme, toggleTheme } = useTheme();
+    const [isHowMmWorksLoaded, setIsHowMmWorksLoaded] = useState(false);
     
     const features = [
         { name: 'Verified Suppliers', description: 'Only approved and trusted distributers' },
@@ -24,7 +25,7 @@ const Landing: React.FC = () => {
     ];
 
     return (
-        <div className="bg-white dark:bg-zinc-950 font-sans selection:bg-red-600 selection:text-white transition-colors duration-300">
+        <div className="bg-white dark:bg-zinc-950 font-sans selection:bg-red-600 selection:text-white">
             {/* Header */}
             <header className="absolute bg-[#FEFEFE] dark:bg-[#000000] inset-x-0 top-0 z-50 border-b border-gray-100 dark:border-zinc-800/50 backdrop-blur-md">
                 <nav className="flex items-center justify-between px-4 py-1 lg:px-8 max-w-7xl mx-auto" aria-label="Global">
@@ -46,7 +47,7 @@ const Landing: React.FC = () => {
                             {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
                         </button>
 
-                        <Link to="/login" className="flex items-center text-xs font-black uppercase tracking-widest text-gray-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-500 transition-colors">
+                        <Link to="/login" className="flex items-center text-xs font-black uppercase tracking-widest text-gray-900 dark:text-zinc-100 hover:text-red-600 dark:hover:text-red-500">
                             Log in <LogIn className="ml-2 w-4 h-4" />
                         </Link>
                         <Link to="/register" className="flex items-center rounded-none bg-red-600 px-5 py-2 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-red-600/20 hover:bg-red-700 transition-all active:scale-95">
@@ -79,7 +80,7 @@ const Landing: React.FC = () => {
                                     <Link to="/register" className="btn-red py-4 px-10 text-sm tracking-widest uppercase italic">
                                         Become a seller
                                     </Link>
-                                    <Link to="/products" className="text-sm font-black leading-6 text-zinc-900 dark:text-zinc-100 uppercase tracking-widest hover:text-red-600 transition-colors flex items-center gap-2">
+                                    <Link to="/products" className="text-sm font-black leading-6 text-zinc-900 dark:text-zinc-100 uppercase tracking-widest hover:text-red-600 flex items-center gap-2">
                                         Explore Products <span aria-hidden="true">→</span>
                                     </Link>
                                 </div>
@@ -120,7 +121,27 @@ const Landing: React.FC = () => {
 
                 {/* How MarketMea works section */}
                 <section className="relative isolate overflow-hidden bg-white px-6 py-16 lg:px-8 dark:bg-zinc-950">
-                    <img src={howMmWorks} alt='how market mea works' className='w-full rounded-2xl'/>
+                    <div className="relative overflow-hidden rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                        {!isHowMmWorksLoaded && (
+                            <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-zinc-200 via-zinc-100 to-zinc-200 dark:from-zinc-800 dark:via-zinc-700 dark:to-zinc-800">
+                                <div className="flex h-full min-h-[240px] items-center justify-center">
+                                    <div className="space-y-4 w-full max-w-3xl px-6">
+                                        <div className="h-6 w-1/3 rounded bg-white/60 dark:bg-zinc-600/60" />
+                                        <div className="h-4 w-2/3 rounded bg-white/50 dark:bg-zinc-600/50" />
+                                        <div className="h-4 w-1/2 rounded bg-white/50 dark:bg-zinc-600/50" />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        <img
+                            src={howMmWorks}
+                            alt="how market mea works"
+                            loading="lazy"
+                            decoding="async"
+                            onLoad={() => setIsHowMmWorksLoaded(true)}
+                            className={`w-full rounded-2xl transition-opacity duration-300 ${isHowMmWorksLoaded ? 'opacity-100' : 'opacity-0'}`}
+                        />
+                    </div>
                 </section>
             </main>
 

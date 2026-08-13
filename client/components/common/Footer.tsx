@@ -28,7 +28,7 @@ const Footer: React.FC = () => {
           </div>
         </div>
         <div className="mt-16 pt-8 border-t border-zinc-900 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.4em] italic">&copy; {new Date().getFullYear()} Market Mea by Techtronics Ventures LLC. ALL RIGHTS RESERVED.</p>
+          <p className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.4em] italic">&copy; {new Date().getFullYear()} Market Mea. ALL RIGHTS RESERVED.</p>
         </div>
       </div>
     </footer>

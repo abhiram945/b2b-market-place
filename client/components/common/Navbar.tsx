@@ -1,4 +1,4 @@
-
+﻿
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -90,7 +90,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
     };
 
     return (
-        <header className="fixed inset-x-0 top-0 bg-white dark:bg-[#000000] border-b border-gray-200 dark:border-zinc-800 z-40 transition-colors duration-300">
+        <header className="fixed inset-x-0 top-0 bg-white dark:bg-[#000000] border-b border-gray-200 dark:border-zinc-800 z-40">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16 items-center">
                     <div className="flex items-center">
@@ -109,7 +109,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
                                 <Link
                                     key={link.to}
                                     to={link.to}
-                                    className={`text-sm font-bold uppercase tracking-wide transition-colors ${location.pathname === link.to
+                                    className={`text-sm font-bold uppercase tracking-wide ${location.pathname === link.to
                                             ? 'text-brand-red'
                                             : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100'
                                         }`}
@@ -124,7 +124,7 @@ const Navbar: React.FC<NavbarProps> = ({ onMenuClick }) => {
                         {/* Theme Toggle */}
                         <button 
                             onClick={toggleTheme}
-                            className="p-2 text-gray-500 dark:text-zinc-400 hover:text-brand-red dark:hover:text-brand-red transition-all cursor-pointer rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800"
+                            className="p-2 text-gray-500 dark:text-zinc-400 hover:text-brand-red dark:hover:text-brand-red cursor-pointer rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800"
                             aria-label="Toggle theme"
                         >
                             {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}

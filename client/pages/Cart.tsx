@@ -167,13 +167,13 @@ const Cart: React.FC = () => {
             {cartItems.length > 0 ? (
               <ul role="list" className="divide-y divide-gray-100 dark:divide-zinc-700">
                 {cartItems.map(item => (
-                  <li key={item._id} className="flex py-8 px-6 hover:bg-gray-50/50 dark:hover:bg-zinc-800/50 transition-colors">
+                  <li key={item._id} className="flex py-8 px-6 hover:bg-gray-50/50 dark:hover:bg-zinc-800/50">
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
                         <div className="min-w-0 flex-1">
                           <span className="text-[10px] font-black text-brand-red uppercase tracking-widest">{item.brand}</span>
                           <h4 className="text-lg font-bold text-gray-900 dark:text-zinc-100 uppercase tracking-tight truncate">
-                            <Link to={`/products/${item._id}`} className="hover:text-brand-red transition-colors">
+                            <Link to={`/products/${item._id}`} className="hover:text-brand-red">
                               {item.title}
                             </Link>
                           </h4>
@@ -207,7 +207,7 @@ const Cart: React.FC = () => {
                             onKeyDown={(e) => handleQuantityKeyDown(item, e)}
                             min={item.minOrderQty}
                             max={item.maxOrderQty}
-                            className="w-16 h-10 border-2 border-gray-100 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-lg text-center text-sm font-black text-gray-900 dark:text-zinc-100 outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            className="w-16 h-10 border-2 border-gray-100 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded-lg text-center text-sm font-black text-gray-900 dark:text-zinc-100 outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             disabled={isCartSyncing}
                           />
                           {quantityErrors[item._id] && <p className="text-red-600 text-[8px] font-bold mt-1 uppercase whitespace-nowrap">{quantityErrors[item._id]}</p>}
@@ -240,8 +240,8 @@ const Cart: React.FC = () => {
 
         {/* Order summary */}
         {cartItems.length > 0 && (
-          <section className="mt-12 lg:col-span-4 lg:mt-0">
-            <div className="bg-black rounded-2xl p-8 shadow-xl border border-zinc-900 text-white">
+          <section className="lg:col-span-4 lg:sticky lg:top-[15vh]">
+            <div className="bg-black rounded-2xl p-8 shadow-xl border border-zinc-900 text-white lg:max-h-[calc(100vh-4rem)] lg:overflow-auto">
               <h2 className="text-xl font-black uppercase tracking-tight italic mb-8 border-b border-zinc-800 pb-4">
                 Transaction <span className="text-brand-red">Summary</span>
               </h2>
@@ -261,7 +261,7 @@ const Cart: React.FC = () => {
                   type="button"
                   onClick={handleCheckout}
                   disabled={isPlacingOrder || isCartSyncing}
-                  className="w-full bg-brand-red hover:bg-brand-red-hover cursor-pointer text-white font-black text-md tracking-[0.2em] py-5 rounded-none transition-all disabled:opacity-50 "
+                  className="w-full bg-brand-red hover:bg-brand-red-hover cursor-pointer text-white font-black text-md tracking-[0.2em] py-5 rounded-none disabled:opacity-50 "
                 >
                   {isPlacingOrder ? 'Placing your order...' : isCartSyncing ? 'Syncing cart...' : 'Place Order'}
                 </button>

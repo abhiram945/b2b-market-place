@@ -18,7 +18,7 @@
 
 /* Theme-Aware Global Styles */
 body {
-  @apply bg-gray-50 text-gray-900 dark:bg-zinc-950 dark:text-zinc-100 transition-colors duration-300;
+  @apply bg-gray-50 text-gray-900 dark:bg-zinc-950 dark:text-zinc-100;
   font-family: 'Inter', system-ui, sans-serif;
 }
 
@@ -45,16 +45,6 @@ body {
   @apply bg-white rounded-lg shadow-xl dark:bg-zinc-900 dark:border dark:border-zinc-800;
 }
 
-/* Logo Dark Mode Handling */
-.logo-adaptive path[fill="#282829"],
-.logo-adaptive path[fill="#000000"] {
-  @apply transition-colors duration-300;
-}
-
-.dark .logo-adaptive path[fill="#282829"],
-.dark .logo-adaptive path[fill="#000000"] {
-  fill: #f4f4f5; /* zinc-100 */
-}
 
 /* Hide Scrollbar Utility */
 .no-scrollbar {

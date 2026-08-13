@@ -180,7 +180,7 @@ const Register: React.FC = () => {
               <input
                 {...register('fullName', { required: 'Full name is required' })}
                 placeholder="Full Name"
-                className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
+                className="w-full dark:text-gray-700 px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 font-bold text-sm"
               />
             </InputWrapper>
 
@@ -195,7 +195,7 @@ const Register: React.FC = () => {
                 })}
                 placeholder="Email address"
                 type="email"
-                className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
+                className="w-full dark:text-gray-700 px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
               />
             </InputWrapper>
 
@@ -205,7 +205,7 @@ const Register: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full h-full px-2 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm bg-white text-left flex items-center justify-between"
+                    className="w-full h-full dark:text-gray-700 px-2 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm bg-white text-left flex items-center justify-between"
                   >
                     <span className="truncate">{watch('countryCode') ? `+${watch('countryCode')}` : 'Code'}</span>
                     <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -217,7 +217,7 @@ const Register: React.FC = () => {
                         <input
                           type="text"
                           placeholder="Search country..."
-                          className="w-full px-3 py-2 text-xs border border-gray-100 rounded-lg focus:outline-none focus:border-brand-red font-bold"
+                          className="w-full dark:text-gray-700 px-3 py-2 text-xs border border-gray-100 rounded-lg focus:outline-none focus:border-brand-red font-bold"
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
                           autoFocus
@@ -265,7 +265,7 @@ const Register: React.FC = () => {
                   placeholder="Phone number"
                   inputMode="numeric"
                   type="text"
-                  className="flex-1 min-w-0 px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
+                  className="flex-1 dark:text-gray-700 min-w-0 px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
                 />
               </div>
             </InputWrapper>
@@ -275,7 +275,7 @@ const Register: React.FC = () => {
                 {...register('companyName', { required: 'Company name is required' })}
                 placeholder="Select or enter company"
                 list="company-names"
-                className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
+                className="w-full dark:text-gray-700 px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
               />
               <datalist id="company-names">
                 {companyNames.map((name) => (
@@ -288,14 +288,14 @@ const Register: React.FC = () => {
               <input
                 {...register('website')}
                 placeholder="e.g. https://www.company.com"
-                className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
+                className="w-full dark:text-gray-700 px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
               />
             </InputWrapper>
 
             <InputWrapper label="Role">
               <select
                 {...register('role', { required: 'Role is required' })}
-                className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm bg-white"
+                className="w-full dark:text-gray-700 px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm bg-white"
               >
                 <option value="" hidden>Select your role</option>
                 <option value="buyer">Buyer</option>
@@ -309,7 +309,7 @@ const Register: React.FC = () => {
                   {...register('address', { required: 'Address is required' })}
                   placeholder="Full Address"
                   rows={3}
-                  className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm resize-none"
+                  className="w-full dark:text-gray-700 px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm resize-none"
                 />
               </InputWrapper>
             </div>
@@ -319,7 +319,7 @@ const Register: React.FC = () => {
                 {...register('tradeLicense', { required: 'Trade License is required' })}
                 type="file"
                 accept=".pdf"
-                className="w-full px-4 py-2 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red transition-all font-bold text-sm"
+                className="w-full dark:text-gray-700 px-4 py-2 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red transition-all font-bold text-sm"
               />
             </InputWrapper>
             <InputWrapper label="Owner ID Document (PDF)">
@@ -327,7 +327,7 @@ const Register: React.FC = () => {
                 {...register('idDocument', { required: 'ID Document is required' })}
                 type="file"
                 accept=".pdf"
-                className="w-full px-4 py-2 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red transition-all font-bold text-sm"
+                className="w-full dark:text-gray-700 px-4 py-2 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red transition-all font-bold text-sm"
               />
             </InputWrapper>
             <InputWrapper label="VAT Registration (PDF)">
@@ -335,7 +335,7 @@ const Register: React.FC = () => {
                 {...register('vatRegistration', { required: 'VAT Registration is required' })}
                 type="file"
                 accept=".pdf"
-                className="w-full px-4 py-2 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red transition-all font-bold text-sm"
+                className="w-full dark:text-gray-700 px-4 py-2 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red transition-all font-bold text-sm"
               />
             </InputWrapper>
             <div></div>
@@ -348,7 +348,7 @@ const Register: React.FC = () => {
                 })}
                 placeholder="Password"
                 type="password"
-                className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
+                className="w-full dark:text-gray-700 px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
               />
             </InputWrapper>
 
@@ -360,7 +360,7 @@ const Register: React.FC = () => {
                 })}
                 placeholder="Confirm Password"
                 type="password"
-                className="w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
+                className="w-full dark:text-gray-700 px-4 py-3 border-2 border-gray-100 rounded-xl focus:outline-none focus:border-brand-red focus:ring-4 focus:ring-red-500/5 transition-all font-bold text-sm"
               />
             </InputWrapper>
           </div>

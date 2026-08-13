@@ -175,14 +175,8 @@ const MyOrders: React.FC = () => {
     return vendor;
   };
   const getCustomerId = (user: any) => typeof user === 'object' ? user?._id : user;
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-32">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-red"></div>
-      </div>
-    );
-  }
+  const isSearching = loading && Boolean(activeSearchId);
+  const showEmptyState = !loading && orders.length === 0;
 
   return (
     <div className="max-w-[90%] mx-auto py-8">
@@ -206,117 +200,128 @@ const MyOrders: React.FC = () => {
         )}
       </div>
 
-      {orders.length === 0 ? (
-        <div className="bg-white p-12 rounded-lg border border-gray-200 text-center shadow-sm">
-          <p className="text-gray-500 font-bold uppercase tracking-widest text-lg italic">
-            {activeSearchId ? 'No orders match id.' : 'No transaction records detected.'}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-10">
-          {paginatedOrders.map(order => (
-            <div key={order._id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden transition-all hover:shadow-md">
-              <div className="p-6 bg-gray-50/50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-600 flex flex-wrap justify-between items-center gap-6">
-                <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Order ID</p>
-                  <p className="text-lg font-black text-gray-900 dark:text-gray-100 font-mono">{order._id.toUpperCase()}</p>
-                  <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase italic mt-1">{new Date(order.createdAt).toLocaleDateString()}</p>
-                </div>
-                {isAdmin && ( 
+      <div className="space-y-6">
+        {loading && (
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm px-6 py-4 flex items-center gap-4">
+            <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-200 border-t-brand-red"></div>
+            <p className="text-xs font-black uppercase tracking-widest text-gray-500 dark:text-gray-300">
+              {isSearching ? `Searching order id "${activeSearchId}"...` : 'Loading orders...'}
+            </p>
+          </div>
+        )}
+
+        {showEmptyState ? (
+          <div className="bg-white dark:bg-gray-600 p-12 rounded-lg border border-gray-200 text-center shadow-sm">
+            <p className="text-gray-500 dark:text-gray-100 font-bold uppercase tracking-widest text-lg italic">
+              {activeSearchId ? 'No orders match id.' : 'No transaction records detected.'}
+            </p>
+          </div>
+        ) : (
+          <div className={loading ? 'space-y-10 opacity-60 pointer-events-none select-none' : 'space-y-10'}>
+            {paginatedOrders.map(order => (
+              <div key={order._id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm overflow-hidden hover:shadow-md">
+                <div className="p-6 bg-gray-50/50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-600 flex flex-wrap justify-between items-center gap-6">
                   <div>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Customer ID</p>
-                    <p className="text-sm font-black text-gray-900 dark:text-gray-100 font-mono">{getCustomerId(order.user)}</p>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Order ID</p>
+                    <p className="text-lg font-black text-gray-900 dark:text-gray-100 font-mono">{order._id.toUpperCase()}</p>
+                    <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase italic mt-1">{new Date(order.createdAt).toLocaleDateString()}</p>
                   </div>
-                )}
+                  {isAdmin && ( 
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Customer ID</p>
+                      <p className="text-sm font-black text-gray-900 dark:text-gray-100 font-mono">{getCustomerId(order.user)}</p>
+                    </div>
+                  )}
 
-                <div className="flex items-center gap-8">
-                  <div className="text-right">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Grand Total</p>
-                    <p className="text-3xl font-black text-gray-900 dark:text-gray-100 tracking-tighter">${order.totalPrice.toFixed(2)}</p>
-                  </div>
+                  <div className="flex items-center gap-8">
+                    <div className="text-right">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Grand Total</p>
+                      <p className="text-3xl font-black text-gray-900 dark:text-gray-100 tracking-tighter">${order.totalPrice.toFixed(2)}</p>
+                    </div>
 
-                  <div className="flex items-center gap-3">
-                    {isAdmin ? (
-                      updatingOrderId === order._id ? (
-                        <div className="text-[10px] font-black uppercase tracking-widest rounded-lg px-4 py-2 border shadow-sm bg-gray-100 text-gray-600 border-gray-200">
-                          Updating...
-                        </div>
+                    <div className="flex items-center gap-3">
+                      {isAdmin ? (
+                        updatingOrderId === order._id ? (
+                          <div className="text-[10px] font-black uppercase tracking-widest rounded-lg px-4 py-2 border shadow-sm bg-gray-100 text-gray-600 border-gray-200">
+                            Updating...
+                          </div>
+                        ) : (
+                          <select
+                            value={order.status}
+                            onChange={(event) => handleStatusUpdate(order._id, event.target.value)}
+                            className={`text-[10px] font-black uppercase tracking-widest rounded-lg px-4 py-2 border shadow-sm cursor-pointer outline-none focus:ring-2 focus:ring-brand-red ${getStatusColor(order.status)}`}
+                          >
+                            {['pending', 'shipped', 'ready', 'delivered', 'completed', 'cancelled'].map(status => (
+                              <option key={status} value={status}>{status}</option>
+                            ))}
+                          </select>
+                        )
                       ) : (
-                        <select
-                          value={order.status}
-                          onChange={(event) => handleStatusUpdate(order._id, event.target.value)}
-                          className={`text-[10px] font-black uppercase tracking-widest rounded-lg px-4 py-2 border shadow-sm cursor-pointer outline-none transition-all focus:ring-2 focus:ring-brand-red ${getStatusColor(order.status)}`}
-                        >
-                          {['pending', 'shipped', 'ready', 'delivered', 'completed', 'cancelled'].map(status => (
-                            <option key={status} value={status}>{status}</option>
-                          ))}
-                        </select>
-                      )
-                    ) : (
-                      <span className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg border ${getStatusColor(order.status)}`}>
-                        {order.status}
-                      </span>
-                    )}
+                        <span className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg border ${getStatusColor(order.status)}`}>
+                          {order.status}
+                        </span>
+                      )}
 
-                    {(isAdmin || isBuyer) && (
-                      <button
-                        onClick={() => handleViewInvoice(order._id)}
-                        disabled={viewingInvoiceId === order._id}
-                        className="bg-brand-red hover:bg-brand-red-hover p-2.5 rounded-lg text-white shadow-md disabled:opacity-50 transition-colors cursor-pointer"
-                        title="View Official Invoice"
-                      >
-                        <FileText className={`w-5 h-5 ${viewingInvoiceId === order._id ? 'animate-pulse' : ''}`} />
-                      </button>
-                    )}
+                      {(isAdmin || isBuyer) && (
+                        <button
+                          onClick={() => handleViewInvoice(order._id)}
+                          disabled={viewingInvoiceId === order._id}
+                          className="bg-brand-red hover:bg-brand-red-hover p-2.5 rounded-lg text-white shadow-md disabled:opacity-50 cursor-pointer"
+                          title="View Official Invoice"
+                        >
+                          <FileText className={`w-5 h-5 ${viewingInvoiceId === order._id ? 'animate-pulse' : ''}`} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-white">
-                    <tr className='dark:bg-gray-700'>
-                      <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Product Description</th>
-                      {showProviderColumn && (
-                        <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Provider</th>
-                      )}
-                      {isAdmin && (
-                        <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Vendor ID</th>
-                      )}
-                      <th className="px-8 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-wider">Vol.</th>
-                      <th className="px-8 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Unit Value</th>
-                      <th className="px-8 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Subtotal</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50 bg-white">
-                    {order.items.map((item, index) => (
-                      <tr key={index} className="dark:bg-gray-600">
-                        <td className="px-8 py-5 text-sm font-bold text-gray-900 dark:text-gray-100 tracking-tight capitalize">{item.productTitle}</td>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-white">
+                      <tr className='dark:bg-gray-700'>
+                        <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Product Description</th>
                         {showProviderColumn && (
-                          <td className="px-8 py-5 text-xs font-bold text-gray-500 dark:text-gray-400 capitalize">{getVendorName(item)}</td>
+                          <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Provider</th>
                         )}
                         {isAdmin && (
-                          <td className="px-8 py-5 text-[11px] font-bold text-gray-500 font-mono dark:text-gray-400">{getVendorId(item.vendor)}</td>
+                          <th className="px-8 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">Vendor ID</th>
                         )}
-                        <td className="px-8 py-5 text-sm font-bold text-gray-900 text-center italic dark:text-gray-100">{item.quantity}</td>
-                        <td className="px-8 py-5 text-sm font-bold text-gray-500 text-right font-mono dark:text-gray-400">${item.price.toFixed(2)}</td>
-                        <td className="px-8 py-5 text-sm font-black text-brand-red text-right font-mono dark:text-brand-red-hover">${(item.quantity * item.price).toFixed(2)}</td>
+                        <th className="px-8 py-4 text-center text-xs font-bold text-gray-400 uppercase tracking-wider">Vol.</th>
+                        <th className="px-8 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Unit Value</th>
+                        <th className="px-8 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-wider">Subtotal</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50 bg-white">
+                      {order.items.map((item, index) => (
+                        <tr key={index} className="dark:bg-gray-600">
+                          <td className="px-8 py-5 text-sm font-bold text-gray-900 dark:text-gray-100 tracking-tight capitalize">{item.productTitle}</td>
+                          {showProviderColumn && (
+                            <td className="px-8 py-5 text-xs font-bold text-gray-500 dark:text-gray-400 capitalize">{getVendorName(item)}</td>
+                          )}
+                          {isAdmin && (
+                            <td className="px-8 py-5 text-[11px] font-bold text-gray-500 font-mono dark:text-gray-400">{getVendorId(item.vendor)}</td>
+                          )}
+                          <td className="px-8 py-5 text-sm font-bold text-gray-900 text-center italic dark:text-gray-100">{item.quantity}</td>
+                          <td className="px-8 py-5 text-sm font-bold text-gray-500 text-right font-mono dark:text-gray-400">${item.price.toFixed(2)}</td>
+                          <td className="px-8 py-5 text-sm font-black text-brand-red text-right font-mono dark:text-gray-100">${(item.quantity * item.price).toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
       {totalPages > 1 && (
         <div className="flex justify-center mt-10 space-x-2">
           {[...Array(totalPages)].map((_, index) => (
             <button
               key={index + 1}
               onClick={() => setCurrentPage(index + 1)}
-              className={`w-10 h-10 rounded font-bold text-sm transition-all cursor-pointer ${currentPage === index + 1 ? 'bg-zinc-900 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:border-brand-red'}`}
+              className={`w-10 h-10 rounded font-bold text-sm cursor-pointer ${currentPage === index + 1 ? 'bg-zinc-900 text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:border-brand-red'}`}
             >
               {index + 1}
             </button>

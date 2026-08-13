@@ -111,9 +111,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   }, [isAuthenticated, isDirty, user?.activeRole]); // Added user.activeRole dependency
 
   return (
-    <div className="flex min-h-screen bg-gray-50 text-gray-900 dark:bg-zinc-950 dark:text-zinc-100 transition-colors duration-300">
+    <div className="flex min-h-screen bg-gray-50 text-gray-900 dark:bg-zinc-950 dark:text-zinc-100">
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setSidebarOpen} />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-x-hidden">
         <Navbar onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1 pt-16">
           <div className="w-full">

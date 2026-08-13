@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useProducts } from '../../hooks/useProducts';
 import ProductTableRow from '../../components/products/ProductTableRow';
 import ProductFilters from '../../components/products/ProductFilters';
@@ -21,9 +21,19 @@ const ProductsList: React.FC = () => {
     updateFilters
   } = useProducts({ autoVendorFilter: false });
 
-  // Combine products from all loaded pages
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [hasMore, setHasMore] = useState(true);
+  const allProducts = useMemo(() => {
+    return Object.keys(productsByPage)
+      .sort((a, b) => Number(a) - Number(b))
+      .reduce((acc: Product[], key) => {
+        const pageProducts = productsByPage[Number(key)] || [];
+        const uniqueNewProducts = pageProducts.filter(
+          newP => !acc.some(existingP => existingP._id === newP._id)
+        );
+        return [...acc, ...uniqueNewProducts];
+      }, []);
+  }, [productsByPage]);
+
+  const hasMore = pageNum < pages;
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -31,23 +41,6 @@ const ProductsList: React.FC = () => {
   const [selectedProductForEdit, setSelectedProductForEdit] = useState<Product | null>(null);
 
   const observerTarget = useRef<HTMLDivElement>(null);
-
-  // Sync combined products list
-  useEffect(() => {
-    const combined = Object.keys(productsByPage)
-      .sort((a, b) => Number(a) - Number(b))
-      .reduce((acc: Product[], key) => {
-        const pageProducts = productsByPage[Number(key)] || [];
-        // Filter out products that are already in acc to prevent duplicate keys
-        const uniqueNewProducts = pageProducts.filter(
-          newP => !acc.some(existingP => existingP._id === newP._id)
-        );
-        return [...acc, ...uniqueNewProducts];
-      }, []);
-    
-    setAllProducts(combined);
-    setHasMore(pageNum < pages);
-  }, [productsByPage, pageNum, pages]);
 
   // Intersection Observer for infinite scroll
   useEffect(() => {
@@ -71,20 +64,20 @@ const ProductsList: React.FC = () => {
     };
   }, [hasMore, loading, pageNum, setPage]);
 
-  const handleProductClick = (product: Product) => {
+  const handleProductClick = useCallback((product: Product) => {
     setSelectedProduct(product);
     setIsDetailsModalOpen(true);
-  };
+  }, []);
 
-  const handleEditClick = (product: Product) => {
+  const handleEditClick = useCallback((product: Product) => {
     setSelectedProductForEdit(product);
     setIsEditModalOpen(true);
-  };
+  }, []);
 
-  const handleCloseEditModal = () => {
+  const handleCloseEditModal = useCallback(() => {
     setIsEditModalOpen(false);
     setSelectedProductForEdit(null);
-  };
+  }, []);
 
   const Th = ({ label, className = "" }: { label: string, className?: string }) => (
     <th className={`px-2 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-400 italic text-center ${className}`}>
@@ -93,9 +86,9 @@ const ProductsList: React.FC = () => {
   );
 
   return (
-    <div className="bg-gray-50 dark:bg-zinc-950 min-h-[calc(100vh-64px)] transition-colors duration-300">
+    <div className="bg-gray-50 dark:bg-zinc-950 min-h-[calc(100vh-64px)]">
       {/* Sticky Filter Section */}
-      <div className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 z-20 sticky top-0 transition-colors">
+      <div className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 z-20 sticky top-0">
         <ProductFilters 
           filters={currentFilters} 
           setFilters={updateFilters} 
@@ -106,7 +99,7 @@ const ProductsList: React.FC = () => {
       <div className="w-full">
         <div className="min-w-full inline-block align-middle">
           <table className="w-full border-collapse min-w-300">
-          <thead className="sticky top-[72px] z-10 bg-zinc-900 dark:bg-zinc-900 shadow-xl border-b dark:border-zinc-800">
+          <thead className="sticky top-18 z-10 bg-zinc-900 dark:bg-zinc-900 shadow-xl border-b dark:border-zinc-800">
             <tr>
               <th className="px-6 py-3 text-left">
                   <span className="text-[10px] font-black uppercase tracking-[0.3em] text-red-600 italic">Product</span>
@@ -165,7 +158,7 @@ const ProductsList: React.FC = () => {
       </div>
 
       {/* Infinite Scroll Trigger & Status */}
-      <div className="w-full py-12 bg-gray-50 dark:bg-zinc-950 flex flex-col items-center justify-center border-t border-zinc-100 dark:border-zinc-800 transition-colors">
+      <div className="w-full py-12 bg-gray-50 dark:bg-zinc-950 flex flex-col items-center justify-center border-t border-zinc-100 dark:border-zinc-800">
         <div ref={observerTarget} className="h-10 w-full flex items-center justify-center">
           {loading && hasMore && (
             <div className="flex items-center gap-3">

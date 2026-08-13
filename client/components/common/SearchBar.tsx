@@ -37,7 +37,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="block w-full h-10 pl-10 pr-40 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg text-sm font-bold text-gray-900 dark:text-zinc-100 outline-none focus:border-brand-red dark:focus:border-brand-red transition-all"
+        className="block w-full h-10 pl-10 pr-35 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg text-sm font-bold text-gray-900 dark:text-zinc-100 outline-none focus:border-brand-red dark:focus:border-brand-red"
       />
       {showClear && (
         <button
@@ -45,7 +45,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
           onClick={onClear}
           disabled={disabled}
           aria-label="clear search"
-          className="absolute inset-y-1.5 right-20.5 px-2 border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 rounded text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:border-gray-300 dark:hover:border-zinc-600 transition-all disabled:opacity-50 disabled:cursor-default cursor-pointer flex items-center justify-center"
+          className="absolute inset-y-1.5 right-20.5 px-2 border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 rounded text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 hover:border-gray-300 dark:hover:border-zinc-600 disabled:opacity-50 disabled:cursor-default cursor-pointer flex items-center justify-center"
         >
           <X className="w-3 h-3" />
         </button>
@@ -53,7 +53,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
       <button
         type="submit"
         disabled={disabled}
-        className="absolute inset-y-1.5 right-1.5 px-3 bg-black dark:bg-zinc-700 hover:bg-brand-red dark:hover:bg-brand-red text-white text-[9px] font-black uppercase tracking-widest rounded transition-all active:scale-95 disabled:opacity-50 disabled:cursor-default cursor-pointer"
+        className="absolute inset-y-1.5 right-1.5 px-3 bg-black dark:bg-zinc-700 hover:bg-brand-red dark:hover:bg-brand-red text-white text-[9px] font-black uppercase tracking-widest rounded active:scale-95 disabled:opacity-50 disabled:cursor-default cursor-pointer"
       >
         search
       </button>

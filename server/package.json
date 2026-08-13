@@ -1,7 +1,7 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "Backend for Market Mea by Techtronics Ventures",
+  "description": "Backend for Market Mea",
   "main": "index.js",
   "type": "module",
   "scripts": {

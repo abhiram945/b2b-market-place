@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Product } from '../../types';
@@ -79,13 +79,13 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
 
   return (
     <>
-      <tr className="bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors group">
+      <tr className="bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 group">
         <td className="px-6 py-4">
           <div className="w-full max-w-125 overflow-x-auto whitespace-nowrap no-scrollbar flex flex-col gap-2">
-            <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-tight group-hover:text-red-600 transition-colors cursor-pointer" onClick={() => onProductClick(product)}>
+            <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-tight group-hover:text-red-600 cursor-pointer" onClick={() => onProductClick(product)}>
                 {product.title}
             </span>
-            <span className="text-xs text-zinc-900 dark:text-zinc-400 tracking-tight transition-colors">
+            <span className="text-xs text-zinc-900 dark:text-zinc-400 tracking-tight">
                 {product._id}
             </span>
           </div>
@@ -125,7 +125,7 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
                 <>
                     <button
                     onClick={() => setAlertModalOpen(true)}
-                    className={`p-1.5 transition-colors ${initialPriceAlert || initialStockAlert ? 'text-red-600' : 'text-zinc-300 dark:text-zinc-600 hover:text-red-600'}`}
+                    className={`p-1.5 ${initialPriceAlert || initialStockAlert ? 'text-red-600' : 'text-zinc-300 dark:text-zinc-600 hover:text-red-600'}`}
                     >
                     <Bell className="w-5 h-5 fill-current" />
                     </button>
@@ -135,7 +135,7 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
                         type="number"
                         value={isNaN(quantity) ? '' : quantity}
                         onChange={handleQuantityChange}
-                        className="w-12 h-8 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-center text-[11px] font-black text-zinc-900 dark:text-zinc-100 rounded-none outline-none focus:border-red-600 focus:ring-0 transition-all"
+                        className="w-12 h-8 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-center text-[11px] font-black text-zinc-900 dark:text-zinc-100 rounded-none outline-none focus:border-red-600 focus:ring-0"
                         disabled={isInCart || isAddingToCart}
                     />
                     </div>
@@ -143,7 +143,7 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
                     <button
                     onClick={handleAddToCart}
                     disabled={isInCart || !!error || isNaN(quantity) || isAddingToCart}
-                    className={`h-9 px-6 rounded-none font-black text-[10px] tracking-widest transition-all active:scale-95 shadow-lg min-w-30 justify-center flex items-center gap-2 cursor-pointer ${
+                    className={`h-9 px-6 rounded-none font-black text-[10px] tracking-widest active:scale-95 shadow-lg min-w-30 justify-center flex items-center gap-2 cursor-pointer ${
                         isInCart || isAddingToCart
                         ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600 cursor-not-allowed border border-zinc-200 dark:border-zinc-700' 
                         : 'bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white hover:bg-red-600 dark:hover:bg-red-600 dark:hover:text-white'
@@ -158,7 +158,7 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
                 {activeRole === 'vendor' && (
                 <button 
                     onClick={() => onEditClick(product)} 
-                    className="h-9 px-6 bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white hover:bg-red-600 dark:hover:bg-red-600 dark:hover:text-white rounded-none font-black text-[10px] uppercase tracking-widest transition-colors min-w-25 cursor-pointer"
+                    className="h-9 px-6 bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white hover:bg-red-600 dark:hover:bg-red-600 dark:hover:text-white rounded-none font-black text-[10px] uppercase tracking-widest min-w-25 cursor-pointer"
                 >
                     EDIT STOCK
                 </button>
@@ -168,13 +168,13 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
                   <>
                     <button
                       onClick={() => onEditClick(product)}
-                      className="h-9 px-6 bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white hover:bg-red-600 dark:hover:bg-red-600 dark:hover:text-white rounded-none font-black text-[10px] uppercase tracking-widest transition-colors min-w-25 cursor-pointer"
+                      className="h-9 px-6 bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white hover:bg-red-600 dark:hover:bg-red-600 dark:hover:text-white rounded-none font-black text-[10px] uppercase tracking-widest min-w-25 cursor-pointer"
                     >
                       EDIT
                     </button>
                     <button
                       onClick={() => onDeleteClick?.(product._id)}
-                      className="h-9 px-6 bg-red-600 hover:bg-red-700 text-white rounded-none font-black text-[10px] uppercase tracking-widest transition-colors min-w-25 cursor-pointer"
+                      className="h-9 px-6 bg-red-600 hover:bg-red-700 text-white rounded-none font-black text-[10px] uppercase tracking-widest min-w-25 cursor-pointer"
                     >
                       DELETE
                     </button>
@@ -196,4 +196,4 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({ product, onProductCli
   );
 };
 
-export default ProductTableRow;
+export default memo(ProductTableRow);
