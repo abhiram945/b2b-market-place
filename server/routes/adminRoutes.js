@@ -12,7 +12,11 @@ import {
   getRoleRequests,
   handleRoleRequest
 } from '../controllers/adminController.js';
-import { bulkCreateProducts } from '../controllers/productController.js'; // Import bulkCreateProducts
+import {
+  bulkCreateProducts,
+  previewProductsByUser,
+  bulkDeleteProductsByUser,
+} from '../controllers/productController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 import { userStatusValidation, validate } from '../middleware/validationMiddleware.js'; // Import validation middleware
 import multer from 'multer';
@@ -77,6 +81,9 @@ router.route('/maintenance')
 
 // New route for bulk product upload
 router.route('/products/bulk').post(protect, admin, bulkCreateProducts);
+router.route('/products/bulk-delete-by-user')
+  .get(protect, admin, previewProductsByUser)
+  .delete(protect, admin, bulkDeleteProductsByUser);
 
 // Image upload routes
 router.post('/upload/brand-logo', protect, admin, uploadImage.single('image'), uploadBrandLogo);

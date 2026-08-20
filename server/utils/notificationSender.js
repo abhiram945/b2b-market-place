@@ -6,14 +6,15 @@ import dotenv from 'dotenv';
 dotenv.config();
 // Initialize Email Transporter
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST, 
-  port: Number(process.env.SMTP_PORT),
-  secure: false, 
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT),
+    secure: false, // SSL/TLS
+    auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+    },
 });
+
 // Initialize Twilio Client
 let twilioClient;
 const twilioWhatsAppFrom = process.env.TWILIO_WHATSAPP_FROM || process.env.TWILIO_PHONE_NUMBER;
@@ -48,10 +49,10 @@ export const sendEmail = async (to, subject, text, attachments = []) => {
 
     try {
         const info = await transporter.sendMail({
-            from: process.env.SMTP_USER,
+            from: `"Market Mea" <${process.env.SMTP_USER}>`,
             to,
             subject,
-            text, 
+            text,
             html: `
                 <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
                     <h2 style="color: #2563eb;">Market Mea Notification</h2>

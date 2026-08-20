@@ -18,6 +18,7 @@ export interface User {
 
 export interface Product {
   _id: string;
+  user?: string;
   title: string;
   brand: string;
   category: string;

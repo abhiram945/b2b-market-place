@@ -424,25 +424,19 @@ export const generateInvoice = async (order, buyer) => {
     drawInfoCol(
         'INVOICE NO.',
         order._id.toString().toUpperCase(),
-        30
+        75
     );
 
     drawInfoCol(
         'DATE',
         new Date(order.createdAt).toLocaleDateString(),
-        180
+        250
     );
 
     drawInfoCol(
         'DUE DATE',
         new Date(order.createdAt).toLocaleDateString(),
-        330
-    );
-
-    drawInfoCol(
-        'SALES EMPLOYEE',
-        'ADMIN',
-        480
+        350
     );
 
     y += 32;

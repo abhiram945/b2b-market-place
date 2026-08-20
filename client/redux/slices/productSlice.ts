@@ -131,6 +131,30 @@ export const bulkUploadProducts = createAsyncThunk(
   }
 );
 
+export const previewProductsByUser = createAsyncThunk(
+  'products/previewProductsByUser',
+  async (userId: string, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get('/admin/products/bulk-delete-by-user', { params: { userId } });
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to preview products for this user.');
+    }
+  }
+);
+
+export const bulkDeleteProductsByUser = createAsyncThunk(
+  'products/bulkDeleteProductsByUser',
+  async (userId: string, { rejectWithValue }) => {
+    try {
+      const { data } = await api.delete('/admin/products/bulk-delete-by-user', { params: { userId } });
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to delete products for this user.');
+    }
+  }
+);
+
 export const fetchFilterOptions = createAsyncThunk(
   'products/fetchFilterOptions',
   async (_, { rejectWithValue }) => {

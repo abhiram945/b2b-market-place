@@ -2,10 +2,11 @@ import React, { useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../redux/store';
 import { deleteProduct, restoreProductsCache } from '../../redux/slices/productSlice';
-import { FileText, PlusCircle } from '../../components/icons';
+import { FileText, PlusCircle, Trash2 } from '../../components/icons';
 import AddProductModal from '../../components/products/AddProductModal';
 import EditProductModal from '../../components/products/EditProductModal';
 import BulkUploadModal from '../../components/products/BulkUploadModal';
+import BulkDeleteByUserModal from '../../components/products/BulkDeleteByUserModal';
 import ProductDetailsModal from '../../components/products/ProductDetailsModal';
 import { Product } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
@@ -50,6 +51,7 @@ const AdminProductList: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
+  const [isBulkDeleteByUserModalOpen, setIsBulkDeleteByUserModalOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [activeSearchId, setActiveSearchId] = useState<string>((currentFilters.searchId as string) || '');
 
@@ -160,6 +162,13 @@ const AdminProductList: React.FC = () => {
             Bulk Upload
           </button>
           <button
+            onClick={() => setIsBulkDeleteByUserModalOpen(true)}
+            className="flex items-center px-6 py-3 bg-zinc-900 text-white font-bold rounded shadow-md hover:bg-brand-red transition-all uppercase tracking-widest cursor-pointer"
+          >
+            <Trash2 className="w-5 h-5 mr-2" />
+            Bulk Delete
+          </button>
+          <button
             onClick={() => setIsAddModalOpen(true)}
             className="flex items-center px-6 py-3 bg-brand-red text-white font-bold rounded shadow-md hover:bg-brand-red-hover transition-all uppercase tracking-widest cursor-pointer"
           >
@@ -251,6 +260,11 @@ const AdminProductList: React.FC = () => {
         isOpen={isBulkUploadModalOpen}
         onClose={() => setIsBulkUploadModalOpen(false)}
         onUploadSuccess={refresh}
+      />
+      <BulkDeleteByUserModal
+        isOpen={isBulkDeleteByUserModalOpen}
+        onClose={() => setIsBulkDeleteByUserModalOpen(false)}
+        onDeleteSuccess={refresh}
       />
       <ProductDetailsModal
         isOpen={isDetailsModalOpen}

@@ -291,6 +291,48 @@ const deleteProduct = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Preview products for a specific user (for bulk deletion confirmation)
+// @route   GET /api/admin/products/bulk-delete-by-user
+// @access  Private/Admin
+const previewProductsByUser = asyncHandler(async (req, res) => {
+  const { userId } = req.query;
+
+  if (!userId || !mongoose.Types.ObjectId.isValid(String(userId))) {
+    res.status(400);
+    throw new Error('Valid user id is required.');
+  }
+
+  const productObjectId = new mongoose.Types.ObjectId(String(userId));
+  const products = await Product.find({ user: productObjectId }).sort({ createdAt: -1 }).lean();
+
+  res.json({
+    userId: productObjectId.toString(),
+    total: products.length,
+    products,
+  });
+});
+
+// @desc    Delete all products for a specific user
+// @route   DELETE /api/admin/products/bulk-delete-by-user
+// @access  Private/Admin
+const bulkDeleteProductsByUser = asyncHandler(async (req, res) => {
+  const { userId } = req.query;
+
+  if (!userId || !mongoose.Types.ObjectId.isValid(String(userId))) {
+    res.status(400);
+    throw new Error('Valid user id is required.');
+  }
+
+  const productObjectId = new mongoose.Types.ObjectId(String(userId));
+  const result = await Product.deleteMany({ user: productObjectId });
+
+  res.json({
+    userId: productObjectId.toString(),
+    deletedCount: result.deletedCount || 0,
+    message: `Deleted ${result.deletedCount || 0} product(s) for user ${productObjectId.toString()}.`,
+  });
+});
+
 // @desc    Bulk create products
 // @route   POST /api/admin/products/bulk
 // @access  Private/Admin
@@ -422,6 +464,8 @@ export {
   updateProduct,
   updateProductByVendor,
   deleteProduct,
+  previewProductsByUser,
+  bulkDeleteProductsByUser,
   bulkCreateProducts,
   getFilterOptions,
 };

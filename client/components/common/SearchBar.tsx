@@ -37,7 +37,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="block w-full h-10 pl-10 pr-35 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg text-sm font-bold text-gray-900 dark:text-zinc-100 outline-none focus:border-brand-red dark:focus:border-brand-red"
+        className="block w-full h-10 pl-10 pr-10 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg text-sm font-bold text-gray-900 dark:text-zinc-100 outline-none focus:border-brand-red dark:focus:border-brand-red"
       />
       {showClear && (
         <button
